@@ -331,3 +331,8 @@ From the review of the original proposal; the scaffold implements these.
 10. **The existing `~/.config/gtk-4.0/gtk.css`** (window/pane translucency
     tweaks) migrates into `src/surfaces/` as part of milestone 1;
     `tools/build` refuses to replace a real file until then.
+11. **Flatpak is out of scope for now** (user decision, 18 Sep 2026). This
+    supersedes amendment 6 until Flatpak GNOME apps enter daily use: the
+    `filesystem=xdg-config/gtk-4.0` override that had been granted was
+    reverted, and the backlog's Flatpak tasks (P1.4, X1) are struck. When
+    Flatpak returns to scope, re-apply the override and reinstate both.

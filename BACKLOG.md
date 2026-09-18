@@ -48,7 +48,7 @@ rebuild-and-restart cycle.*
 
 - [x] **P1.0** (P0) Install sassc: `sudo pacman -S --needed sassc`
   (everything else in the toolchain is already present).
-- [ ] **P1.1** (P0) No-op build: `tools/build` compiles the comment-only
+- [x] **P1.1** (P0) No-op build: `tools/build` compiles the comment-only
   skeleton, symlinks `~/.config/gtk-4.0/gtk.css`, restarts daemons.
   *Accept:* rebuild + restart leaves every app visually unchanged; two
   consecutive builds produce byte-identical output.
@@ -57,13 +57,14 @@ rebuild-and-restart cycle.*
   *Accept:* both survive compilation verbatim in `build/gtk.css` — libsass
   must pass modern colour syntax through, not mangle it. If it mangles,
   switch to Dart Sass and record why in decisions.md.
-- [ ] **P1.3** (P0) Load test: temporary `headerbar { background: red; }`
+- [x] **P1.3** (P0) Load test: temporary `headerbar { background: red; }`
   in the overlay.
   *Accept:* visible in a native GNOME app; then removed.
-- [ ] **P1.4** (P1) Flatpak access:
-  `flatpak override --user --filesystem=xdg-config/gtk-4.0`.
-  *Accept:* a Flatpak GNOME app shows the P1.3 red rule.
-- [ ] **P1.5** (P0) Migrate the existing `~/.config/gtk-4.0/gtk.css`
+- ~~**P1.4** (P1) Flatpak access: `flatpak override --user --filesystem=xdg-config/gtk-4.0`.
+  *Accept:* a Flatpak GNOME app shows the P1.3 red rule.~~
+  *(Deferred 18 Sep 2026 — Flatpak out of scope for now; the override that
+  had been applied was reverted. Reinstate when Flatpak returns to scope.)*
+- [x] **P1.5** (P0) Migrate the existing `~/.config/gtk-4.0/gtk.css`
   (window / content-pane / sidebar-pane translucency, 10 lines) into
   `src/surfaces/`, raw `rgb()` values replaced by upstream-variable
   derivations, selectors registered in the contract.
@@ -127,10 +128,10 @@ verdict is recorded. Stop the project if it is a no-go.*
 - [ ] **H2** (P0) Window surface: headerbar↔content hairline separator
   (alpha, never solid); window rung of the ladder.
 - [ ] **H3** (P1) Toolbar / searchbar / actionbar.
-- [ ] **H4** (P0) Side-by-side verification: Files + Epiphany + one Flatpak
-  app; light/dark × HC/normal × 1×/1.25×/1.5×.
-  *Accept:* no native↔Flatpak divergence beyond accent colour. Any
-  divergence means a runtime-version mismatch → **X1 becomes P0**.
+- [ ] **H4** (P0) Side-by-side verification: Files + Epiphany;
+  light/dark × HC/normal × 1×/1.25×/1.5×.
+  *Accept:* no regressions in any matrix cell. *(The Flatpak matrix cell is
+  deferred with Flatpak — proposal amendment 11.)*
 - [ ] **H5** (P0) GO/NO-GO recorded in `docs/decisions.md`. If no-go:
   revert the surfaces, keep the repo, the guard and the pipeline.
 
@@ -181,10 +182,10 @@ verdict is recorded. Stop the project if it is a no-go.*
 
 ## Hardening (P2 — pull forward when blocking)
 
-- [ ] **X1** Flatpak runtime guard: extend `check-selectors` to also
+- ~~**X1** Flatpak runtime guard: extend `check-selectors` to also
   extract from installed `org.gnome.Platform` runtimes and check the
-  contract against the **oldest** libadwaita actually running. *(Becomes
-  P0 if H4 shows divergence.)*
+  contract against the **oldest** libadwaita actually running.~~
+  *(Deferred with Flatpak, 18 Sep 2026 — proposal amendment 11.)*
 - [ ] **X2** `tools/selftest`: automate P1.7 (bogus contract entries →
   exit 1, both axes reported) so the guard is testable in one command.
 - [ ] **X3** Regenerate the proposal's metrics from the pinned version —
@@ -214,3 +215,5 @@ verdict is recorded. Stop the project if it is a no-go.*
 - Patching, forking or replacing libadwaita
 - Widget internals, layout, metrics, padding, adaptive breakpoints, window
   controls
+- Flatpak apps and runtimes — deferred 18 Sep 2026, revisit if Flatpak
+  GNOME apps enter daily use
