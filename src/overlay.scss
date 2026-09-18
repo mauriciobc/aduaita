@@ -9,6 +9,7 @@
 // L2 — surfaces. The only layer that names upstream selectors; every
 // selector used must be registered in upstream/selectors.txt, and every
 // upstream variable derived from in upstream/variables.txt.
+@import "surfaces/window";
 @import "surfaces/headerbar";
 @import "surfaces/toolbar";
 @import "surfaces/boxed-list";

@@ -1,0 +1,29 @@
+// L2 — window and panes. Migrated unchanged in effect from the pre-overlay
+// ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5); the values now derive from
+// upstream variables (_tokens.scss), so dark mode tracks too.
+//
+// window, dialog: GTK core node names — deliberately NOT registered in
+// upstream/selectors.txt. They do not appear in libadwaita's own sheet
+// (verified against 1:1.9.4-1), so the guard would false-positive on them,
+// and a libadwaita upgrade cannot move them.
+//
+// .content-pane: upstream (widgets/_split-view.scss and friends) styles it
+// only inside compound selectors — there is no standalone `.content-pane`
+// rule in 1.9.4 — so the contract registers the compound atom
+// `:not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane` as the
+// dependency. Our own `.content-pane` atom matches any pane widget at
+// priority 800 regardless.
+// .sidebar-pane: standalone upstream rule; registered as-is.
+
+window,
+dialog {
+  background-color: var(--ov-surface-window);
+}
+
+.content-pane {
+  background-color: var(--ov-surface-content);
+}
+
+.sidebar-pane {
+  background-color: var(--ov-surface-sidebar);
+}

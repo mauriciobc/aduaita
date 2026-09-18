@@ -8,3 +8,18 @@
 // documented exceptions to the scheme) land here together with L1 — see
 // BACKLOG.md D5: every value a primitive emits resolves through a token,
 // and the switch redefines those tokens, so one edit disables one family.
+
+:root {
+  // Window and pane translucency — migrated from the pre-overlay
+  // ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5). The old file hardcoded
+  // rgba(242, 242, 244, …), which forced light values in dark mode; the
+  // derivations below track both schemes for free.
+  //
+  // These two doubles as the sassc colour round-trip proof (P1.2):
+  // libsass must pass color-mix() and relative colour syntax through
+  // verbatim, not mangle them.
+  --ov-surface-window: color-mix(in srgb, var(--window-bg-color) 84%, transparent);
+  // light: #f2f2f4 -> +8/+8/+6 = #fafafa — the old hardcoded value, exact.
+  --ov-surface-content: rgb(from var(--window-bg-color) calc(r + 8) calc(g + 8) calc(b + 6));
+  --ov-surface-sidebar: transparent;
+}

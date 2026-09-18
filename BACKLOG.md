@@ -46,13 +46,13 @@ How to read this file:
 *Done when: a no-op build installs, loads, and survives a
 rebuild-and-restart cycle.*
 
-- [ ] **P1.0** (P0) Install sassc: `sudo pacman -S --needed sassc`
+- [x] **P1.0** (P0) Install sassc: `sudo pacman -S --needed sassc`
   (everything else in the toolchain is already present).
 - [ ] **P1.1** (P0) No-op build: `tools/build` compiles the comment-only
   skeleton, symlinks `~/.config/gtk-4.0/gtk.css`, restarts daemons.
   *Accept:* rebuild + restart leaves every app visually unchanged; two
   consecutive builds produce byte-identical output.
-- [ ] **P1.2** (P0) sassc round-trip: add one `color-mix()` and one
+- [x] **P1.2** (P0) sassc round-trip: add one `color-mix()` and one
   relative-colour derivation to `_tokens.scss`.
   *Accept:* both survive compilation verbatim in `build/gtk.css` — libsass
   must pass modern colour syntax through, not mangle it. If it mangles,
@@ -74,10 +74,10 @@ rebuild-and-restart cycle.*
   the hook path: `sudo tools/check-selectors`.
   *Accept:* exit 0; `git status` clean afterwards — proof the guard never
   writes into the repo as root.
-- [ ] **P1.7** (P1) Contract self-test: append one bogus selector and one
+- [x] **P1.7** (P1) Contract self-test: append one bogus selector and one
   bogus variable to the contracts, run `tools/check-selectors`, revert.
   *Accept:* exit 1, both misses reported by name.
-- [ ] **P1.8** (P2) Confirm `upstream/pinned-version` equals
+- [x] **P1.8** (P2) Confirm `upstream/pinned-version` equals
   `pacman -Q libadwaita` (it did at scaffold time: 1:1.9.4-1).
 
 ## M2 — Design system: L0 + L1

@@ -6,6 +6,17 @@
 # upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
 #
 # Rules:
-#   - every selector named by any L2 file in src/surfaces/ must appear here
-#   - an unregistered selector is invisible to the guard and will break silently
+#   - register the ATOMS UPSTREAM USES for anything the overlay overrides —
+#     not necessarily the atoms the overlay itself writes. E.g. the overlay
+#     targets `.content-pane` directly, but upstream styles it only inside
+#     compound selectors, so the compound atom is what the guard must watch.
+#   - an unregistered dependency is invisible to the guard and will break
+#     silently
 #   - update this file and the L2 rule in the same commit
+#
+# GTK-core node names (window, dialog, …) do NOT belong here: they are not
+# in libadwaita's sheet, the guard would false-positive, and libadwaita
+# upgrades cannot move them.
+
+.sidebar-pane
+:not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane

@@ -9,3 +9,5 @@
 # Rules:
 #   - every upstream var() referenced by src/_tokens.scss must appear here
 #   - update this file and _tokens.scss in the same commit
+
+--window-bg-color
