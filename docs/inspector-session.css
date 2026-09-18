@@ -5,7 +5,7 @@
  *   GTK_DEBUG=interactive nautilus
  *
  * Paste ONE numbered block at a time into the Inspector's CSS tab.
- * The dark-mode and high-contrast toggles live on the libadwaita page of
+ * The dark-mode and high-contrast toggles live on the Libadwaita page of
  * the Inspector — use them, not the system settings.
  *
  * Record every verdict in docs/decisions.md. The four verdicts to report:
@@ -14,26 +14,24 @@
  *         keep or drop texture?
  *   D3  — raised ladder visible? overlay/window distinct? kill switch works?
  *   HC  — with block 3 applied: everything flat under High Contrast?
- *
- * Blocks 2 and 3 are the exact output of the shipped L1 mixins — what you
- * judge here is what M3 will apply.
  */
 
-/* ==== 1 · E3 — pressed inversion (T3) ================================== */
-/* Press and hold a button: does it read as physically depressed? Any
- * layout shift (there must be none — transform only)? Try a default
- * button and a pill button. */
-
-button {
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.25),
-              inset 0 1px 0 rgba(0, 0, 0, 0.30);
-  transform: translate(0, 1px);
-}
+/* ==== 1 · E3 — pressed inversion (CORRECTED) =========================== */
+/* Paste. Idle buttons must look NORMAL. Then press and hold: the pressed
+ * button gets a dark top edge + 1px nudge. If ALL buttons still look
+ * pressed while idle, paste D1 below and report what you see. */
 
 button:active {
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.25),
               inset 0 1px 0 rgba(0, 0, 0, 0.30);
   transform: translate(0, 1px);
+}
+
+/* E3 diagnostic — only if idle buttons STILL look pressed after pasting
+ * the corrected block above (delete the block first, then paste this): */
+
+button {
+  background-color: magenta;
 }
 
 /* ==== 2 · E4 — grain tile at three strengths (T4) ====================== */
