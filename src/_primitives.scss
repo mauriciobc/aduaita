@@ -1,22 +1,82 @@
-// L1 — primitives. Mixins only; this file emits no CSS by itself.
+// L1 — primitives. Mixins and functions only; this file emits no CSS by
+// itself. Every primitive emits its effect AND its own
+// @media (prefers-contrast: more) revert inline — that is how the
+// accessibility rule is enforced structurally instead of by discipline.
 //
-// Three families, each emitting its effect AND its own
-// @media (prefers-contrast: more) revert inline (that is how the
-// accessibility rule is enforced structurally instead of by discipline):
+// Mechanism (decided by Evening 0, docs/decisions.md):
+//   bevel   — inset box-shadow pair (9-slice border-image is dead: GTK does
+//             not clip border-image to border-radius); crisp at 1× (E2).
+//   depth   — box-shadow ladders only. filter is banned in v1.
+//   texture — grain tile layer; renders (E4), provisional until DD2.
 //
-//   bevel()   — inset edge highlight/shade pair. DECIDED by Evening 0
-//               (docs/decisions.md E1/E2): 9-slice border-image is dead —
-//               border-image does not follow border-radius — and the inset
-//               pair renders crisp at 1×. Clipped gradient layers remain
-//               an option for bevels wider than ~2px.
-//   texture() — layered background-image (grain tile) + blend, opacity
-//               budgeted at <= 5%. Renders (E4); headerbar-only for now,
-//               provisional until DD2.
-//   depth()   — box-shadow ladders (multi-stop, low alpha). filter is
-//               banned in v1: upstream never uses blur(), and it is the
-//               iGPU risk.
+// GTK constraint (measured, decisions.md M2): var() substitutes single
+// value tokens (a length, a colour) but NOT whole multi-token segments —
+// so the ladder geometry lives here in L1 and L0 owns the colours and
+// dimensions. Every emitted value resolves through an --ov-* token; the
+// ladder stop colours all flow through --ov-depth-color (the depth kill
+// switch). No raw colours, no raw geometry outside L0's tokens.
 //
-// Every emitted value resolves through an --ov-* token from L0. No raw
-// colours, no raw geometry. Overriding box-shadow or background-image
-// replaces upstream's value — each mixin must restate upstream's stops
-// alongside the overlay's; the pinned version makes that safe.
+// Overriding box-shadow or background-image REPLACES upstream's value —
+// each surface rule must restate upstream's stops/images alongside the
+// overlay's (ov-elevate's $upstream parameter carries them); the pinned
+// version makes restating safe.
+
+// The bevel segment: inset highlight/shadow pair, for composing into a
+// box-shadow list. Killed by --ov-bevel-width: 0px.
+@function ov-bevel() {
+  @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
+          inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
+}
+
+// Ladder stop colours — per-stop alphas here, base colour in L0. Killed
+// by --ov-depth-color: transparent.
+@function ov-depth-raised() {
+  @return 0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
+          0 2px 6px color-mix(in srgb, var(--ov-depth-color) 10%, transparent);
+}
+
+@function ov-depth-overlay() {
+  @return 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 20%, transparent),
+          0 3px 8px color-mix(in srgb, var(--ov-depth-color) 12%, transparent),
+          0 8px 24px color-mix(in srgb, var(--ov-depth-color) 8%, transparent);
+}
+
+@function ov-depth-window() {
+  @return 0 2px 4px color-mix(in srgb, var(--ov-depth-color) 22%, transparent),
+          0 6px 16px color-mix(in srgb, var(--ov-depth-color) 14%, transparent),
+          0 12px 32px color-mix(in srgb, var(--ov-depth-color) 10%, transparent);
+}
+
+// Full elevation for a surface: bevel pair + the ladder rung, plus the
+// inline contrast revert.
+//
+//   $rung      flat | raised | overlay | window
+//   $upstream  upstream's box-shadow stops for this surface, taken from
+//              the pinned sheet — the revert restores them under
+//              prefers-contrast: more. Pass () when upstream declares
+//              none there.
+@mixin ov-elevate($rung: raised, $upstream: ()) {
+  @if $rung == flat {
+    box-shadow: ov-bevel();
+  } @else if $rung == overlay {
+    box-shadow: ov-bevel(), ov-depth-overlay();
+  } @else if $rung == window {
+    box-shadow: ov-bevel(), ov-depth-window();
+  } @else {
+    box-shadow: ov-bevel(), ov-depth-raised();
+  }
+  @media (prefers-contrast: more) {
+    box-shadow: #{if(length($upstream) > 0, $upstream, none)};
+  }
+}
+
+// Texture layer: grain tile over the existing background. Overrides the
+// whole background-image property — restate upstream's images in the
+// surface rule when it declares any. Killed by --ov-texture-image: none.
+@mixin ov-texture() {
+  background-image: var(--ov-texture-image);
+  background-repeat: repeat;
+  @media (prefers-contrast: more) {
+    background-image: none;
+  }
+}

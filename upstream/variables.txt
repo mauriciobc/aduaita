@@ -11,3 +11,5 @@
 #   - update this file and _tokens.scss in the same commit
 
 --window-bg-color
+--dark-5
+--light-1

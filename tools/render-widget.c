@@ -1,6 +1,6 @@
 /* tools/render-widget.c — render one widget with one CSS file, offscreen.
  *
- *   render-widget <css-file> <out.tiff> <button|headerbar> <width> <height>
+ *   render-widget <css-file> <out.tiff> <button|headerbar|box> <width> <height>
  *
  * Same mechanism as the overlay: a CssProvider on the default display at
  * GTK_STYLE_PROVIDER_PRIORITY_USER (800). Paints the widget via
@@ -31,21 +31,33 @@ int main(int argc, char **argv)
 
   GdkDisplay *display = gdk_display_get_default();
   GtkCssProvider *provider = gtk_css_provider_new();
+  const char *contrast = g_getenv("CONTRAST");
+  if (contrast && strcmp(contrast, "more") == 0)
+    g_object_set(provider, "prefers-contrast", GTK_INTERFACE_CONTRAST_MORE, NULL);
   gtk_css_provider_load_from_path(provider, argv[1]);
   gtk_style_context_add_provider_for_display(
       display, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
   g_object_unref(provider);
 
   GtkWidget *widget;
-  if (strcmp(argv[3], "headerbar") == 0)
+  if (strcmp(argv[3], "headerbar") == 0) {
     widget = gtk_header_bar_new();
-  else
+  } else if (strcmp(argv[3], "box") == 0) {
+    /* a centered button inside a padded box: shows outset shadows */
+    widget = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *btn = gtk_button_new_with_label("Test");
+    gtk_widget_set_halign(btn, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(btn, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(widget), btn);
+  } else {
     widget = gtk_button_new_with_label("Test");
-
+  }
   GtkWidget *win = gtk_window_new();
+
   gtk_window_set_child(GTK_WINDOW(win), widget);
 
   int w = atoi(argv[4]), h = atoi(argv[5]);
+  gtk_window_set_default_size(GTK_WINDOW(win), w, h);
   gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, NULL, NULL, NULL);
   gtk_widget_allocate(widget, w, h, -1, NULL);
   gtk_widget_realize(win);
@@ -54,6 +66,11 @@ int main(int argc, char **argv)
   gint64 end = g_get_monotonic_time() + 400000;  /* 400 ms of mapping */
   while (g_get_monotonic_time() < end)
     g_main_context_iteration(NULL, FALSE);
+  g_print("sizes: win %dx%d, widget %dx%d\n",
+          gtk_widget_get_width(GTK_WIDGET(win)),
+          gtk_widget_get_height(GTK_WIDGET(win)),
+          gtk_widget_get_width(widget),
+          gtk_widget_get_height(widget));
 
   GdkPaintable *paintable = gtk_widget_paintable_new(widget);
   GtkSnapshot *snapshot = gtk_snapshot_new();

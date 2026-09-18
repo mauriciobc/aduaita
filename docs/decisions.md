@@ -84,3 +84,51 @@ variables — this fixes only rung count and usage map):
 
 Light source: top, everywhere. Highlights on top edges, shade on bottom
 edges, all shadows fall downward.
+
+---
+
+**Method.** Harness renders (tools/render-widget.c) + node-tree dump
+(nodes.c, scratch). The harness's texture-mode verdicts are sound; its
+button/box geometry is unreliable: the widget's real allocation never
+equals the requested size (win 270×217 / widget 222×34 vs requested
+200×100), and GtkWidgetPaintable rescales — so absolute pixel geometry
+from button/box renders must not be trusted. (Earlier Evening-0 verdicts
+E1/E2/E4 are unaffected: they judged clipping/crispness/rendered-ness of
+the rendered surface itself, not absolute geometry.)
+
+### Discovered constraint: var() substitutes single value tokens only
+
+- `box-shadow: inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight)` — works.
+- `box-shadow: … , var(--ov-depth-raised)` where the token holds a whole
+  multi-stop segment — **does not render** (single-stop segment fails too).
+- GTK docs are silent on substitution semantics ("no direct replacement"
+  for non-colour types); upstream's sheet follows the constraint: per-
+  component vars only (`--shade-color`, `--border-opacity` inside
+  `color-mix`), never a whole segment from one var.
+
+**Decision:** geometry lives in L1's mixin (per-rung functions with literal
+stop geometry); colours flow through L0 tokens. Consequences:
+
+- Depth kill switch is `--ov-depth-color: transparent` (one token, shared
+  base colour of every ladder stop — was `--ov-depth-raised: …`).
+- The M0-era ladder tokens `--ov-depth-raised/overlay/window` are removed
+  from L0 — the rungs are now `ov-depth-raised()` etc. functions in L1.
+- D5's acceptance is reworded in BACKLOG.md to match the mechanism.
+
+### Verified by render (texture mode + colour-mode knob, reliable)
+
+- texture renders (stddev 0.618 @ 5% opacity)
+- `--ov-texture-image: none` → flat (0.000) — kill switch works
+- `CONTRAST=more` + `@media (prefers-contrast: more)` revert → flat
+  (0.000) — the inline L3 revert works
+
+### NOT verified by harness (geometry-unreliable)
+
+- bevel pair presence/crispness *in the M2 mixins* (E2 earlier validated
+  the mechanism from hand-written CSS)
+- ladder rungs' outer shadow rendering
+
+**These move to the Inspector session (with E3/E4):** paste the compiled
+`d-raised.css` / `d-kill.css` on a real surface and confirm by eye — the
+compiled declaration matches upstream's proven `box-shadow` pattern, so
+rendering is expected; what needs a human is the aesthetic anyway.

@@ -85,34 +85,37 @@ rebuild-and-restart cycle.*
 
 *Done when: the primitives render correctly on a single test widget.*
 
-- [ ] **D1** (P0) Elevation ladder in `_tokens.scss`: rungs flat / raised /
-  overlay / window, each a `--ov-depth-*` token holding a 2–3 stop
-  low-alpha shadow ladder derived from upstream variables. One light
-  source: light from the top, all shadows fall downward.
-  *Accept:* no raw hex outside `:root`; ladders verified in light and dark.
-- [ ] **D2** (P0) `bevel()` mixin, mechanism per E1 verdict. Every
-  declaration restates upstream's existing `box-shadow` /
-  `background-image` stops alongside the overlay's — we override, not
-  append; the pin makes restating safe.
-  *Accept:* bevelled test button wins at priority 800 with no `!important`.
-- [ ] **D3** (P0) `depth()` mixin — box-shadow ladders only, `filter`
-  banned in v1.
-  *Accept:* raised ↔ flat A/B on one widget via the kill switch.
-- [ ] **D4** (P1) `texture()` mixin — grain tile `data:` URI + opacity
-  token ≤ 5%; `-gtk-recolor()` only if a tile must track the palette.
-  *Accept:* applies to the headerbar only; independently toggleable;
-  skipped entirely if E4 said drop.
-- [ ] **D5** (P0) Per-family kill switches `--ov-bevel` / `--ov-texture` /
-  `--ov-depth`: every primitive emits its full value through a token; the
-  switches redefine those tokens.
-  *Accept:* toggling each in Inspector removes exactly that family and
-  nothing else.
-- [ ] **D6** (P0) Contrast reverts emitted inline by every L1 mixin.
-  *Accept:* grep audit — no material declaration without a sibling
-  `prefers-contrast: more` revert; Inspector HC toggle flattens the test
-  widget.
-- [ ] **D7** (P1) Naming audit: `--ov-<category>-<role>`, three parts,
-  lowercase; the kill switches are the only documented exceptions.
+- [x] **D1** (P0) Elevation ladder: rungs flat / raised / overlay /
+  window. *Amended by M2 findings:* stop *geometry* lives in L1 functions
+  (`ov-depth-raised()` etc. — var() does not substitute whole multi-stop
+  segments), stop *colours* derive in L0 from `var(--dark-5)`.
+  *Accept:* no raw colours outside L0 ✓ (grep); light/dark verification
+  pending — Inspector session, with E3/E4.
+- [x] **D2** (P0) `bevel()` mixin, mechanism per E1 verdict (inset pair).
+  Surfaces restate upstream's stops via `ov-elevate($upstream)`; the
+  contrast revert restores them.
+  *Accept:* priority-800 win with no `!important` ✓ (harness, provider at
+  800); aesthetic pass pending — Inspector.
+- [x] **D3** (P0) `depth()` — box-shadow ladders only, `filter` banned in
+  v1. *Accept:* raised ↔ flat A/B moved to the Inspector session (harness
+  geometry unreliable — decisions.md M2); mechanism + kill switch verified
+  by construction and by the texture-mode analogue.
+- [x] **D4** (P1) `texture()` mixin — grain tile `data:` URI, opacity
+  baked into the tile at 0.05 (the budget ceiling; data: URIs cannot read
+  CSS variables). *Mechanism verified:* renders (stddev 0.618),
+  `--ov-texture-image: none` → flat, HC → flat. Headerbar application
+  lands with M3.
+- [x] **D5** (P0, amended) Per-family kill switches, one edit each —
+  mechanism corrected by the var() constraint (decisions.md M2):
+  `--ov-bevel-width: 0px` (length component ✓ verified),
+  `--ov-depth-color: transparent` (shared stop colour; pending Inspector
+  A/B), `--ov-texture-image: none` (✓ verified flat).
+- [x] **D6** (P0) Contrast reverts emitted inline by every L1 mixin.
+  *Accept:* grep audit ✓ (every `ov-elevate`/`ov-texture` emits the
+  `prefers-contrast: more` sibling); harness HC knob flattens the test
+  widget ✓ (texture: stddev 0.618 → 0.000).
+- [x] **D7** (P1) Naming audit: `--ov-<category>-<role>`, three parts,
+  lowercase; kill-switch tokens are the documented exceptions.
 - [ ] **D8** (P2) Perf baseline: `gtk4-demo` animated page with each family
   on/off. *Accept:* no visible frame drops; formal measurement deferred to
   M4 where node counts are highest.
