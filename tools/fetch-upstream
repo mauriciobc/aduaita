@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Fetch a libadwaita package from the Arch Linux archive and extract its
+# compiled stylesheet into upstream/cache/<version>/gtk.css.
+#
+# Usage: tools/fetch-upstream [version]
+#   version  full pacman version, e.g. 1:1.9.4-1.
+#            Defaults to upstream/pinned-version.
+#
+# Only the extracted gtk.css is kept; the package and its file tree are
+# removed afterwards (the cache is reproducible and gitignored).
+set -euo pipefail
+
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=tools/_lib.sh
+. "$repo/tools/_lib.sh"
+
+v="${1:-$(cat "$repo/upstream/pinned-version")}"
+enc="${v/:/%3A}"
+url="https://archive.archlinux.org/packages/l/libadwaita/libadwaita-${enc}-x86_64.pkg.tar.zst"
+cache="$repo/upstream/cache/$v"
+pkg="$cache/libadwaita-${v}-x86_64.pkg.tar.zst"
+
+mkdir -p "$cache"
+
+if [[ ! -s "$cache/gtk.css" ]]; then
+  echo "fetching: $url"
+  curl -sfL -o "$pkg" "$url"
+  bsdtar xf "$pkg" -C "$cache"
+  extract_sheet "$cache/usr/lib/libadwaita-1.so.0" > "$cache/gtk.css"
+  rm -rf "$cache/usr"
+  rm -f "$pkg" "$cache/.PKGINFO" "$cache/.MTREE" "$cache/.INSTALL"
+fi
+
+echo "version:   $v"
+echo "gtk.css:   $cache/gtk.css ($(wc -l < "$cache/gtk.css") lines)"
+echo "selectors: $(extract_selectors "$cache/gtk.css" | wc -l) atoms"
+echo "variables: $(extract_variables "$cache/gtk.css" | wc -l) defined"

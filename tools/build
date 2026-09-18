@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Compile the overlay, install it, and restart style daemons so running
+# apps pick it up. GTK reads user CSS at process startup only —
+# --gapplication-service daemons (Nautilus, the file picker, …) keep
+# painting the old look until killed; they respawn on demand.
+#
+# Usage: tools/build [--no-restart]
+set -euo pipefail
+
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+out="$repo/build/gtk.css"
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-4.0"
+
+if [[ $EUID -eq 0 ]]; then
+  echo "error: run as your user, not root (root's XDG config is the wrong target)" >&2
+  exit 1
+fi
+
+mkdir -p "$repo/build" "$confdir"
+sassc "$repo/src/overlay.scss" "$out"
+
+target="$confdir/gtk.css"
+if [[ -e "$target" && ! -L "$target" ]]; then
+  echo "error: refusing to replace a real file: $target" >&2
+  echo "       migrate its rules into src/ and remove it first (BACKLOG.md P1.5)" >&2
+  exit 1
+fi
+ln -sfn "$out" "$target"
+echo "installed: $target -> $out ($(wc -l < "$out") lines)"
+
+if [[ "${1:-}" != "--no-restart" ]]; then
+  pids="$(pgrep -f -- '--gapplication-service' || true)"
+  if [[ -n "$pids" ]]; then
+    # Killing only forces a fresh CSS read; the daemons respawn on demand.
+    # shellcheck disable=SC2086
+    kill $pids
+    echo "restarted $(echo "$pids" | wc -l) --gapplication-service daemon(s)"
+  fi
+fi

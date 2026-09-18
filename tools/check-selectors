@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Diff the upgrade contract (upstream/selectors.txt + upstream/variables.txt)
+# against a libadwaita stylesheet.
+#
+# Usage: tools/check-selectors [version]
+#   no argument  check the *installed* /usr/lib/libadwaita-1.so.0.
+#                This is what the pacman hook runs: no network, nothing
+#                ever written into the repo (safe as root, PostTransaction).
+#   version      check upstream/cache/<version>/gtk.css, fetching it from
+#                the Arch archive first if needed (network).
+#
+# Exit status: 1 if any contract entry is missing from the sheet.
+# A missing selector or variable is cosmetic — never block a system
+# upgrade on this (hence AbortOnFail = No in the hook).
+set -euo pipefail
+
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=tools/_lib.sh
+. "$repo/tools/_lib.sh"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+if [[ $# -gt 0 ]]; then
+  if [[ ! -s "$repo/upstream/cache/$1/gtk.css" ]]; then
+    "$repo/tools/fetch-upstream" "$1" >/dev/null
+  fi
+  css="$repo/upstream/cache/$1/gtk.css"
+  label="$1 (archive)"
+else
+  so="/usr/lib/libadwaita-1.so.0"
+  if [[ ! -e "$so" ]]; then
+    echo "error: $so not found" >&2
+    exit 1
+  fi
+  css="$tmp/gtk.css"
+  extract_sheet "$so" > "$css"
+  label="installed ($(pacman -Q libadwaita 2>/dev/null | awk '{print $2}' || echo unknown))"
+fi
+
+extract_selectors "$css" > "$tmp/selectors.txt"
+extract_variables "$css" > "$tmp/variables.txt"
+
+status=0
+
+if [[ -s "$repo/upstream/selectors.txt" ]]; then
+  missing="$(comm -23 \
+    <(grep -vE '^(#|$)' "$repo/upstream/selectors.txt" | sort -u) \
+    "$tmp/selectors.txt" || true)"
+  if [[ -n "$missing" ]]; then
+    echo "MISSING SELECTORS against libadwaita $label:"
+    echo "$missing" | sed 's/^/  /'
+    status=1
+  fi
+fi
+
+if [[ -s "$repo/upstream/variables.txt" ]]; then
+  missing="$(comm -23 \
+    <(grep -vE '^(#|$)' "$repo/upstream/variables.txt" | sort -u) \
+    "$tmp/variables.txt" || true)"
+  if [[ -n "$missing" ]]; then
+    echo "MISSING VARIABLES against libadwaita $label:"
+    echo "$missing" | sed 's/^/  /'
+    status=1
+  fi
+fi
+
+if [[ $status -eq 0 ]]; then
+  echo "contract OK against libadwaita $label"
+fi
+exit $status
