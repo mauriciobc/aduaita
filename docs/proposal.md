@@ -217,6 +217,7 @@ first if needed). Exit non-zero on any miss, either axis.
 ```ini
 [Trigger]
 Operation = Upgrade
+Operation = Install
 Type = Package
 Target = libadwaita
 
@@ -224,11 +225,12 @@ Target = libadwaita
 Description = Checking Adwaita overlay selector contract
 When = PostTransaction
 Exec = /home/<user>/adwaita-overlay/tools/check-selectors
-AbortOnFail = No
 ```
 
-`AbortOnFail = No` matters. A missing selector is cosmetic, and should
-never block a system upgrade.
+PostTransaction hooks cannot abort a transaction — `AbortOnFail` is a
+no-op there, and setting it makes pacman warn on every run — so it is left
+unset. The guard exits non-zero and pacman prints the report; a missing
+selector or variable is cosmetic and must never block a system upgrade.
 
 ## Expected volume
 

@@ -70,7 +70,7 @@ rebuild-and-restart cycle.*
   derivations, selectors registered in the contract.
   *Accept:* old file replaced by the build symlink; same visual effect; no
   raw colours outside L0.
-- [ ] **P1.6** (P1) Install the pacman hook
+- [x] **P1.6** (P1) Install the pacman hook
   (`sudo cp hooks/adwaita-overlay.hook /etc/pacman.d/hooks/`), then dry-run
   the hook path: `sudo tools/check-selectors`.
   *Accept:* exit 0; `git status` clean afterwards — proof the guard never

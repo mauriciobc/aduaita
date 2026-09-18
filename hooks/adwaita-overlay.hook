@@ -11,4 +11,3 @@ When = PostTransaction
 # nothing written into the repo, safe to run as root.
 # Fix this path if the repo ever moves.
 Exec = /home/mauriciobc/Documentos/Code/aduaita/tools/check-selectors
-AbortOnFail = No
