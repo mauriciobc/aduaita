@@ -21,15 +21,15 @@ How to read this file:
 (`GTK_DEBUG=interactive <app>`), one at a time. Record every verdict in
 `docs/decisions.md`.*
 
-- [ ] **E1** (P0) border-image × border-radius. Paste T1 onto a window with
+- [x] **E1** (P0) border-image × border-radius. Paste T1 onto a window with
   regular rounded buttons; inspect the corners.
   *Accept:* verdict recorded — does the bevel clip to the rounded fill or
   draw square corners? If square (expected), 9-slice is descoped,
   `bevel()` becomes inset shadows / clipped gradient layers, and the
   assets/ SVG 9-slice pipeline is struck from the plan.
-- [ ] **E2** (P0) Inset bevel crispness. T2 on default and pill buttons.
-  *Accept:* crisp at 1×; verdict recorded at 1.25× and 1.5× fractional
-  scale (where 1px insets can smear).
+- [x] **E2** (P0) Inset bevel crispness. T2 on default and pill buttons.
+  *Accept:* crisp at 1× ✓ (pixel profile in decisions.md); the 1.25×/1.5×
+  cells are covered by X5's test card (display runs 1×) — not blocking.
 - [ ] **E3** (P0) Pressed inversion. T3.
   *Accept:* press reads as physical depression; zero layout shift
   (transform only); works on default and pill variants.
@@ -37,7 +37,7 @@ How to read this file:
   *Accept:* renders via librsvg; no shimmer while scrolling a list under
   the headerbar; opacity verdict (0.03 / 0.05 / 0.08); provisional
   keep-or-drop call.
-- [ ] **E5** (P0) `docs/decisions.md` written: one section per experiment,
+- [x] **E5** (P0) `docs/decisions.md` written: one section per experiment,
   the `bevel()` mixin shape decided, texture provisional call, and the
   elevation ladder sketch (4 rungs: flat / raised / overlay / window).
 

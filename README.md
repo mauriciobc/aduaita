@@ -7,28 +7,25 @@ proposed upstream, libadwaita never patched or forked.
 
 Read [docs/proposal.md](docs/proposal.md) first (the design document, with
 the accepted review amendments), then [BACKLOG.md](BACKLOG.md) (the working
-backlog). [docs/evening-0.css](docs/evening-0.css) holds the mechanism
-experiments that gate the design — run them before writing any L1 code.
+backlog) and [docs/decisions.md](docs/decisions.md) (the running decision
+record).
 
 ## Layout
 
 ```
 src/            L0 tokens, L1 primitives, L2 surfaces (SCSS, built by sassc)
-assets/         SVG texture tiles — only if Evening 0 keeps them alive
+assets/         SVG texture tiles (data: URIs preferred); 9-slice descoped —
+                border-image does not follow border-radius (decisions.md E1)
 upstream/       pinned-version, selector + variable contracts, cache/ (gitignored)
-tools/          fetch-upstream, check-selectors, build, _lib.sh
+tools/          fetch-upstream, check-selectors, build, render-widget.c
 hooks/          pacman PostTransaction hook
-docs/           proposal, evening-0 experiments, decisions
+docs/           proposal, decisions, evening-0 experiments
 build/          sassc output (gitignored)
 ```
 
 ## Toolchain
 
-All present except **sassc** — install it before the first build:
-
-```
-sudo pacman -S --needed sassc
-```
+All present: sassc, glib2 (gresource), bsdtar, git, gcc (for render-widget).
 
 ## Commands
 
@@ -40,10 +37,19 @@ tools/check-selectors 1:1.9.4-1  # contract vs an archived version (network)
 tools/build                      # sassc + symlink ~/.config/gtk-4.0/gtk.css + restart daemons
 ```
 
+Offscreen render of one widget with one CSS file (pixel-level verdicts,
+X5 test card):
+
+```
+gcc -O1 -o build/render-widget tools/render-widget.c $(pkg-config --cflags --libs gtk4)
+build/render-widget <css-file> <out.tiff> <button|headerbar> <width> <height>
+```
+
 ## The contracts
 
-- `upstream/selectors.txt` — every selector atom L2 targets. Hand-written on
-  purpose: adding a line is a deliberate act of taking on a dependency.
+- `upstream/selectors.txt` — every selector atom L2 depends on upstream
+  having. Hand-written on purpose: adding a line is a deliberate act of
+  taking on a dependency.
 - `upstream/variables.txt` — every upstream variable L0 derives from. Guards
   the load-bearing layer; a renamed upstream variable is caught here, not by
   the selector contract.
@@ -57,9 +63,3 @@ sudo cp hooks/adwaita-overlay.hook /etc/pacman.d/hooks/
 ```
 
 Fix the `Exec` path in the hook if the repo ever moves.
-
-## Note
-
-`~/.config/gtk-4.0/gtk.css` currently exists as a real file (window and
-pane translucency tweaks). `tools/build` refuses to replace a real file;
-BACKLOG.md P1.5 migrates those rules into the overlay first.

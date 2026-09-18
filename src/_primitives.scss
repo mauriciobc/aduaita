@@ -4,12 +4,14 @@
 // @media (prefers-contrast: more) revert inline (that is how the
 // accessibility rule is enforced structurally instead of by discipline):
 //
-//   bevel()   — inset edge highlight/shade; mechanism decided by Evening 0
-//               (docs/evening-0.css E1): 9-slice border-image only if it
-//               survives border-radius, otherwise inset shadows / clipped
-//               gradient layers.
+//   bevel()   — inset edge highlight/shade pair. DECIDED by Evening 0
+//               (docs/decisions.md E1/E2): 9-slice border-image is dead —
+//               border-image does not follow border-radius — and the inset
+//               pair renders crisp at 1×. Clipped gradient layers remain
+//               an option for bevels wider than ~2px.
 //   texture() — layered background-image (grain tile) + blend, opacity
-//               budgeted at <= 5%.
+//               budgeted at <= 5%. Renders (E4); headerbar-only for now,
+//               provisional until DD2.
 //   depth()   — box-shadow ladders (multi-stop, low alpha). filter is
 //               banned in v1: upstream never uses blur(), and it is the
 //               iGPU risk.
