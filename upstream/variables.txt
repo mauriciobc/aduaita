@@ -1,0 +1,11 @@
+# The variable contract for L0. One upstream custom property per line,
+# sorted — every upstream variable that src/_tokens.scss derives from.
+#
+# L0 is the load-bearing layer: a renamed upstream variable silently nukes
+# every --ov-* token, and the selector contract alone would never notice.
+# tools/check-selectors verifies each entry is still *defined* in the
+# target stylesheet, the same way it verifies selectors.
+#
+# Rules:
+#   - every upstream var() referenced by src/_tokens.scss must appear here
+#   - update this file and _tokens.scss in the same commit

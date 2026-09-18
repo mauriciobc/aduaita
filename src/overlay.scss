@@ -1,0 +1,20 @@
+// adwaita-overlay — additive material layer over libadwaita.
+// Loaded at GTK_STYLE_PROVIDER_PRIORITY_USER (800) over libadwaita's
+// stylesheet at PRIORITY_THEME (200). Import order below is readability
+// only; GTK cascades by provider priority, not source order.
+
+@import "tokens";     // L0 — derived --ov-* variables (paints nothing)
+@import "primitives"; // L1 — bevel / texture / depth mixins (no output)
+
+// L2 — surfaces. The only layer that names upstream selectors; every
+// selector used must be registered in upstream/selectors.txt, and every
+// upstream variable derived from in upstream/variables.txt.
+@import "surfaces/headerbar";
+@import "surfaces/toolbar";
+@import "surfaces/boxed-list";
+@import "surfaces/button";
+@import "surfaces/entry";
+@import "surfaces/popover";
+
+// L3 — contrast reverts are emitted inline by the L1 mixins, not by a
+// separate block, so no material rule can ever drift from its revert.

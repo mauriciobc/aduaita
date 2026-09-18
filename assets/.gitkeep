@@ -1,0 +1,3 @@
+# SVG texture tiles and 9-slice sources land here — only if Evening 0
+# (docs/evening-0.css) keeps them alive. Raster, if ever, always paired
+# through -gtk-scaled().

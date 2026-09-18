@@ -1,0 +1,11 @@
+# The selector contract. One selector atom per line, sorted.
+#
+# Hand-written on purpose: adding a line here is a deliberate act of taking
+# on a dependency on an (undocumented) libadwaita selector. tools/check-selectors
+# diffs this file against the installed stylesheet on every libadwaita
+# upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
+#
+# Rules:
+#   - every selector named by any L2 file in src/surfaces/ must appear here
+#   - an unregistered selector is invisible to the guard and will break silently
+#   - update this file and the L2 rule in the same commit

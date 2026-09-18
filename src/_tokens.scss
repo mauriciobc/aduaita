@@ -1,0 +1,10 @@
+// L0 — tokens. Every --ov-* variable is defined here and nowhere else, on
+// :root, derived from upstream variables (color-mix() / relative colours)
+// so accent, dark mode and contrast keep driving the material system with
+// no extra work. This layer paints nothing.
+//
+// Naming: --ov-<category>-<role>, always three parts, always lowercase.
+// Per-family kill switches (--ov-bevel / --ov-texture / --ov-depth, the
+// documented exceptions to the scheme) land here together with L1 — see
+// BACKLOG.md D5: every value a primitive emits resolves through a token,
+// and the switch redefines those tokens, so one edit disables one family.
