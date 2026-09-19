@@ -395,3 +395,22 @@ zero material declarations exist outside HC coverage. 10 HC blocks cover
 the full stylesheet. Structural audit PASSED. The user's live sweep
 (toggle + eyeball) remains the final gate ritual, but the structure is
 proven complete.
+
+## Light/dark matrix audit — 19 Sep 2026
+
+Color audit of the built stylesheet:
+
+- zero raw hex literals anywhere
+- `white`/`black` keywords appear ONLY inside color-mix() derivations
+  (highlight/shadow pairs, scoop gradients) — they are light-direction
+  physics constants, not palette colors; every *palette* color flows
+  through upstream vars (--light-1, --dark-5, --window-bg-color,
+  --headerbar-bg-color, --accent-*, --view-bg-color...)
+- the single rgb(from ...) is the P1.5 content-pane relative-color
+  derivation (user-tuned)
+
+Scheme behavior: gradient stops mix over scheme-aware base colors, grain
+tiles switch via prefers-color-scheme, well/scoop/glow use black/white
+derivations that invert meaningfully in dark. Structural dark-verification
+PASSED; the eyeball pass rides with daily driving (any dark-mode artifact
+lands in the daily-drive section).
