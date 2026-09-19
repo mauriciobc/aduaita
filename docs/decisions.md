@@ -259,6 +259,36 @@ Findings ledger (session total):
 3. The Inspector CSS tab drops url() layers — only the real user
    provider delivers images. All three now documented.
 
+## Entry surface spec — 19 Sep 2026 (live-tuned, user-approved: "AWESOME")
+
+Search/text entries get a permanent recessed material (the first container
+depth), with a deeper well on focus — the user's model: "everything that
+has depth keeps it in all states; interaction only modulates depth."
+
+```css
+entry,
+entry:focus-within {
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, black 5%, transparent),
+    color-mix(in srgb, black 0%, transparent) 40%);   /* the scoop */
+  box-shadow: inset 0 1px 3px color-mix(in srgb, black 9%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
+}
+entry:focus-within {
+  box-shadow: inset 0 2px 5px color-mix(in srgb, black 13%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
+}
+```
+
+Why v1 failed perceptually: 1px black@7% over a white fill is a ~76-point
+one-row band — invisible on small fields. v2 adds the interior scoop
+gradient (the eye needs the FIELD shaded, not a line) + deeper focus
+(13%/5px vs 9%/3px) so focus-modulation is actually perceptible.
+
+Landing plan (M2/M3): `ov-inset()` primitive in L1 with these values;
+entry/textview surfaces in L2; upstream's focus outline coexists (it is
+an outline, not box-shadow — proven compatible).
+
 ## Headerbar surface spec — 19 Sep 2026 (live-tuned, user-approved)
 
 Final recipe (user iterated the gradient live and approved "looks nice" at
@@ -283,3 +313,19 @@ Notes:
   mode pass, and the widget-selector split (real headerbars + Nautilus's
   GtkBox top bar need separate delivery — the gradient shorthand shape
   works for both).
+
+## L1 landing — 19 Sep 2026
+
+All live-tuned recipes landed as L1 primitives (src/_primitives.scss):
+
+- ov-bevel() — tuned hairline pair, DORMANT by default
+- ov-depth-*() — container ladders, unused until a surface asks
+- ov-well() + ov-press() — THE button material (N4 + 90ms ease,
+  :active + :keyboard-activating, $upstream restating, HC revert)
+- ov-inset() — THE entry material (scoop + recess, deeper on focus,
+  HC revert)
+- ov-texture() — scheme-split grain (tiles land with M3 wiring)
+
+New governing principle recorded: "everything that has depth keeps it in
+all states; interaction only MODULATES depth" (entries). Buttons are the
+explicit exception (no resting material; depth appears only on press).

@@ -3,33 +3,42 @@
 // @media (prefers-contrast: more) revert inline — that is how the
 // accessibility rule is enforced structurally instead of by discipline.
 //
-// Mechanism (decided by Evening 0, docs/decisions.md):
-//   bevel   — inset box-shadow pair (9-slice border-image is dead: GTK does
-//             not clip border-image to border-radius); crisp at 1× (E2).
-//   depth   — box-shadow ladders only. filter is banned in v1.
-//   texture — grain tile layer; renders (E4), provisional until DD2.
+// Mechanism (decided Evening 0 + M2, docs/decisions.md):
+//   bevel   — 0.5px hairline pair, values user-tuned; DORMANT by default
+//             (--ov-bevel-width: 0px is the standing state — the user
+//             struck all resting styling on buttons).
+//   depth   — the pressed WELL on buttons (N4: depth only during press,
+//             90ms ease) and ladder functions for container surfaces
+//             (popovers/menus if ever needed). filter banned for ladders.
+//   inset   — permanent recessed material for container-ish surfaces
+//             (entries): scoop gradient + hairline, DEEPER on focus.
+//   texture — grain tiles (scheme-split); headerbar garnish.
 //
 // GTK constraint (measured, decisions.md M2): var() substitutes single
-// value tokens (a length, a colour) but NOT whole multi-token segments —
-// so the ladder geometry lives here in L1 and L0 owns the colours and
-// dimensions. Every emitted value resolves through an --ov-* token; the
-// ladder stop colours all flow through --ov-depth-color (the depth kill
-// switch). No raw colours, no raw geometry outside L0's tokens.
+// value tokens (length, colour) but NOT whole multi-token segments — so
+// geometry lives here in L1; L0 owns colours, dimensions, kill switches.
+//
+// Governing principle (user, M2 session): "everything that has depth
+// keeps it in all states; interaction only MODULATES depth." Buttons are
+// the exception: they have NO resting material — depth appears only on
+// press (the well).
 //
 // Overriding box-shadow or background-image REPLACES upstream's value —
-// each surface rule must restate upstream's stops/images alongside the
-// overlay's (ov-elevate's $upstream parameter carries them); the pinned
-// version makes restating safe.
+// surface rules must restate upstream's stops/images alongside the
+// overlay's ($upstream parameters); the pinned version makes that safe.
 
-// The bevel segment: inset highlight/shadow pair, for composing into a
-// box-shadow list. Killed by --ov-bevel-width: 0px.
+// ---------------------------------------------------------------------
+// Bevel — the tuned 0.5px hairline pair. DORMANT by default.
+// ---------------------------------------------------------------------
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
           inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
 }
 
-// Ladder stop colours — per-stop alphas here, base colour in L0. Killed
-// by --ov-depth-color: transparent.
+// ---------------------------------------------------------------------
+// Depth ladders — container surfaces only (popover/menu/wall if ever).
+// Buttons never wear these (no resting material).
+// ---------------------------------------------------------------------
 @function ov-depth-raised() {
   @return 0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
           0 2px 6px color-mix(in srgb, var(--ov-depth-color) 10%, transparent);
@@ -47,32 +56,65 @@
           0 12px 32px color-mix(in srgb, var(--ov-depth-color) 10%, transparent);
 }
 
-// Full elevation for a surface: bevel pair + the ladder rung, plus the
-// inline contrast revert.
-//
-//   $rung      flat | raised | overlay | window
-//   $upstream  upstream's box-shadow stops for this surface, taken from
-//              the pinned sheet — the revert restores them under
-//              prefers-contrast: more. Pass () when upstream declares
-//              none there.
-@mixin ov-elevate($rung: raised, $upstream: ()) {
-  @if $rung == flat {
-    box-shadow: ov-bevel();
-  } @else if $rung == overlay {
-    box-shadow: ov-bevel(), ov-depth-overlay();
-  } @else if $rung == window {
-    box-shadow: ov-bevel(), ov-depth-window();
-  } @else {
-    box-shadow: ov-bevel(), ov-depth-raised();
+// ---------------------------------------------------------------------
+// The pressed WELL — the entire button material (N4, user-tuned).
+// Resting state: stock Adwaita, nothing. Pressed: the surface sinks.
+// ---------------------------------------------------------------------
+@function ov-well() {
+  @return inset 0 2px 4px color-mix(in srgb, black 10%, transparent),
+          inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
+}
+
+// Button elevation: no resting material; well on press + keyboard press.
+// $upstream: upstream's box-shadow stops for this surface — restated so
+// :active does not strip upstream's shadow, and restored under HC.
+@mixin ov-press($upstream: ()) {
+  transition: box-shadow 90ms ease-out, filter 90ms ease-out;
+  &:active,
+  &:keyboard-activating {
+    box-shadow: ov-well();
+    filter: brightness(0.96);
+    @media (prefers-contrast: more) {
+      box-shadow: #{if(length($upstream) > 0, $upstream, none)};
+      filter: none;
+    }
   }
   @media (prefers-contrast: more) {
     box-shadow: #{if(length($upstream) > 0, $upstream, none)};
   }
 }
 
-// Texture layer: grain tile over the existing background. Overrides the
-// whole background-image property — restate upstream's images in the
-// surface rule when it declares any. Killed by --ov-texture-image: none.
+// ---------------------------------------------------------------------
+// The INSET — permanent recessed material for entries (user-tuned).
+// Rest: scoop + soft line. Focus: deeper well. Upstream's focus outline
+// coexists (outline is a separate property — proven).
+// ---------------------------------------------------------------------
+@mixin ov-inset($upstream: ()) {
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, black 5%, transparent),
+    color-mix(in srgb, black 0%, transparent) 40%);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, black 9%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
+  transition: box-shadow 90ms ease-out;
+  &:focus-within {
+    background-image: linear-gradient(to bottom,
+      color-mix(in srgb, black 5%, transparent),
+      color-mix(in srgb, black 0%, transparent) 40%);
+    box-shadow: inset 0 2px 5px color-mix(in srgb, black 13%, transparent),
+                inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
+  }
+  @media (prefers-contrast: more) {
+    background-image: none;
+    box-shadow: #{if(length($upstream) > 0, $upstream, none)};
+  }
+}
+
+// ---------------------------------------------------------------------
+// Texture — scheme-split grain tiles, headerbar garnish (E4). Overrides
+// the whole background-image property; the surface rule composes it with
+// the surface fill via the background shorthand (proven delivery shape).
+// Killed by --ov-texture-image: none; reverted under HC.
+// ---------------------------------------------------------------------
 @mixin ov-texture() {
   background-image: var(--ov-texture-image);
   background-repeat: repeat;
