@@ -116,3 +116,31 @@ headerbar {
               var(--headerbar-bg-color);
   background-repeat: repeat;
 }
+
+/* ==== 2bis · E4 grain — the isolation ladder =========================== */
+/* Paste ONE rung at a time. The FIRST rung that produces NO visible
+   change marks where the chain breaks — report that rung number. */
+
+/* Rung 1 — sanity: can the Inspector style ANYTHING here?
+   Expected: the whole window background turns yellow. */
+window { background-color: yellow; }
+
+/* Rung 2 — does headerbar respond AT ALL (color, not image)?
+   Expected: headerbar turns yellow. */
+headerbar { background-color: yellow; }
+
+/* Rung 3 — does background-COLOR via shorthand work on headerbar? */
+headerbar { background: yellow; }
+
+/* Rung 4 — does a background-IMAGE apply to headerbar? (grid pattern) */
+headerbar {
+  background-image: linear-gradient(45deg, rgba(255,0,0,.15) 25%, transparent 25%),
+                    linear-gradient(-45deg, rgba(255,0,0,.15) 25%, transparent 25%);
+  background-size: 12px 12px;
+}
+
+/* Rung 5 — the grain URI, via the shorthand (2fix, condensed) */
+headerbar {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"), var(--headerbar-bg-color);
+  background-repeat: repeat;
+}
