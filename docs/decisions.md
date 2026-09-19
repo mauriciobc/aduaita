@@ -133,6 +133,29 @@ stop geometry); colours flow through L0 tokens. Consequences:
 compiled declaration matches upstream's proven `box-shadow` pattern, so
 rendering is expected; what needs a human is the aesthetic anyway.
 
+## Pressed-state decision — 19 Sep 2026 (Inspector session, live)
+
+User verdict after judging the refined variants: **N4 — the pressed well.**
+
+- Resting state: the tuned 0.5px hairline pair (white@30% / black@15%),
+  scoped to opaque buttons (`.raised` + default; `.flat`/`.osd` excluded).
+- Pressed state: the bevel + ladder are REPLACED by an inverted well —
+  shadow moves to the inside:
+  ```css
+  box-shadow: inset 0 2px 4px color-mix(in srgb, black 10%, transparent),
+              inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
+  filter: brightness(0.96);
+  ```
+- No outward shadows during press; no translate. The surface sinks.
+- Plus the 90ms ease-out transition on press AND release (box-shadow,
+  filter) — user confirmed the animation was the missing piece in the
+  earlier snap version.
+
+Implementation note: the pressed well REPLACES the resting pair and rung
+(they cannot coexist — two competing inset stories). ov-elevate's pressed
+companion emits exactly the well; restated upstream stops still apply in
+both states.
+
 ## Bevel tuning — 19 Sep 2026 (Inspector session, live)
 
 The resting bevel was tuned on real buttons by the user:
@@ -147,3 +170,17 @@ The resting bevel was tuned on real buttons by the user:
   extensively, so the selector pattern is proven in-tree.
 - These values are now the shipped L0 tokens (`--ov-bevel-width: 0.5px`,
   `--ov-bevel-highlight` @30%, `--ov-bevel-shadow` @15%).
+
+## Neumorphism probe — 19 Sep 2026
+
+N1–N3 (permanent extrude variants) rejected by the user after live judging:
+carpet-bomb `button {}` selectors turned the whole window to mud — scoped
+probe (block 1f, headerbar `.raised` controls only) was needed to judge
+anything. **N4 — the pressed well — won:** depth exists only during
+interaction; the resting state stays the 0.5px hairline whisper. Permanent
+outward soft-shadows (classic neumorphism) are rejected as the resting
+material.
+
+Scoping lesson recorded: `.raised` (+ default, non-flat) buttons are the
+material carriers; `.flat`/`.osd` never wear it. This is upstream's own
+flat/raised split (1.4+), so the selector pattern is native.
