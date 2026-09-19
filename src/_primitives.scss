@@ -57,17 +57,24 @@
 }
 
 // ---------------------------------------------------------------------
-// The pressed WELL — the entire button material (N4, user-tuned).
-// Resting state: stock Adwaita, nothing. Pressed: the surface sinks.
+// The pressed WELL — the entire button material (N4 → amplified, user-
+// locked 19 Sep: "looks beautiful"). Resting state: stock Adwaita,
+// nothing. Pressed: the surface sinks. Held (toggles): light version.
 // ---------------------------------------------------------------------
 @function ov-well() {
-  @return inset 0 2px 4px color-mix(in srgb, black 10%, transparent),
+  @return inset 0 3px 6px color-mix(in srgb, black 16%, transparent),
           inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
 }
 
-// Button elevation: no resting material; well on press + keyboard press.
-// $upstream: upstream's box-shadow stops for this surface — restated so
-// :active does not strip upstream's shadow, and restored under HC.
+@function ov-well-held() {
+  @return inset 0 1px 3px color-mix(in srgb, black 8%, transparent),
+          inset 0 -1px 0 color-mix(in srgb, white 15%, transparent);
+}
+
+// Button press: no resting material; well on press + keyboard press;
+// held wells on :checked. $upstream restates this surface's upstream
+// stops (see decisions.md; the pinned version makes restating safe).
+// Selector family includes menubutton wrapper→child bridge.
 @mixin ov-press($upstream: ()) {
   transition: box-shadow 90ms ease-out, filter 90ms ease-out;
   &:active,
@@ -77,6 +84,12 @@
     @media (prefers-contrast: more) {
       box-shadow: #{if(length($upstream) > 0, $upstream, none)};
       filter: none;
+    }
+  }
+  &:checked {
+    box-shadow: ov-well-held();
+    @media (prefers-contrast: more) {
+      box-shadow: #{if(length($upstream) > 0, $upstream, none)};
     }
   }
   @media (prefers-contrast: more) {

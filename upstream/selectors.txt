@@ -1,22 +1,26 @@
-# The selector contract. One selector atom per line, sorted.
-#
-# Hand-written on purpose: adding a line here is a deliberate act of taking
-# on a dependency on an (undocumented) libadwaita selector. tools/check-selectors
-# diffs this file against the installed stylesheet on every libadwaita
-# upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
-#
-# Rules:
-#   - register the ATOMS UPSTREAM USES for anything the overlay overrides —
-#     not necessarily the atoms the overlay itself writes. E.g. the overlay
-#     targets `.content-pane` directly, but upstream styles it only inside
-#     compound selectors, so the compound atom is what the guard must watch.
-#   - an unregistered dependency is invisible to the guard and will break
-#     silently
-#   - update this file and the L2 rule in the same commit
-#
-# GTK-core node names (window, dialog, …) do NOT belong here: they are not
-# in libadwaita's sheet, the guard would false-positive, and libadwaita
-# upgrades cannot move them.
 
+#
+#
+#
+#     compound selectors, so the compound atom is what the guard must watch.
+#     not necessarily the atoms the overlay itself writes. E.g. the overlay
+#     silently
+#     targets `.content-pane` directly, but upstream styles it only inside
+#   - an unregistered dependency is invisible to the guard and will break
+#   - register the ATOMS UPSTREAM USES for anything the overlay overrides —
+#   - update this file and the L2 rule in the same commit
+# GTK-core node names (window, dialog, …) do NOT belong here: they are not
+# Hand-written on purpose: adding a line here is a deliberate act of taking
+# Rules:
+# The selector contract. One selector atom per line, sorted.
+# diffs this file against the installed stylesheet on every libadwaita
+# in libadwaita's sheet, the guard would false-positive, and libadwaita
+# on a dependency on an (undocumented) libadwaita selector. tools/check-selectors
+# upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
+# upgrades cannot move them.
 .sidebar-pane
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
+button:active
+button:checked
+button.keyboard-activating
+.linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button

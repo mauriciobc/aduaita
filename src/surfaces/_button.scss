@@ -1,7 +1,27 @@
-// L2 — buttons, full variant matrix: default / flat / pill / suggested /
-// destructive / osd / opaque; states hover, :active (inverted bevel —
-// controls physically depress), :checked, :disabled, :focus-visible.
-// Milestone 5.
+// L2 — buttons. THE button material: no resting styling (stock Adwaita);
+// the well on press/keyboard-press; held wells on :checked toggles.
+// Values are the user's 19 Sep live-tuned, locked spec (decisions.md).
 //
-// Shadow ladders on default variants only — flat buttons stay flat.
-// The focus ring must survive the bevel (BACKLOG.md A2).
+// Scope ("not all buttons"): .flat and .osd stay stock — they are
+// backgroundless by design and the well reads wrong on them. Upstream's
+// own :not(...) chain is the pattern.
+//
+// Selectors here must be registered in upstream/selectors.txt.
+
+button:not(.flat):not(.osd) {
+  @include ov-press();
+}
+
+// toggles hold their press — held well (the :checked clause inside
+// ov-press covers plain toggles; .toggle containers handled here)
+.toggle:checked button:not(.flat):not(.osd),
+button.toggle:checked:not(.flat):not(.osd) {
+  box-shadow: ov-well-held();
+  @media (prefers-contrast: more) {
+    box-shadow: none;
+  }
+}
+
+// menubutton wrapper press bridges to the inner button (ov-press's
+// :active covers the child; the wrapper itself needs no material — its
+// "cyan ring" seam in the probe was upstream spacing, accepted).
