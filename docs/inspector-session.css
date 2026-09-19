@@ -173,3 +173,21 @@ headerbar {
               var(--headerbar-bg-color);
   background-repeat: repeat;
 }
+
+/* ==== 2fix3 · grain visibility booster (diagnostic only) =============== */
+/* The 5% grain may be invisible on a small screen — this 60% version is
+   unmistakable. If THIS shows, the pipeline works and the shipped tile is
+   simply subtle by design; if even this shows nothing, the paste isn't
+   reaching the headerbar. Delete after judging. */
+
+headerbar {
+  background: url("/home/mauriciobc/Documentos/Code/aduaita/assets/grain.png"),
+              var(--headerbar-bg-color);
+  background-repeat: repeat;
+}
+
+/* 2fix3-alt — 60% grain tile (unmistakable), absolute path */
+headerbar {
+  background: url("/tmp/m2/grain60.png"), var(--headerbar-bg-color);
+  background-repeat: repeat;
+}
