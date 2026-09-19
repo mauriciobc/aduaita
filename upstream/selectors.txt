@@ -18,9 +18,10 @@
 # on a dependency on an (undocumented) libadwaita selector. tools/check-selectors
 # upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
 # upgrades cannot move them.
+.linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
 .sidebar-pane
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
+button.keyboard-activating
 button:active
 button:checked
-button.keyboard-activating
-.linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
+button:hover

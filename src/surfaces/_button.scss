@@ -1,27 +1,49 @@
-// L2 — buttons. THE button material: no resting styling (stock Adwaita);
-// the well on press/keyboard-press; held wells on :checked toggles.
-// Values are the user's 19 Sep live-tuned, locked spec (decisions.md).
+// L2 — buttons. The full state machine, all values user-locked live:
+//   rest    — stock Adwaita, nothing (struck resting styling)
+//   hover   — ov-glow(): layered soft rim in the theme accent
+//   pressed — ov-well(): the amplified inset well + 0.96 brightness
+//   held    — ov-well-held(): light inset on :checked
+// Transitions: 90ms ease-out on base (press AND release animate).
 //
-// Scope ("not all buttons"): .flat and .osd stay stock — they are
-// backgroundless by design and the well reads wrong on them. Upstream's
-// own :not(...) chain is the pattern.
-//
-// Selectors here must be registered in upstream/selectors.txt.
+// Scope ("not all buttons"): .flat and .osd stay stock.
+// Selectors registered in upstream/selectors.txt (exact upstream atoms).
 
 button:not(.flat):not(.osd) {
-  @include ov-press();
+  transition: box-shadow 90ms ease-out, filter 90ms ease-out,
+              background-image 90ms ease-out;
 }
 
-// toggles hold their press — held well (the :checked clause inside
-// ov-press covers plain toggles; .toggle containers handled here)
-.toggle:checked button:not(.flat):not(.osd),
-button.toggle:checked:not(.flat):not(.osd) {
+button:not(.flat):not(.osd):hover:not(:active):not(:checked):not(:disabled) {
+  background-image: ov-glow();
+}
+
+button:not(.flat):not(.osd):active,
+button:not(.flat):not(.osd):keyboard-activating,
+menubutton:active > button:not(.flat):not(.osd) {
+  box-shadow: ov-well();
+  filter: brightness(0.96);
+}
+
+button:not(.flat):not(.osd):checked {
   box-shadow: ov-well-held();
+}
+
+button.toggle:checked:not(.flat):not(.osd),
+.toggle:checked button:not(.flat):not(.osd) {
+  box-shadow: ov-well-held();
+}
+
+// High contrast: glow, well, held — all revert flat.
+button:not(.flat):not(.osd),
+button:not(.flat):not(.osd):hover,
+button:not(.flat):not(.osd):active,
+button:not(.flat):not(.osd):keyboard-activating,
+button:not(.flat):not(.osd):checked,
+button.toggle:checked:not(.flat):not(.osd),
+.toggle:checked button:not(.flat):not(.osd) {
   @media (prefers-contrast: more) {
+    background-image: none;
     box-shadow: none;
+    filter: none;
   }
 }
-
-// menubutton wrapper press bridges to the inner button (ov-press's
-// :active covers the child; the wrapper itself needs no material — its
-// "cyan ring" seam in the probe was upstream spacing, accepted).

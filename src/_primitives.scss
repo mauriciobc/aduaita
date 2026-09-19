@@ -57,6 +57,34 @@
 }
 
 // ---------------------------------------------------------------------
+// The hover GLOW — layered soft rim (user-locked 19 Sep, v4). Five
+// feathered layers (top/bottom/side washes + center bloom) build a
+// smooth edge-pooling light in the theme accent. Hover-only; suppressed
+// during press/checked/disabled by the surface's :not chain.
+// ---------------------------------------------------------------------
+@function ov-glow() {
+  @return linear-gradient(to bottom,
+           color-mix(in srgb, var(--accent-color) 16%, transparent) 0%,
+           color-mix(in srgb, var(--accent-color) 7%, transparent) 14%,
+           color-mix(in srgb, var(--accent-color) 0%, transparent) 38%),
+          linear-gradient(to top,
+           color-mix(in srgb, var(--accent-color) 14%, transparent) 0%,
+           color-mix(in srgb, var(--accent-color) 6%, transparent) 14%,
+           color-mix(in srgb, var(--accent-color) 0%, transparent) 38%),
+          linear-gradient(to right,
+           color-mix(in srgb, var(--accent-color) 11%, transparent) 0%,
+           color-mix(in srgb, var(--accent-color) 5%, transparent) 16%,
+           color-mix(in srgb, var(--accent-color) 0%, transparent) 40%),
+          linear-gradient(to left,
+           color-mix(in srgb, var(--accent-color) 11%, transparent) 0%,
+           color-mix(in srgb, var(--accent-color) 5%, transparent) 16%,
+           color-mix(in srgb, var(--accent-color) 0%, transparent) 40%),
+          radial-gradient(ellipse at center,
+           color-mix(in srgb, var(--accent-color) 5%, transparent) 0%,
+           color-mix(in srgb, var(--accent-color) 0%, transparent) 70%);
+}
+
+// ---------------------------------------------------------------------
 // The pressed WELL — the entire button material (N4 → amplified, user-
 // locked 19 Sep: "looks beautiful"). Resting state: stock Adwaita,
 // nothing. Pressed: the surface sinks. Held (toggles): light version.

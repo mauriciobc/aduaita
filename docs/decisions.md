@@ -329,3 +329,22 @@ All live-tuned recipes landed as L1 primitives (src/_primitives.scss):
 New governing principle recorded: "everything that has depth keeps it in
 all states; interaction only MODULATES depth" (entries). Buttons are the
 explicit exception (no resting material; depth appears only on press).
+
+## Hover glow — 19 Sep 2026 (user-locked, v4)
+
+The button state machine is complete — four states, all user-tuned live:
+
+  rest    — stock Adwaita (nothing)
+  hover   — ov-glow(): five-layer soft rim, accent edge-pooling
+            (16/14/11/11% rim washes + 5% center bloom), label 45% accent
+  pressed — ov-well(): amplified inset well (3px/6px, black@16%) + lip,
+            brightness 0.96
+  held    — ov-well-held(): light inset (1px/3px, black@8%)
+
+Geometry odyssey recorded: flat tint (rejected, "transparent overlay") →
+center-bloom radial (rejected, "inverted") → hard rim (close) → v4
+layered soft rim (locked). Lesson: "glow" meant edge-pooling with smooth
+multi-stage falloff, not a hotspot.
+
+Scope: .flat/.osd excluded. HC: all four states revert flat. Contract
+clean against 1:1.9.4-1 after registering button:hover.
