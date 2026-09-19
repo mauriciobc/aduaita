@@ -21,7 +21,7 @@
   //            ladder stops go transparent)
   //   texture: --ov-texture-image: none     (valid whole-property layer)
   // ---------------------------------------------------------------------
-  --ov-bevel-width: 1px;
+  --ov-bevel-width: 0.5px;
   --ov-depth-color: color-mix(in srgb, var(--dark-5) 100%, transparent);
 
   // Texture: feTurbulence grain tile (E4: renders). Opacity is baked into
@@ -30,10 +30,13 @@
   --ov-texture-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 
   // ---------------------------------------------------------------------
-  // Bevel edge pair — one light source: the top.
+  // Bevel edge pair — one light source: the top. Values are the user's
+  // 2026-09-19 Inspector tuning: 0.5px sub-pixel hairlines (antialiased
+  // by GSK; scale-graceful) at whisper alpha. Scoped to opaque buttons —
+  // flat buttons (headerbar, sidebars) stay flat via :not() in L2.
   // ---------------------------------------------------------------------
-  --ov-bevel-highlight: color-mix(in srgb, var(--light-1) 55%, transparent);
-  --ov-bevel-shadow: color-mix(in srgb, var(--dark-5) 30%, transparent);
+  --ov-bevel-highlight: color-mix(in srgb, var(--light-1) 30%, transparent);
+  --ov-bevel-shadow: color-mix(in srgb, var(--dark-5) 15%, transparent);
 
   // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay

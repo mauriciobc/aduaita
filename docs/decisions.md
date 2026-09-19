@@ -132,3 +132,18 @@ stop geometry); colours flow through L0 tokens. Consequences:
 `d-raised.css` / `d-kill.css` on a real surface and confirm by eye — the
 compiled declaration matches upstream's proven `box-shadow` pattern, so
 rendering is expected; what needs a human is the aesthetic anyway.
+
+## Bevel tuning — 19 Sep 2026 (Inspector session, live)
+
+The resting bevel was tuned on real buttons by the user:
+
+- **Geometry:** 0.5px insets — sub-pixel hairlines (GSK antialiases them;
+  graceful at fractional scale, unlike 1px+ pairs).
+- **Strength:** highlight white@30%, shadow black@15% — "whisper" register
+  (R2 direction, weaker than shipped R1's 55/30).
+- **Scope:** NOT all buttons — opaque buttons only. Flat buttons (headerbar
+  buttons, sidebars) stay flat; L2 will scope via `button:not(.flat)`-
+  style selectors when surfaces land (M3). Upstream already uses `:not()`
+  extensively, so the selector pattern is proven in-tree.
+- These values are now the shipped L0 tokens (`--ov-bevel-width: 0.5px`,
+  `--ov-bevel-highlight` @30%, `--ov-bevel-shadow` @15%).
