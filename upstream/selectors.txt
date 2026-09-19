@@ -20,7 +20,9 @@
 # upgrades cannot move them.
 .linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
 .sidebar-pane
+.toolbar
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
+actionbar > revealer > box
 button.keyboard-activating
 button:active
 button:checked
@@ -28,6 +30,7 @@ button:hover
 entry
 entry:focus-within
 headerbar
+searchbar > revealer > box
 switch
 switch > slider
 switch:active
