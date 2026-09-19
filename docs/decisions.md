@@ -424,3 +424,18 @@ house motion spec, C2 passed, HC structurally proven, zero raw colors.
 
 The stylesheet is COMPLETE for daily driving. Remaining gates: the user's
 live HC eyeball ritual, and the two-week daily-drive (M7).
+
+## List hover softening — 19 Sep 2026
+
+User: hover animation on list rows should be softer without jank.
+
+The jank trap identified first: the current implementation transitions
+`background-image` (a 3-stop gradient). Gradient-to-gradient
+interpolation in GSK is a re-rasterization per frame — at 200ms on a
+dense list that's real work, and it's why softness has felt risky here.
+
+Fix: transition `background-color` (GPU-trivial, GSK lerps it natively)
+and make the hover state a FLAT color wash, not a gradient. Softness now
+comes from three honest dials: lower peak alpha, longer duration
+(280ms), and the same house curve — not from a gradient shape that the
+renderer struggles with.

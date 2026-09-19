@@ -1,26 +1,20 @@
 // L2 — lists and cards (M4). The density surface: highest node counts,
-// performance gate (C2) measures here.
+// performance gate (C2) measured here (passed: 2.80 vs 3.19 ms/frame).
 //
-// Material decisions (principles + micro-interaction care):
-//   .card           — FLOATS: restated ladder in our depth language
-//                     (soft, low-alpha, downward-only). Scoop would read
-//                     as a hole in a card grid.
-//   boxed-list rows — FLAT surfaces: rows are content (shadows belong to
-//                     elevation transitions). The .boxed-list container
-//                     wears the subtle scoop.
+// Material decisions:
+//   .card           — FLOATS: restated ladder in our depth language.
+//   boxed-list rows — FLAT surfaces: rows are content; the .boxed-list
+//                     container wears the subtle scoop.
 //
-// Micro-interactions (user: GNOME is sloppy here — be thoughtful; use
-// them MORE, deliberately, each one meaningful):
-//   hover          — a soft accent wash fading from the TOP (matches the
-//                    house light direction), 200ms house curve both ways
-//   active/pressed — a slightly deeper wash (the row "acknowledges" the
-//                    click) — upstream has the state, nobody styles it
-//                    with depth intent
-//   has-open-popup — keep the hover wash pinned while the popup is open
-//                    (upstream invented this state and then ignored it)
-//   focus-visible  — untouched: upstream's outline is correct and
-//                    keyboard navigation must stay crisp
-//   selected       — untouched: selection is app semantics, not material
+// Micro-interactions (user: GNOME is sloppy — be deliberate; user
+// refinement 19 Sep: hover must be SOFTER, without jank):
+//   * the hover/active wash is a FLAT background-COLOR, not a gradient —
+//     color interpolation in GSK is trivial and jank-free, gradient
+//     re-rasterization is not. Softness comes from lower alpha + longer
+//     duration, not from gradient shape.
+//   * asymmetric timing: 280ms in (approach is gentle), 200ms out
+//     (leaving should not linger). Both on the house curve.
+//   * has-open-popup pins the wash; focus-visible/selected untouched.
 
 list.boxed-list,
 list.content,
@@ -41,8 +35,7 @@ list.content > row:not(:selected).activatable,
 list.boxed-list-separate > row:not(:selected).activatable,
 list.boxed-list > row.expander row.header:not(:selected).activatable,
 list.content > row.expander row.header:not(:selected).activatable {
-  transition: background-image 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 list.boxed-list > row:not(:selected).activatable:hover,
@@ -52,18 +45,14 @@ list.boxed-list > row.expander row.header:not(:selected).activatable:hover,
 list.content > row.expander row.header:not(:selected).activatable:hover,
 list.boxed-list > row:not(:selected).activatable.has-open-popup,
 list.content > row:not(:selected).activatable.has-open-popup {
-  background-image: linear-gradient(to bottom,
-    color-mix(in srgb, var(--accent-color) 9%, transparent) 0%,
-    color-mix(in srgb, var(--accent-color) 3%, transparent) 45%,
-    color-mix(in srgb, var(--accent-color) 0%, transparent) 100%);
+  background-color: color-mix(in srgb, var(--accent-color) 5%, transparent);
+  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 list.boxed-list > row:not(:selected).activatable:active,
 list.content > row:not(:selected).activatable:active {
-  background-image: linear-gradient(to bottom,
-    color-mix(in srgb, var(--accent-color) 14%, transparent) 0%,
-    color-mix(in srgb, var(--accent-color) 5%, transparent) 60%,
-    color-mix(in srgb, var(--accent-color) 0%, transparent) 100%);
+  background-color: color-mix(in srgb, var(--accent-color) 9%, transparent);
+  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @media (prefers-contrast: more) {
@@ -73,6 +62,6 @@ list.content > row:not(:selected).activatable:active {
   list.boxed-list > row:hover,
   list.content > row:hover,
   list.boxed-list-separate > row:hover {
-    background-image: none;
+    background-color: transparent;
   }
 }
