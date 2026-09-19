@@ -376,3 +376,13 @@ measures slightly FASTER than stock (within noise; the row washes
 replace upstream's hover work rather than adding to it at rest). The
 gradient+grain on chrome surfaces and row micro-washes cost nothing
 measurable. No family needs a perf-based restriction. Verdict: C2 PASSED.
+
+## Tabbar/viewswitcher decision — 19 Sep 2026 (U6)
+
+DEFERRED, with reasoning: tabbar/viewswitcher tabs are `.flat` buttons
+inside a box that upstream itself gives a subtle inset "slot" look
+(the whole point of the Adwaita 4.9 tab redesign). Our material adds
+nothing they don't already have — the tabs ARE a groove in upstream's
+language. Restyling them would fight upstream's structure for zero
+visual gain. Revisit only if the daily drive surfaces a specific tab
+that looks broken against the new material.
