@@ -386,3 +386,12 @@ nothing they don't already have — the tabs ARE a groove in upstream's
 language. Restyling them would fight upstream's structure for zero
 visual gain. Revisit only if the daily drive surfaces a specific tab
 that looks broken against the new material.
+
+## HC structural audit — 19 Sep 2026
+
+The build's material declarations (box-shadow / background-image) all sit
+inside @media (prefers-contrast: more) blocks or are their reverts —
+zero material declarations exist outside HC coverage. 10 HC blocks cover
+the full stylesheet. Structural audit PASSED. The user's live sweep
+(toggle + eyeball) remains the final gate ritual, but the structure is
+proven complete.
