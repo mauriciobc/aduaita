@@ -1,111 +1,16 @@
-/*
- * Inspector session — closes E3, E4 and D3 (BACKLOG.md), plus the
- * light/dark × high-contrast sweep.
- *
- *   GTK_DEBUG=interactive nautilus
- *
- * Paste ONE numbered block at a time into the Inspector's CSS tab.
- * The dark-mode and high-contrast toggles live on the Libadwaita page of
- * the Inspector — use them, not the system settings.
- *
- * Record every verdict in docs/decisions.md. The four verdicts to report:
- *   E3  — pressed: physical? zero layout shift? default AND pill buttons?
- *   E4  — shimmer while scrolling? best strength (0.03 / 0.05 / 0.08)?
- *         keep or drop texture?
- *   D3  — raised ladder visible? overlay/window distinct? kill switch works?
- *   HC  — with block 3 applied: everything flat under High Contrast?
- */
+/* ==== 1c · E3 final — V2 + transition ================================== */
+/* V2 won (darkened fill + soft inverted pair). This adds the animation:
+   a short ease on press and release. Paste BELOW the V2 rule if it's
+   still in the tab; otherwise paste both rules together. */
 
-/* ==== 1 · E3 — pressed inversion (CORRECTED) =========================== */
-/* Paste. Idle buttons must look NORMAL. Then press and hold: the pressed
- * button gets a dark top edge + 1px nudge. If ALL buttons still look
- * pressed while idle, paste D1 below and report what you see. */
-
-button:active {
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.25),
-              inset 0 1px 0 rgba(0, 0, 0, 0.30);
-  transform: translate(0, 1px);
-}
-
-/* E3 diagnostic — only if idle buttons STILL look pressed after pasting
- * the corrected block above (delete the block first, then paste this): */
-
-button {
-  background-color: magenta;
-}
-
-/* ==== 2 · E4 — grain tile at three strengths (T4) ====================== */
-/* One variant at a time. Scroll a list under the headerbar: any shimmer?
- * Light AND dark. Pick a strength — or kill texture here and now. */
-
-/* 2a — 0.03 (subtlest) */
-headerbar {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-
-/* 2b — 0.05 (the shipped ceiling) */
-headerbar {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-
-/* 2c — 0.08 (strongest allowed) */
-headerbar {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-
-/* ==== 3 · D3 — ladder A/B (shipped ov-elevate(raised) output) ========== */
-/* Paste on any window with buttons. Then flip the kill switch (3b) and
- * compare. Toggle the overlay rung (3c) for contrast. Toggle dark mode. */
-
-/* 3a — raised rung, shipped output */
-button {
-  box-shadow: inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
-              inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow),
-              0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
-              0 2px 6px color-mix(in srgb, var(--ov-depth-color) 10%, transparent);
-}
-
-/* 3b — depth kill switch (one edit, exactly the shipped mechanism) */
-:root { --ov-depth-color: transparent; }
-
-/* 3c — overlay rung (the popover/menu strength) */
-button {
-  box-shadow: inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
-              inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow),
-              0 1px 2px color-mix(in srgb, var(--ov-depth-color) 20%, transparent),
-              0 3px 8px color-mix(in srgb, var(--ov-depth-color) 12%, transparent),
-              0 8px 24px color-mix(in srgb, var(--ov-depth-color) 8%, transparent);
-}
-
-/* ==== 4 · HC sweep ====================================================== */
-/* With block 3a applied, toggle High Contrast on the libadwaita page.
- * Expected: everything flat — the mixins' @media reverts. If anything
- * bevelled or shadowed survives, that is a D6 bug: record it. */
-
-/* ==== 1b · E3 refinement — senior pressed variants ===================== */
-/* The T3 original was too crude (verdict: junior). Three refinements,
-   synthesized from production patterns: never pure black, pressed = fill
-   darkens (pushed away from the light source) + soft inversion of the
-   resting bevel, no translate gimmick. ONE at a time, judge, then swap.
-   If one wins, say which — it becomes the D2 pressed spec. */
-
-/* V1 — "quiet press": darkened fill only */
-button:active {
-  filter: brightness(0.93);
-}
-
-/* V2 — "material press": darkened fill + soft inverted pair */
+/* V2 — material press (the winner) */
 button:active {
   filter: brightness(0.94);
   box-shadow: inset 0 1px 0 color-mix(in srgb, black 12%, transparent),
               inset 0 -1px 0 color-mix(in srgb, white 18%, transparent);
 }
 
-/* V3 — "deep press": darkened fill + a single soft top line */
-button:active {
-  filter: brightness(0.92);
-  box-shadow: inset 0 1px 1px color-mix(in srgb, black 18%, transparent);
+/* the animation — on the base selector so press AND release both ease */
+button {
+  transition: box-shadow 90ms ease-out, filter 90ms ease-out;
 }
