@@ -27,7 +27,10 @@
   // Texture: feTurbulence grain tile (E4: renders). Opacity is baked into
   // the tile at 0.05, the budget ceiling — data: URIs cannot read CSS
   // variables, so changing the strength means editing this one URI.
-  --ov-texture-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  --ov-texture-image: url("file:///home/mauriciobc/Documentos/Code/aduaita/assets/grain-light.png");
+  @media (prefers-color-scheme: dark) {
+    --ov-texture-image: url("file:///home/mauriciobc/Documentos/Code/aduaita/assets/grain-dark.png");
+  }
 
   // ---------------------------------------------------------------------
   // Bevel edge pair — one light source: the top. Values are the user's

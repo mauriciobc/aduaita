@@ -1,7 +1,33 @@
-// L2 — headerbar cluster. The largest visual mass; milestone 3, the
-// go/no-go of the whole aesthetic.
+// L2 — headerbar. The floating surface: accent-free gradient (14/10,
+// user-tuned) + scheme-split grain tile @5%, over --headerbar-bg-color.
 //
-// Conventions enforced here: every selector registered in
-// upstream/selectors.txt; every rule commented with the upstream source
-// file (e.g. // widgets/_header-bar.scss) so the guard's reports are
-// actionable; no raw colours or geometry — L0 tokens and L1 mixins only.
+// Selector split (decisions.md E4 finding): real `headerbar` nodes in
+// most apps; Nautilus paints its top bar as a GtkBox inside
+// `toolbarview > .top-bar` — image layers on plain boxes are dropped,
+// so that family gets color-only styling until an app-specific rule
+// exists. Both families registered in the contract.
+//
+// The grain URI is in --ov-texture-image (L0); the scheme-split dark
+// tile swaps in via prefers-color-scheme here.
+
+headerbar {
+  background:
+    var(--ov-texture-image),
+    linear-gradient(to bottom,
+      color-mix(in srgb, white 14%, var(--headerbar-bg-color)),
+      color-mix(in srgb, black 10%, var(--headerbar-bg-color))),
+    var(--headerbar-bg-color);
+  background-repeat: repeat, no-repeat, no-repeat;
+  @media (prefers-color-scheme: dark) {
+    background:
+      url("file:///home/mauriciobc/Documentos/Code/aduaita/assets/grain-dark.png"),
+      linear-gradient(to bottom,
+        color-mix(in srgb, white 4%, var(--headerbar-bg-color)),
+        color-mix(in srgb, black 8%, var(--headerbar-bg-color))),
+      var(--headerbar-bg-color);
+    background-repeat: repeat, no-repeat, no-repeat;
+  }
+  @media (prefers-contrast: more) {
+    background: var(--headerbar-bg-color);
+  }
+}

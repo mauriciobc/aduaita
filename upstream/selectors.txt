@@ -25,3 +25,6 @@ button.keyboard-activating
 button:active
 button:checked
 button:hover
+entry
+entry:focus-within
+headerbar

@@ -128,25 +128,30 @@
 // ---------------------------------------------------------------------
 // The INSET — permanent recessed material for entries (user-tuned).
 // Rest: scoop + soft line. Focus: deeper well. Upstream's focus outline
-// coexists (outline is a separate property — proven).
+// coexists (outline is a separate property — proven). Upstream's own
+// resting box-shadow is a 1px currentColor ring — restated so our pair
+// doesn't strip it (the ring survives as the entry's border).
 // ---------------------------------------------------------------------
 @mixin ov-inset($upstream: ()) {
+  $ring: inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
   background-image: linear-gradient(to bottom,
     color-mix(in srgb, black 5%, transparent),
     color-mix(in srgb, black 0%, transparent) 40%);
-  box-shadow: inset 0 1px 3px color-mix(in srgb, black 9%, transparent),
+  box-shadow: $ring,
+              inset 0 1px 3px color-mix(in srgb, black 9%, transparent),
               inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
   transition: box-shadow 90ms ease-out;
   &:focus-within {
     background-image: linear-gradient(to bottom,
       color-mix(in srgb, black 5%, transparent),
       color-mix(in srgb, black 0%, transparent) 40%);
-    box-shadow: inset 0 2px 5px color-mix(in srgb, black 13%, transparent),
+    box-shadow: $ring,
+                inset 0 2px 5px color-mix(in srgb, black 13%, transparent),
                 inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
   }
   @media (prefers-contrast: more) {
     background-image: none;
-    box-shadow: #{if(length($upstream) > 0, $upstream, none)};
+    box-shadow: #{if(length($upstream) > 0, $upstream, $ring)};
   }
 }
 

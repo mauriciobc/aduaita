@@ -1,5 +1,10 @@
-// L2 — entries: entry, search, password reveal. Milestone 5.
+// L2 — entries. The recessed material (ov-inset): scoop gradient + soft
+// line at rest, deeper well on focus, upstream's focus outline
+// coexisting, the 1px currentColor ring restated in every state.
 //
-// The focus ring is the accessibility-critical element here: it must stay
-// clearly visible over bevel and texture in both colour schemes
-// (BACKLOG.md A2).
+// user-tuned live 19 Sep ("AWESOME"); values in _primitives.scss.
+// Selectors registered in upstream/selectors.txt.
+
+entry {
+  @include ov-inset();
+}
