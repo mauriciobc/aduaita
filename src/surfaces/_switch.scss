@@ -30,6 +30,8 @@ switch {
     background-image: linear-gradient(color-mix(in srgb, black 12%, transparent),
                                       color-mix(in srgb, black 4%, transparent));
   }
+
+  transition: background-color 180ms ease-out;
 }
 
 switch > slider {
