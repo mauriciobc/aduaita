@@ -39,8 +39,9 @@ switch > slider {
   background-image: linear-gradient(to bottom,
     color-mix(in srgb, var(--light-1) 96%, transparent),
     color-mix(in srgb, var(--light-1) 80%, transparent));
-  box-shadow: inset 0 1px 1px -1px color-mix(in srgb, white 90%, transparent),
-              0 4px 3px -1px color-mix(in srgb, black 25%, transparent);
+  box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
+              inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
+              inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
 }
 
 // High contrast: back to upstream's state-colored track and knob fill;
