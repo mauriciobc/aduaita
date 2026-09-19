@@ -24,7 +24,11 @@
 .toolbar
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
 actionbar > revealer > box
+button.destructive-action:active
+button.destructive-action:hover
 button.keyboard-activating
+button.suggested-action:active
+button.suggested-action:hover
 button:active
 button:checked
 button:hover
