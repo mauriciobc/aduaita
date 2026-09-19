@@ -208,3 +208,28 @@ Final pressed spec (the only button material):
     transition: box-shadow 90ms ease-out, filter 90ms ease-out;  /* on base */
   }
 Resting bevel: none. Ladder: none on buttons. Flat/osd: never.
+
+## E4 delivery finding — 19 Sep 2026 (Inspector session)
+
+This Nautilus build paints its top bar with a plain **GtkBox** — no
+`headerbar` node exists in the window (upstream's `.top-bar > headerbar`
+selectors target other apps). Consequences, all observed live:
+
+- `background-color` pastes reach the box (boxes paint their own bg) —
+  the yellow probes worked on the sidebar AND top bar.
+- `background-image` / `background: url(...)` pastes are **silently
+  dropped** — plain GtkBox widgets do not paint CSS image layers.
+- The feTurbulence data-URI failure earlier was never independently
+  confirmed dead; the delivery failure masked it.
+
+**E4 resolution:** the grain experiment cannot be judged in this window —
+the surface it targets doesn't exist there. Options for closing E4
+properly: (a) judge the grain on a真 headerbar app (gnome-calculator,
+Epiphany), (b) accept texture as dormant until M3 surfaces exist and
+verify with the harness+Inspector there. Record as "E4 deferred with
+reason", not failed.
+
+**Architecture note for M3:** Nautilus's headerbar-less top bar means
+L2's headerbar surface rules must target the *container pattern*
+(toolbarview > .top-bar children) AND real headerbars — two selector
+families, both registered in the contract.
