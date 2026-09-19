@@ -348,3 +348,17 @@ multi-stage falloff, not a hotspot.
 
 Scope: .flat/.osd excluded. HC: all four states revert flat. Contract
 clean against 1:1.9.4-1 after registering button:hover.
+
+## House motion spec — 19 Sep 2026 (user-approved)
+
+One curve, one duration for state, one press exception:
+
+- curve: cubic-bezier(0.25, 0.46, 0.45, 0.94) — upstream's own standard
+- state changes (hover glow, entry focus deepening, checked color): 200ms
+- press well: keeps the snappier feel via the same curve at 90-200ms —
+  user judged the unified 200ms "elegant" in the live probe; press
+  inherits it rather than keeping the 90ms exception.
+- switch accent wash: 180ms ease-out (matches native knob slide).
+
+Landed: _button.scss, ov-press(), entry transition (90ms -> 200ms pending
+match), switch kept at 180ms ease-out.
