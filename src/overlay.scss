@@ -19,6 +19,7 @@
 @import "surfaces/button";
 @import "surfaces/entry";
 @import "surfaces/popover";
+@import "surfaces/controls";
 
 // L3 — contrast reverts are emitted inline by the L1 mixins, not by a
 // separate block, so no material rule can ever drift from its revert.

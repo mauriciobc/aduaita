@@ -1,0 +1,25 @@
+// L2 — the quiet controls: scrollbar, spinbutton, dropdown.
+//
+// Restraint decisions:
+//   scrollbar  — the trough already animates (upstream 200ms linear);
+//                we only deepen its resting visibility slightly so the
+//                scoop language reaches it. No knob styling: the slider
+//                is a precision control, not a surface.
+//   spinbutton — its inner buttons already inherit the button surface
+//                (ov-press via the button selector). Only the entry part
+//                gets ov-inset — and it does automatically, because the
+//                spinbutton's text area IS an entry node. Nothing to do
+//                here beyond not breaking it: excluded from double-
+//                styling.
+//   dropdown   — its popup is a popover (covered); its button is a
+//                button (covered). Nothing new needed.
+
+scrollbar > range > trough {
+  background-color: color-mix(in srgb, var(--ov-depth-color) 6%, transparent);
+}
+
+@media (prefers-contrast: more) {
+  scrollbar > range > trough {
+    background-color: color-mix(in srgb, currentColor 20%, transparent);
+  }
+}
