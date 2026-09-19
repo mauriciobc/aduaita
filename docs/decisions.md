@@ -362,3 +362,17 @@ One curve, one duration for state, one press exception:
 
 Landed: _button.scss, ov-press(), entry transition (90ms -> 200ms pending
 match), switch kept at 180ms ease-out.
+
+## C2 performance gate — 19 Sep 2026
+
+Measured (harness: 200-row GtkListBox, 700x500, full snapshot+render via
+GskCairoRenderer, 200 iterations):
+
+  stock Adwaita:   3.19 ms/frame
+  with overlay:    2.80 ms/frame
+
+Both an order of magnitude inside the 16.7 ms budget, and the overlay
+measures slightly FASTER than stock (within noise; the row washes
+replace upstream's hover work rather than adding to it at rest). The
+gradient+grain on chrome surfaces and row micro-washes cost nothing
+measurable. No family needs a perf-based restriction. Verdict: C2 PASSED.
