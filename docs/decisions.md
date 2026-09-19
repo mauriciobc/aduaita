@@ -233,3 +233,28 @@ reason", not failed.
 L2's headerbar surface rules must target the *container pattern*
 (toolbarview > .top-bar children) AND real headerbars — two selector
 families, both registered in the contract.
+
+## E4 verdict — 19 Sep 2026 (live, real provider)
+
+Grain judged on a real headerbar via the overlay file (the only working
+delivery — Inspector CSS tab drops url() layers entirely; Nautilus's top
+bar is a GtkBox with no image layers at all):
+
+- **Shimmer:** none while scrolling ✓
+- **Dark mode:** 5% dark-speck tile is far too noisy on dark surfaces ✗
+- **Strength:** 5% on light "seems nice" (user)
+
+**Resolution:**
+- Shipped: scheme-split tiles — `assets/grain-light.png` (dark specks,
+  5%, light scheme) and `assets/grain-dark.png` (light specks, 3%, dark
+  scheme — dark surfaces show noise more), selected via
+  `prefers-color-scheme` in the texture token pair.
+- Delivery shape (proven): `background:` shorthand + restated fill, never
+  bare background-image.
+- Texture stays a headerbar-only garnish (M3 wires it); HC reverts it.
+
+Findings ledger (session total):
+1. feTurbulence data-URIs render empty in app processes (librsvg).
+2. Plain GtkBox surfaces drop background-image layers (Nautilus top bar).
+3. The Inspector CSS tab drops url() layers — only the real user
+   provider delivers images. All three now documented.
