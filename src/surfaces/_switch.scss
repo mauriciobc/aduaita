@@ -1,0 +1,45 @@
+// L2 — switches. THE neumorphic toggle (user request: "same depth feel",
+// classic neu reference): the track is a GROOVE pressed into the surface
+// (dual inset: dark top-left, light bottom-right), the knob is an
+// extruded same-family disc (raised dual: light top-left, dark bottom).
+// Checked state: groove deepens, knob keeps its extrusion — no accent
+// fill; the depth itself communicates state (pure neumorphism).
+//
+// Upstream node structure (1.9.4): switch { padding 3px, radius 14px }
+// > slider { 20px circle, white-ish fill, own drop shadow }.
+// The knob keeps upstream's drop shadow and gains the extrusion pair.
+// HC: groove and extrusion revert flat (accent state coloring stays).
+
+switch {
+  background-color: var(--window-bg-color);
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, black 12%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, white 35%, transparent);
+  &:hover {
+    background-color: color-mix(in srgb, var(--window-bg-color) 94%, black);
+  }
+  &:checked {
+    background-color: var(--window-bg-color);
+  }
+}
+
+switch > slider {
+  background-color: var(--window-bg-color);
+  box-shadow:
+    0 2px 4px RGB(0 0 6 / 20%),
+    inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+}
+
+// HC revert: groove flattens to upstream's state colors, knob keeps only
+// its border-ish shadow for visibility.
+@media (prefers-contrast: more) {
+  switch {
+    background-color: color-mix(in srgb, currentColor 15%, transparent);
+    box-shadow: none;
+  }
+  switch > slider {
+    background-color: color-mix(in srgb, white 80%, var(--view-bg-color));
+    box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
+  }
+}
