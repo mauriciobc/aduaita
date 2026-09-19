@@ -1,45 +1,51 @@
-// L2 — switches. THE neumorphic toggle (user request: "same depth feel",
-// classic neu reference): the track is a GROOVE pressed into the surface
-// (dual inset: dark top-left, light bottom-right), the knob is an
-// extruded same-family disc (raised dual: light top-left, dark bottom).
-// Checked state: groove deepens, knob keeps its extrusion — no accent
-// fill; the depth itself communicates state (pure neumorphism).
+// L2 — switches. Faithful port of the user's reference (CodePen ndzGXm,
+// Slider v1) onto GTK's switch > slider structure:
 //
-// Upstream node structure (1.9.4): switch { padding 3px, radius 14px }
-// > slider { 20px circle, white-ish fill, own drop shadow }.
-// The knob keeps upstream's drop shadow and gains the extrusion pair.
-// HC: groove and extrusion revert flat (accent state coloring stays).
+//   track  — flat surface, whisper of top-darkening, ONE tight dark
+//            hairline inset at the top edge, white highlight lip just
+//            outside the bottom edge. Shallow dish, not a deep groove.
+//   knob   — BRIGHTER than the track: light gradient disc, strong white
+//            top-glow inset, drop shadow below (it floats on the track).
+//   state  — position only: checked changes NOTHING else (no accent).
+//
+// Pen values (1em ~ 9px at GTK switch scale):
+//   track  bg: linear-gradient(black 7%, transparent) over base
+//          inset: 0 0.07em 0.1em -0.1em black@40%
+//          outset: 0 0.05em 0.08em -0.01em white@70%
+//   knob   bg: linear-gradient(#f5f5f5 10%, #eee)
+//          inset: 0 0.1em 0.15em -0.05em white@90%
+//          drop:  0 0.5em 0.3em -0.1em black@25%
+//   transitions: 350ms track / 250ms ease-in-out knob (GTK animates the
+//   knob position natively; the 90ms family does not apply here).
 
 switch {
   background-color: var(--window-bg-color);
-  box-shadow:
-    inset 0 2px 4px color-mix(in srgb, black 12%, transparent),
-    inset 0 -1px 1px color-mix(in srgb, white 35%, transparent);
-  &:hover {
-    background-color: color-mix(in srgb, var(--window-bg-color) 94%, black);
-  }
-  &:checked {
-    background-color: var(--window-bg-color);
-  }
+  background-image: linear-gradient(color-mix(in srgb, black 7%, transparent),
+                                    color-mix(in srgb, black 0%, transparent));
+  box-shadow: inset 0 1px 1px -1px color-mix(in srgb, black 40%, transparent),
+              0 1px 1px -1px color-mix(in srgb, white 70%, transparent);
 }
 
 switch > slider {
-  background-color: var(--window-bg-color);
-  box-shadow:
-    0 2px 4px RGB(0 0 6 / 20%),
-    inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
-    inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+  background-color: color-mix(in srgb, var(--light-1) 86%, var(--window-bg-color));
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, var(--light-1) 96%, transparent),
+    color-mix(in srgb, var(--light-1) 80%, transparent));
+  box-shadow: inset 0 1px 1px -1px color-mix(in srgb, white 90%, transparent),
+              0 4px 3px -1px color-mix(in srgb, black 25%, transparent);
 }
 
-// HC revert: groove flattens to upstream's state colors, knob keeps only
-// its border-ish shadow for visibility.
+// High contrast: back to upstream's state-colored track and knob fill;
+// keep only the knob's drop shadow for figure/ground.
 @media (prefers-contrast: more) {
   switch {
     background-color: color-mix(in srgb, currentColor 15%, transparent);
+    background-image: none;
     box-shadow: none;
   }
   switch > slider {
     background-color: color-mix(in srgb, white 80%, var(--view-bg-color));
+    background-image: none;
     box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
   }
 }
