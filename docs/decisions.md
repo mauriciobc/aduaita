@@ -156,6 +156,12 @@ Implementation note: the pressed well REPLACES the resting pair and rung
 companion emits exactly the well; restated upstream stops still apply in
 both states.
 
+**REVISED same day:** the user struck the resting bevel entirely —
+**no resting styling at all.** Idle buttons stay stock Adwaita; N4's well
+is pressed-only. The 0.5px hairline values remain on record as the tuned
+bevel recipe; `--ov-bevel-width: 0px` is now effectively the standing
+state (no surface emits the resting pair by default).
+
 ## Bevel tuning — 19 Sep 2026 (Inspector session, live)
 
 The resting bevel was tuned on real buttons by the user:
@@ -184,3 +190,21 @@ material.
 Scoping lesson recorded: `.raised` (+ default, non-flat) buttons are the
 material carriers; `.flat`/`.osd` never wear it. This is upstream's own
 flat/raised split (1.4+), so the selector pattern is native.
+
+## Neumorphism probe — 19 Sep 2026
+
+N1–N3 (permanent extrude variants) rejected by the user after live judging:
+carpet-bomb `button {}` selectors turned the whole window to mud — scoped
+probe (block 1f, headerbar `.raised` controls only) was needed to judge
+anything. **N4 — the pressed well — won, and was then simplified further:**
+no resting styling AT ALL. Idle buttons stay stock Adwaita; the well is
+pressed-only, with the 90 ms ease.
+
+Final pressed spec (the only button material):
+  button:active (and :keyboard-activating) {
+    box-shadow: inset 0 2px 4px color-mix(in srgb, black 10%, transparent),
+                inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
+    filter: brightness(0.96);
+    transition: box-shadow 90ms ease-out, filter 90ms ease-out;  /* on base */
+  }
+Resting bevel: none. Ladder: none on buttons. Flat/osd: never.
