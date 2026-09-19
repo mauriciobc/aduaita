@@ -220,3 +220,12 @@ verdict is recorded. Stop the project if it is a no-go.*
   controls
 - Flatpak apps and runtimes — deferred 18 Sep 2026, revisit if Flatpak
   GNOME apps enter daily use
+
+---
+
+## Daily drive — STARTED 19 Sep 2026
+
+The clock is running. The stylesheet is complete and live; from here the
+project's only input is real use. Annoyances, breakages, and fatigues go
+to "Found during daily drive" above. The gate: two weeks (M7), then the
+final texture keep/drop call (DD2).
