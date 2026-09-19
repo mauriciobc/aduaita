@@ -414,3 +414,13 @@ tiles switch via prefers-color-scheme, well/scoop/glow use black/white
 derivations that invert meaningfully in dark. Structural dark-verification
 PASSED; the eyeball pass rides with daily driving (any dark-mode artifact
 lands in the daily-drive section).
+
+## Full stylesheet complete — 19 Sep 2026
+
+The overlay covers: buttons (4-state machine + variant dials), entries,
+switches, headerbars, toolbar family, lists/cards, popovers, scrollbars,
+window/panes. 238-line build from 12 source files, 30+ contract entries,
+house motion spec, C2 passed, HC structurally proven, zero raw colors.
+
+The stylesheet is COMPLETE for daily driving. Remaining gates: the user's
+live HC eyeball ritual, and the two-week daily-drive (M7).
