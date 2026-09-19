@@ -34,6 +34,7 @@ headerbar
 list.boxed-list > row:not(:selected).activatable:active
 list.boxed-list > row:not(:selected).activatable:hover
 list.content > row:not(:selected).activatable:hover
+popover > contents
 searchbar > revealer > box
 switch
 switch > slider

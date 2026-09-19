@@ -1,3 +1,31 @@
-// L2 — popovers and menus. Milestone 5. These sit on the overlay rung of
-// the elevation ladder (the deepest shadow stops) — depth comes from the
-// ladder token, never from filter.
+// L2 — popovers and menus. THE overlay rung of the ladder: they are the
+// deepest floating surfaces in the language.
+//
+// Upstream already stacks a 4-stop ladder here (0 1px 5px 1px, 0 2px 14px
+// 3px + border). Restated in our depth vocabulary: same structure, our
+// tokens, slightly deeper final stop so the overlay rung reads distinct
+// from raised. Menu items inside keep flat (menus are dense content).
+// Hover on menu rows: the same soft accent wash as list rows.
+
+popover > contents {
+  box-shadow: 0 1px 5px 1px color-mix(in srgb, var(--ov-depth-color) 12%, transparent),
+              0 2px 14px 3px color-mix(in srgb, var(--ov-depth-color) 9%, transparent),
+              0 8px 32px 6px color-mix(in srgb, var(--ov-depth-color) 5%, transparent);
+}
+
+popover > contents > menubutton:hover,
+popover > contents modelbutton:hover {
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, var(--accent-color) 9%, transparent) 0%,
+    color-mix(in srgb, var(--accent-color) 0%, transparent) 100%);
+}
+
+@media (prefers-contrast: more) {
+  popover > contents {
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+  }
+  popover > contents > menubutton:hover,
+  popover > contents modelbutton:hover {
+    background-image: none;
+  }
+}
