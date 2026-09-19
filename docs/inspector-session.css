@@ -1,16 +1,17 @@
-/* ==== 1c · E3 final — V2 + transition ================================== */
-/* V2 won (darkened fill + soft inverted pair). This adds the animation:
-   a short ease on press and release. Paste BELOW the V2 rule if it's
-   still in the tab; otherwise paste both rules together. */
+/* ==== 1d · E3 addendum — resting bevel on idle buttons ================= */
+/* Soft edge treatment for the UNPRESSED state. Paste and judge, then
+   tune the alphas to taste. Remember the resting bevel is a STANDING
+   effect — it should whisper, not speak. If you notice it before the
+   pressed state, it's too strong. */
 
-/* V2 — material press (the winner) */
-button:active {
-  filter: brightness(0.94);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, black 12%, transparent),
-              inset 0 -1px 0 color-mix(in srgb, white 18%, transparent);
+/* R1 — shipped values: hairline highlight top, soft shade bottom */
+button {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, black 30%, transparent);
 }
 
-/* the animation — on the base selector so press AND release both ease */
+/* R2 — half strength: closer to a whisper */
 button {
-  transition: box-shadow 90ms ease-out, filter 90ms ease-out;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, black 15%, transparent);
 }
