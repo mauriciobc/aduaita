@@ -258,3 +258,28 @@ Findings ledger (session total):
 2. Plain GtkBox surfaces drop background-image layers (Nautilus top bar).
 3. The Inspector CSS tab drops url() layers — only the real user
    provider delivers images. All three now documented.
+
+## Headerbar surface spec — 19 Sep 2026 (live-tuned, user-approved)
+
+Final recipe (user iterated the gradient live and approved "looks nice" at
+the full values):
+
+```css
+headerbar {
+  background:
+    url("assets/grain-light.png"),                /* grain @5%, repeat */
+    linear-gradient(to bottom,
+      color-mix(in srgb, white 14%, var(--headerbar-bg-color)),
+      color-mix(in srgb, black 10%, var(--headerbar-bg-color))),
+    var(--headerbar-bg-color);
+  background-repeat: repeat, no-repeat, no-repeat;
+}
+```
+
+Notes:
+- First gradient attempt (4%/3%) was subliminal — a ~47px bar cannot show
+  a 7-point swing; user iterated to 14%/10% ("statement headerbar").
+- This is M3's headerbar surface rule, pending: HC sweep verdict, dark
+  mode pass, and the widget-selector split (real headerbars + Nautilus's
+  GtkBox top bar need separate delivery — the gradient shorthand shape
+  works for both).
