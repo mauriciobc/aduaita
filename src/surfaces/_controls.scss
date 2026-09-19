@@ -1,6 +1,6 @@
-// L2 — the quiet controls: scrollbar, spinbutton, dropdown.
+// L2 — controls: scrollbar, sliders/progress, checkboxes/radios, toasts, spinbutton, dropdown.
 //
-// Restraint decisions:
+// Restraint & surface decisions:
 //   scrollbar  — the trough already animates (upstream 200ms linear);
 //                we only deepen its resting visibility slightly so the
 //                scoop language reaches it. No knob styling: the slider
@@ -9,17 +9,148 @@
 //                (ov-press via the button selector). Only the entry part
 //                gets ov-inset — and it does automatically, because the
 //                spinbutton's text area IS an entry node. Nothing to do
-//                here beyond not breaking it: excluded from double-
-//                styling.
+//                here beyond not breaking it: excluded from double-styling.
 //   dropdown   — its popup is a popover (covered); its button is a
 //                button (covered). Nothing new needed.
+//   scale/progress — trough wears the recessed channel (analogue to switch track);
+//                scale slider knob floats with top-light, drop shadow, and 120ms
+//                mechanical depression on active drag.
+//   check/radio — tactile microcavity at rest, soft accent wash on hover (280ms),
+//                dry 120ms press depression, flat accent on checked.
+//   toast      — floating notification pill restated at the overlay elevation rung.
 
 scrollbar > range > trough {
   background-color: color-mix(in srgb, var(--ov-depth-color) 6%, transparent);
 }
 
+// ---------------------------------------------------------------------
+// Sliders & Progress (scale, progressbar, levelbar)
+// ---------------------------------------------------------------------
+scale > trough,
+progressbar:not(.osd) > trough,
+levelbar > trough > block.empty {
+  box-shadow: inset 0 1px 1px -1px color-mix(in srgb, black 40%, transparent),
+              0 1px 1px -1px color-mix(in srgb, white 70%, transparent);
+}
+
+scale > trough > slider {
+  background-color: color-mix(in srgb, var(--light-1) 86%, var(--view-bg-color));
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, var(--light-1) 96%, transparent),
+    color-mix(in srgb, var(--light-1) 80%, transparent));
+  box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
+              inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
+              inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background-image 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+scale:hover > trough > slider {
+  transition: background-image 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+scale:active > trough > slider {
+  box-shadow: 0 1px 2px RGB(0 0 6 / 25%),
+              inset 0 1px 2px color-mix(in srgb, black 12%, transparent),
+              inset 0 -1px 1px color-mix(in srgb, white 40%, transparent);
+  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+scale:disabled > trough > slider {
+  box-shadow: none;
+  background-image: none;
+}
+
+// ---------------------------------------------------------------------
+// Checkboxes & Radios (check, radio)
+// ---------------------------------------------------------------------
+check:not(:checked):not(:indeterminate),
+radio:not(:checked):not(:indeterminate) {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 15%, transparent),
+              inset 0 1px 2px color-mix(in srgb, black 10%, transparent);
+  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  &:hover {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent),
+                inset 0 1px 2px color-mix(in srgb, black 12%, transparent);
+    background-color: color-mix(in srgb, currentColor 5%, transparent);
+    transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  &:active {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent),
+                inset 0 2px 4px color-mix(in srgb, black 16%, transparent);
+    background-color: color-mix(in srgb, currentColor 25%, transparent);
+    transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+check:checked:active,
+radio:checked:active,
+check:indeterminate:active,
+radio:indeterminate:active {
+  box-shadow: inset 0 1px 2px color-mix(in srgb, black 18%, transparent);
+  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// ---------------------------------------------------------------------
+// Toasts
+// ---------------------------------------------------------------------
+toast {
+  box-shadow: 0 1px 3px 1px color-mix(in srgb, var(--ov-depth-color) 14%, transparent),
+              0 3px 10px 2px color-mix(in srgb, var(--ov-depth-color) 10%, transparent),
+              0 8px 24px 4px color-mix(in srgb, var(--ov-depth-color) 6%, transparent);
+}
+
+// ---------------------------------------------------------------------
+// High contrast reverts
+// ---------------------------------------------------------------------
 @media (prefers-contrast: more) {
   scrollbar > range > trough {
     background-color: color-mix(in srgb, currentColor 20%, transparent);
+  }
+
+  scale > trough,
+  progressbar:not(.osd) > trough,
+  levelbar > trough > block.empty {
+    box-shadow: none;
+  }
+
+  scale > trough > slider {
+    background-color: color-mix(in srgb, white 80%, var(--view-bg-color));
+    background-image: none;
+    box-shadow: 0 0 0 1px var(---slider-border-color, currentColor), 0 2px 4px RGB(0 0 6 / 20%);
+  }
+
+  check,
+  radio {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+  }
+
+  check:not(:checked):not(:indeterminate):hover,
+  radio:not(:checked):not(:indeterminate):hover {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 60%, transparent);
+    background-color: transparent;
+  }
+
+  check:not(:checked):not(:indeterminate):active,
+  radio:not(:checked):not(:indeterminate):active {
+    box-shadow: none;
+    background-color: color-mix(in srgb, currentColor 60%, transparent);
+  }
+
+  check:checked:active,
+  radio:checked:active,
+  check:indeterminate:active,
+  radio:indeterminate:active {
+    box-shadow: none;
+  }
+
+  toast {
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
   }
 }

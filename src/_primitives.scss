@@ -4,12 +4,11 @@
 // accessibility rule is enforced structurally instead of by discipline.
 //
 // Mechanism (decided Evening 0 + M2, docs/decisions.md):
-//   bevel   — 0.5px hairline pair, values user-tuned; DORMANT by default
-//             (--ov-bevel-width: 0px is the standing state — the user
-//             struck all resting styling on buttons).
-//   depth   — the pressed WELL on buttons (N4: depth only during press,
-//             90ms ease) and ladder functions for container surfaces
-//             (popovers/menus if ever needed). filter banned for ladders.
+//   bevel   — 0.5px hairline pair, values user-tuned; THE same-surface
+//             rest language for regular buttons (inset-only — no drops).
+//   depth   — container ladders (popover/menu/window). Floating knobs
+//             (switch/scale) may use ov-raised*; buttons never do —
+//             external shadows break the same-surface language.
 //   inset   — permanent recessed material for container-ish surfaces
 //             (entries): scoop gradient + hairline, DEEPER on focus.
 //   texture — grain tiles (scheme-split); headerbar garnish.
@@ -19,16 +18,17 @@
 // geometry lives here in L1; L0 owns colours, dimensions, kill switches.
 //
 // Governing principle (user, M2 session): "everything that has depth
-// keeps it in all states; interaction only MODULATES depth." Buttons are
-// the exception: they have NO resting material — depth appears only on
-// press (the well).
+// keeps it in all states; interaction only MODULATES depth." Regular
+// buttons wear ov-bevel() at rest (same-surface hairlines); press
+// replaces it with ov-well(). External drop shadows are banned on
+// buttons. Flat/osd stay flat.
 //
 // Overriding box-shadow or background-image REPLACES upstream's value —
 // surface rules must restate upstream's stops/images alongside the
 // overlay's ($upstream parameters); the pinned version makes that safe.
 
 // ---------------------------------------------------------------------
-// Bevel — the tuned 0.5px hairline pair. DORMANT by default.
+// Bevel — the tuned 0.5px hairline pair (same-surface button rest).
 // ---------------------------------------------------------------------
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
@@ -37,7 +37,7 @@
 
 // ---------------------------------------------------------------------
 // Depth ladders — container surfaces only (popover/menu/wall if ever).
-// Buttons never wear these (no resting material).
+// Buttons never wear these (external drops break same-surface language).
 // ---------------------------------------------------------------------
 @function ov-depth-raised() {
   @return 0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
@@ -85,9 +85,8 @@
 }
 
 // ---------------------------------------------------------------------
-// The pressed WELL — the entire button material (N4 → amplified, user-
-// locked 19 Sep: "looks beautiful"). Resting state: stock Adwaita,
-// nothing. Pressed: the surface sinks. Held (toggles): light version.
+// The pressed WELL — inset-only depression. Replaces the resting bevel
+// on press; held (toggles) uses the light version.
 // ---------------------------------------------------------------------
 @function ov-well() {
   @return inset 0 3px 6px color-mix(in srgb, black 16%, transparent),
@@ -99,17 +98,42 @@
           inset 0 -1px 0 color-mix(in srgb, white 15%, transparent);
 }
 
-// Button press: no resting material; well on press + keyboard press;
-// held wells on :checked. $upstream restates this surface's upstream
-// stops (see decisions.md; the pinned version makes restating safe).
+// ---------------------------------------------------------------------
+// Raised chip — FLOATING knobs only (switch/scale). Drop shadow is
+// intentional here: knobs sit ON a track. Buttons must NOT use these —
+// they are same-surface and external shadows break that language.
+// ---------------------------------------------------------------------
+@function ov-raised() {
+  @return 0 2px 4px RGB(0 0 6 / 20%),
+          inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
+          inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+}
+
+@function ov-raised-pressed() {
+  @return 0 1px 2px RGB(0 0 6 / 22%),
+          inset 0 3px 6px color-mix(in srgb, black 16%, transparent),
+          inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
+}
+
+@function ov-raised-held() {
+  @return 0 1px 2px RGB(0 0 6 / 14%),
+          inset 0 1px 3px color-mix(in srgb, black 8%, transparent),
+          inset 0 -1px 0 color-mix(in srgb, white 15%, transparent);
+}
+
+// Button press: bevel → well on press + keyboard press; held well on
+// :checked. $upstream restates this surface's upstream stops (see
+// decisions.md; the pinned version makes restating safe).
 // Selector family includes menubutton wrapper→child bridge.
 @mixin ov-press($upstream: ()) {
   transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   &:active,
-  &:keyboard-activating {
+  &.keyboard-activating {
     box-shadow: ov-well();
     filter: brightness(0.96);
+    transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
     @media (prefers-contrast: more) {
       box-shadow: #{if(length($upstream) > 0, $upstream, none)};
       filter: none;

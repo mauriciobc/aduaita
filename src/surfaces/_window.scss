@@ -13,7 +13,7 @@
 // `:not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane` as the
 // dependency. Our own `.content-pane` atom matches any pane widget at
 // priority 800 regardless.
-// .sidebar-pane: standalone upstream rule; registered as-is.
+// .sidebar-pane: moved to _sidebar.scss.
 
 window,
 dialog {
@@ -22,8 +22,4 @@ dialog {
 
 .content-pane {
   background-color: var(--ov-surface-content);
-}
-
-.sidebar-pane {
-  background-color: var(--ov-surface-sidebar);
 }

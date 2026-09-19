@@ -1,16 +1,19 @@
 // L2 — headerbar. The floating surface: accent-free gradient (14/10,
 // user-tuned) + scheme-split grain tile @5%, over --headerbar-bg-color.
 //
-// Selector split (decisions.md E4 finding): real `headerbar` nodes in
-// most apps; Nautilus paints its top bar as a GtkBox inside
-// `toolbarview > .top-bar` — image layers on plain boxes are dropped,
-// so that family gets color-only styling until an app-specific rule
-// exists. Both families registered in the contract.
+// In AdwToolbarView apps (Nautilus, etc.), the top bar is a container
+// `toolbarview > .top-bar` wrapping a vertical GtkBox. When multiple bars
+// exist (e.g. HeaderBar + TabBar), the box receives `.collapse-spacing` with
+// 3px vertical padding. Styling `headerbar` directly leaves the top 3px of
+// the parent box unstyled, exposing the window/pane background as a line on top.
+// We style `toolbarview > .top-bar` to cover the full container and set
+// `background: none` on its nested `headerbar` to prevent double-painting.
 //
 // The grain URI is in --ov-texture-image (L0); the scheme-split dark
 // tile swaps in via prefers-color-scheme here.
 
-headerbar {
+headerbar,
+toolbarview > .top-bar {
   background:
     var(--ov-texture-image),
     linear-gradient(to bottom,
@@ -30,4 +33,8 @@ headerbar {
   @media (prefers-contrast: more) {
     background: var(--headerbar-bg-color);
   }
+}
+
+toolbarview > .top-bar headerbar {
+  background: none;
 }

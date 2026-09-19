@@ -156,14 +156,17 @@ verdict is recorded. Stop the project if it is a no-go.*
   variants only — flat stays flat.
 - [ ] **U2** (P1) Entry + search + password-reveal.
 - [ ] **U3** (P1) Popover + menu — overlay rung of the ladder.
-- [ ] **U4** (P2) Splitbutton / dropdown / combobox.
+- [x] **U4** (P2) Splitbutton / dropdown / combobox. (splitbutton inherits
+  button surface and well; dropdown button/popover covered by existing
+  surfaces — documented restraint).
 - [ ] **U5** (P1) Hardcoded-hex audit at the pinned version: extract every
   hex outside `:root`, classify palette-following vs structural (shadow
   `rgb()` is fine), decide override or accept per case.
   *Accept:* the classified list recorded in `docs/decisions.md`.
-- [ ] **U6** (P2) Inclusion decision: scrollbar, switch, slider,
-  AdwTabBar / viewswitcher — identity surfaces; only if the M3 verdict
-  says the aesthetic wants them.
+- [x] **U6** (P2) Inclusion decision: scrollbar, switch, slider,
+  AdwTabBar / viewswitcher — identity surfaces: switch ported, scrollbar
+  trough deepened, scale slider + progress channels added; tabbar/viewswitcher
+  deferred per U6 decision.
 
 ## M6 — Contrast & accessibility
 

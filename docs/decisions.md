@@ -439,3 +439,88 @@ and make the hover state a FLAT color wash, not a gradient. Softness now
 comes from three honest dials: lower peak alpha, longer duration
 (280ms), and the same house curve — not from a gradient shape that the
 renderer struggles with.
+
+## System-wide micro-interaction rollout — 19 Sep 2026
+
+User: extend micro-interaction improvements across all system components;
+strictly zero visual design or material alterations.
+
+1. Asymmetric mechanical timing applied across interactive components:
+   - Hover approach: gentle 280ms on the house curve `cubic-bezier(0.25, 0.46, 0.45, 0.94)`.
+   - Release / departure: clean 200ms spring-back (no sluggish lingering).
+   - Active press acknowledge: 120ms immediate mechanical tactile response
+     on buttons (`button:not(.flat):not(.osd):active`, `ov-press()`, suggested/destructive),
+     popover menu buttons, and all list rows (`boxed-list`, `content`,
+     `boxed-list-separate`, expander row headers).
+
+2. Menu / popover jank elimination:
+   - Struck the legacy 2-stop `background-image` gradient on hover (a leftover from
+     before M4 list row softening) in favor of the GPU-trivial flat color wash
+     (`var(--accent-color) 5%` hover, `9%` active), fully aligning menu rows
+     with the list row interaction spec.
+
+3. Zero design drift:
+   - No new decorative properties, shadows, or colors added to controls.
+   - Flat buttons, switches, scrollbars, and entries keep their locked designs.
+
+## Controls surface extension (scale, progress, check, radio, toast) — 19 Sep 2026
+
+User approved Option A across remaining candidate controls:
+
+1. Sliders & Progress (`scale`, `progressbar`, `levelbar`):
+   - Troughs (`scale > trough`, `progressbar:not(.osd) > trough`, `levelbar > trough > block.empty`):
+     recessed mechanical channel with top-shade hairline (`inset 0 1px 1px -1px black@40%`)
+     and bottom reflection lip (`0 1px 1px -1px white@70%`), matching the `switch` track.
+   - Slider knob (`scale > trough > slider`): floating disc with top-light gradient
+     and soft drop shadow (`0 2px 4px @20%`), paired with `120ms` mechanical depression
+     on active drag (`0 1px 2px @25%` + inverted inset well). Disabled collapses shadow.
+
+2. Checkboxes & Radios (`check`, `radio`):
+   - Tactile microcavity (`inset 0 1px 2px black@10%`) within the restated 2px ring.
+   - Gentle `280ms` hover wash (`var(--accent-color) 5%`).
+   - Dry, crisp `120ms` mechanical depression (`inset 0 2px 4px black@16%`) on active click.
+   - Checked state active compression (`inset 0 1px 2px black@18%`).
+
+3. Toasts (`toast`):
+   - Restated at the overlay elevation rung with 3-stop diffuse shadow
+     matching suspended popovers/menus.
+
+4. Contract & Invariants:
+   - All selectors registered in `upstream/selectors.txt` and verified via `tools/check-selectors`.
+   - Full HC reverts under `prefers-contrast: more`.
+   - Zero raw hex; zero layout shifts.
+
+## AdwToolbarView top-bar unstyled gap fix — 19 Sep 2026
+
+1. The Bug:
+   - In apps utilizing `AdwToolbarView` with multiple top widgets (e.g. HeaderBar + SearchBar in `gnome-extensions-app`, HeaderBar + TabBar in `nautilus`), Libadwaita assigns `.collapse-spacing` to the internal vertical `GtkBox`:
+     `toolbarview > .top-bar .collapse-spacing { padding-top: 3px; padding-bottom: 3px; }`
+   - Because `headerbar` was styled directly, its background started at y=3. The top 3px belonged to the parent `GtkBox`, which was unstyled, leaking the underlying window / content-pane background (especially prominent with translucent / blurred window surfaces such as Blur my Shell).
+
+2. The Solution:
+   - Follow Libadwaita's architecture by applying the surface gradient and grain to `toolbarview > .top-bar` as well as standalone `headerbar`.
+   - Set `background: none` on nested `toolbarview > .top-bar headerbar` to prevent double-painting.
+   - Upstream contract updated with `toolbarview > .top-bar headerbar` and `toolbarview > .top-bar.raised`.
+
+
+## Sidebar surface styling (split-view & navigation-sidebar) — 19 Sep 2026
+
+1. The Surface & Scope:
+   - Split-view container pane (`.sidebar-pane`) and navigation list widgets (`.navigation-sidebar` across `row`, `child` list items, and `flowboxchild`).
+   - Includes legacy tree rows, `sidebar .navigation-sidebar > row`, `placessidebar .navigation-sidebar > row`, and inline item actions (`button.sidebar-button`).
+   - Dedicated surface extracted to `src/surfaces/_sidebar.scss`.
+
+2. Material & Micro-interaction Decisions:
+   - Asymmetric hover entry & exit microinteractions:
+     * Entry (mouse enters item): gentle `280ms` ease on the house curve (`cubic-bezier(0.25, 0.46, 0.45, 0.94)`) declared on `:hover`. Eliminates stock Adwaita's abrupt, unsmoothed flashes when hovering.
+     * Exit (mouse leaves item): clean `200ms` spring-back declared on the base item (`> row`, `> child`, `> flowboxchild`, etc.), preventing sluggish trails when skimming down navigation trees.
+     * Active press acknowledgment: crisp `120ms` mechanical tactile response.
+   - Jank prevention: flat `background-color` washes (6% hover, 10% active, 9% selected, 13% selected hover, 16% selected active) via `currentColor` derivations. Avoids GSK gradient re-rasterization overhead on dense navigation trees.
+   - `has-open-popup`: pins the hover wash when context menus are open.
+   - Micro-actions: `button.sidebar-button` (unmount, eject, add bookmark) receives matching 280ms entry, 200ms exit, and 120ms active transition washes.
+   - Separators: subtle hairline division via `color-mix(in srgb, currentColor 8%, transparent)`.
+
+3. Contracts & Invariants:
+   - 31 selector atoms registered in `upstream/selectors.txt` and verified via `tools/check-selectors`.
+   - Clean high-contrast reversion under `prefers-contrast: more` (transparency restores upstream's 1px HC outline).
+   - Zero raw hex; dark mode and accent tracking automatic.

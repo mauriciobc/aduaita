@@ -10,14 +10,13 @@
 // selector used must be registered in upstream/selectors.txt, and every
 // upstream variable derived from in upstream/variables.txt.
 @import "surfaces/window";
+@import "surfaces/sidebar";
 @import "surfaces/headerbar";
 @import "surfaces/entry";
 @import "surfaces/button";
 @import "surfaces/switch";
 @import "surfaces/toolbar";
 @import "surfaces/boxed-list";
-@import "surfaces/button";
-@import "surfaces/entry";
 @import "surfaces/popover";
 @import "surfaces/controls";
 

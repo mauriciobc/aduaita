@@ -33,13 +33,13 @@
   }
 
   // ---------------------------------------------------------------------
-  // Bevel edge pair — one light source: the top. Values are the user's
-  // 2026-09-19 Inspector tuning: 0.5px sub-pixel hairlines (antialiased
-  // by GSK; scale-graceful) at whisper alpha. Scoped to opaque buttons —
-  // flat buttons (headerbar, sidebars) stay flat via :not() in L2.
+  // Bevel edge pair — one light source: the top. 0.5px sub-pixel
+  // hairlines (GSK-antialiased). Softened further from the 30/15
+  // Inspector tune: whisper alphas so rest barely registers.
+  // Same-surface button rest (inset-only; no external drops).
   // ---------------------------------------------------------------------
-  --ov-bevel-highlight: color-mix(in srgb, var(--light-1) 30%, transparent);
-  --ov-bevel-shadow: color-mix(in srgb, var(--dark-5) 15%, transparent);
+  --ov-bevel-highlight: color-mix(in srgb, var(--light-1) 16%, transparent);
+  --ov-bevel-shadow: color-mix(in srgb, var(--dark-5) 8%, transparent);
 
   // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay

@@ -20,29 +20,83 @@
 # upgrades cannot move them.
 .card
 .linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
+.navigation-sidebar > child
+.navigation-sidebar > flowboxchild
+.navigation-sidebar > row
+.navigation-sidebar > separator
+.navigation-sidebar child.activatable.has-open-popup
+.navigation-sidebar child.activatable:active
+.navigation-sidebar child.activatable:hover
+.navigation-sidebar child.activatable:selected.has-open-popup
+.navigation-sidebar child.activatable:selected:active
+.navigation-sidebar child.activatable:selected:hover
+.navigation-sidebar child:selected
+.navigation-sidebar flowboxchild.has-open-popup
+.navigation-sidebar flowboxchild:active
+.navigation-sidebar flowboxchild:hover
+.navigation-sidebar flowboxchild:selected
+.navigation-sidebar flowboxchild:selected.has-open-popup
+.navigation-sidebar flowboxchild:selected:active
+.navigation-sidebar flowboxchild:selected:hover
+.navigation-sidebar row.activatable.has-open-popup
+.navigation-sidebar row.activatable:active
+.navigation-sidebar row.activatable:hover
+.navigation-sidebar row.activatable:selected.has-open-popup
+.navigation-sidebar row.activatable:selected:active
+.navigation-sidebar row.activatable:selected:hover
+.navigation-sidebar row:selected
 .sidebar-pane
 .toolbar
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
 actionbar > revealer > box
+button.destructive-action
 button.destructive-action:active
 button.destructive-action:hover
 button.keyboard-activating
+button.sidebar-button
+button.sidebar-button:active
+button.sidebar-button:hover
+button.suggested-action
 button.suggested-action:active
 button.suggested-action:hover
 button:active
 button:checked
+button:disabled
 button:hover
+check
+check:checked:active
+check:not(:checked):not(:indeterminate):active
+check:not(:checked):not(:indeterminate):hover
 entry
 entry:focus-within
 headerbar
+levelbar > trough > block.empty
 list.boxed-list > row:not(:selected).activatable:active
 list.boxed-list > row:not(:selected).activatable:hover
 list.content > row:not(:selected).activatable:hover
+placessidebar .navigation-sidebar > row
 popover > contents
+popover.menu modelbutton
+popover.menu modelbutton:active
+popover.menu modelbutton:hover
+progressbar > trough
+radio
+radio:checked:active
+radio:not(:checked):not(:indeterminate):active
+radio:not(:checked):not(:indeterminate):hover
+scale > trough
+scale > trough > slider
+scale:active > trough > slider
+scale:disabled > trough > slider
+scale:hover > trough > slider
 scrollbar > range > trough
 searchbar > revealer > box
+sidebar .navigation-sidebar > row
 switch
 switch > slider
 switch:active
 switch:checked
 switch:hover
+toast
+toolbarview > .top-bar headerbar
+toolbarview > .top-bar.raised

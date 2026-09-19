@@ -1,14 +1,16 @@
-// L2 — buttons. The full state machine, all values user-locked live:
-//   rest    — stock Adwaita, nothing (struck resting styling)
-//   hover   — ov-glow(): layered soft rim in the theme accent
-//   pressed — ov-well(): the amplified inset well + 0.96 brightness
+// L2 — buttons. Same-surface material: buttons feel part of the
+// background (no external drop shadows — those break the language).
+//   rest    — ov-bevel(): 0.5px top highlight + bottom shade hairlines
+//   hover   — ov-glow(): layered soft rim in the theme accent (bevel stays)
+//   pressed — ov-well(): amplified inset well + 0.96 brightness
 //   held    — ov-well-held(): light inset on :checked
-// Transitions: 90ms ease-out on base (press AND release animate).
+// Transitions: house motion (280ms hover entry / 200ms exit / 120ms press).
 //
 // Scope ("not all buttons"): .flat and .osd stay stock.
 // Selectors registered in upstream/selectors.txt (exact upstream atoms).
 
 button:not(.flat):not(.osd) {
+  box-shadow: ov-bevel();
   transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               background-image 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -17,13 +19,17 @@ button:not(.flat):not(.osd) {
 
 button:not(.flat):not(.osd):hover:not(:active):not(:checked):not(:disabled) {
   background-image: ov-glow();
+  transition: background-image 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 button:not(.flat):not(.osd):active,
-button:not(.flat):not(.osd):keyboard-activating,
+button:not(.flat):not(.osd).keyboard-activating,
 menubutton:active > button:not(.flat):not(.osd) {
   box-shadow: ov-well();
   filter: brightness(0.96);
+  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 button:not(.flat):not(.osd):checked {
@@ -35,12 +41,19 @@ button.toggle:checked:not(.flat):not(.osd),
   box-shadow: ov-well-held();
 }
 
-// High contrast: glow, well, held — all revert flat.
+button:not(.flat):not(.osd):disabled {
+  box-shadow: none;
+  background-image: none;
+  filter: none;
+}
+
+// High contrast: bevel, glow, well, held — all revert flat.
 button:not(.flat):not(.osd),
 button:not(.flat):not(.osd):hover,
 button:not(.flat):not(.osd):active,
-button:not(.flat):not(.osd):keyboard-activating,
+button:not(.flat):not(.osd).keyboard-activating,
 button:not(.flat):not(.osd):checked,
+button:not(.flat):not(.osd):disabled,
 button.toggle:checked:not(.flat):not(.osd),
 .toggle:checked button:not(.flat):not(.osd) {
   @media (prefers-contrast: more) {
@@ -51,24 +64,99 @@ button.toggle:checked:not(.flat):not(.osd),
 }
 
 // ---------------------------------------------------------------------
-// Variant dials (U5): colored variants carry their own depth signal in
-// their FILL — so their material dials down. Suggested/destructive are
-// loud; a deep well on press would read as aggressive. They get a
-// shallower well and no hover glow (their fill is the affordance).
-// Opaque keeps the standard well (neutral fill needs it).
+// Accent luminous glass — COMPLETE restyle for colored CTAs.
+// Glass REQUIRES a translucent fill. Upstream's --accent-bg-color is
+// opaque; stacking washes over it can never look like glass.
+// DELIVERY: background: shorthand (gradient + translucent fill).
+//   rest    — accent@~55% + glass wash + soft 30% alpha highlight
+//   hover   — denser tint + brighter glass + accent bloom
+//   pressed — denser scoop + compressed well
+//   held    — light recessed well
+// HC: solid accent (accessibility). Destructive remaps --accent-*.
 // ---------------------------------------------------------------------
 button.suggested-action:not(.flat):not(.osd),
 button.destructive-action:not(.flat):not(.osd) {
+  color: var(--accent-fg-color);
+  border-color: transparent;
+  // Translucent accent fill — the surface behind shows through.
+  background:
+    linear-gradient(to bottom,
+      color-mix(in srgb, white 28%, transparent),
+      color-mix(in srgb, white 6%, transparent) 42%,
+      color-mix(in srgb, black 10%, transparent)),
+    color-mix(in srgb, var(--accent-bg-color) 55%, transparent);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 1px 1.5px RGB(255 255 255 / 30%),
+              inset 0 -1px 1.5px RGB(0 0 0 / 10%);
+  transition: border-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
   &:hover:not(:active):not(:checked):not(:disabled) {
-    background-image: none;
+    border-color: transparent;
+    background:
+      linear-gradient(to bottom,
+        color-mix(in srgb, white 34%, transparent),
+        color-mix(in srgb, white 8%, transparent) 40%,
+        color-mix(in srgb, black 8%, transparent)),
+      color-mix(in srgb, var(--accent-bg-color) 68%, transparent);
+    background-repeat: no-repeat;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-color) 28%, transparent),
+                0 4px 14px -2px color-mix(in srgb, var(--accent-bg-color) 45%, transparent),
+                0 12px 28px -6px color-mix(in srgb, var(--accent-bg-color) 22%, transparent),
+                inset 0 1px 1.5px RGB(255 255 255 / 40%),
+                inset 0 -1px 1.5px RGB(0 0 0 / 8%);
+    transition: border-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                background 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
+
   &:active,
-  &:keyboard-activating {
-    box-shadow: inset 0 2px 4px color-mix(in srgb, black 18%, transparent),
-                inset 0 -1px 1px color-mix(in srgb, white 22%, transparent);
+  &.keyboard-activating {
+    border-color: transparent;
+    background:
+      linear-gradient(to bottom,
+        color-mix(in srgb, black 16%, transparent),
+        color-mix(in srgb, black 4%, transparent)),
+      color-mix(in srgb, var(--accent-bg-color) 72%, transparent);
+    background-repeat: no-repeat;
+    box-shadow: 0 2px 10px -2px color-mix(in srgb, var(--accent-bg-color) 40%, transparent),
+                inset 0 2.5px 5px RGB(0 0 0 / 22%),
+                inset 0 -1px 1px RGB(255 255 255 / 20%);
+    filter: brightness(0.97);
+    transition: border-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                background 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
+
   &:checked {
-    box-shadow: inset 0 1px 3px color-mix(in srgb, black 10%, transparent),
-                inset 0 -1px 0 color-mix(in srgb, white 12%, transparent);
+    border-color: transparent;
+    background:
+      linear-gradient(to bottom,
+        color-mix(in srgb, black 10%, transparent),
+        color-mix(in srgb, black 3%, transparent)),
+      color-mix(in srgb, var(--accent-bg-color) 62%, transparent);
+    background-repeat: no-repeat;
+    box-shadow: inset 0 1.5px 3px RGB(0 0 0 / 16%),
+                inset 0 -1px 0 RGB(255 255 255 / 18%);
+  }
+
+  &:disabled {
+    border-color: transparent;
+    // Keep translucent so "Instalada" still reads as glass, just quieter.
+    background: color-mix(in srgb, var(--accent-bg-color) 35%, transparent);
+    color: color-mix(in srgb, var(--accent-fg-color) 70%, transparent);
+    box-shadow: none;
+    filter: none;
+  }
+
+  @media (prefers-contrast: more) {
+    border-color: transparent;
+    background: var(--accent-bg-color); // solid for accessibility
+    color: var(--accent-fg-color);
+    box-shadow: none;
+    filter: none;
   }
 }

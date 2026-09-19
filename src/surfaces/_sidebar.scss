@@ -1,0 +1,135 @@
+// L2 — sidebar and navigation sidebar.
+// Upstream source: widgets/_split-view.scss, widgets/_navigation-sidebar.scss
+//
+// Surfaces:
+//   .sidebar-pane        — the container pane in AdwNavigationSplitView / AdwOverlaySplitView.
+//                          Maintains translucency through --ov-surface-sidebar.
+//   .navigation-sidebar  — the navigation list widget (Nautilus, Settings, etc.).
+//
+// Material decisions:
+//   * Items are content (FLAT surfaces): no resting shadows or bevels (following
+//     the M4 decision on lists; avoids rendering jank during scrolling).
+//   * Micro-interactions (hover entry & exit):
+//     - Entry (mouse enter): gentle 280ms approach on the house curve
+//       cubic-bezier(0.25, 0.46, 0.45, 0.94) declared on :hover.
+//     - Exit (mouse leave): clean 200ms spring-back declared on the base item,
+//       ensuring no sluggish lingering when skimming across items.
+//     - Active (press): crisp 120ms mechanical tactile acknowledgment.
+//     - Soft flat color washes via background-color (jank-free in GSK, trivial lerp).
+//     - Hover wash: currentColor 6% (gentle and calm).
+//     - Active / press: currentColor 10% (crisp mechanical acknowledgment).
+//     - Selected: currentColor 9% (calm, clear resting presence).
+//     - Selected + hover: currentColor 13% (280ms entry, 200ms exit).
+//     - Selected + active: currentColor 16% (120ms).
+//     - has-open-popup: pins the hover wash when context menus are open.
+//   * button.sidebar-button: 280ms entry / 200ms exit / 120ms active washes on inline actions (eject, bookmark).
+//   * Separators: hairline division with color-mix(in srgb, currentColor 8%, transparent).
+//   * High contrast: clean reversion to transparent under prefers-contrast: more,
+//     letting upstream's 1px HC outline take over.
+
+.sidebar-pane {
+  background-color: var(--ov-surface-sidebar);
+}
+
+// Exit microinteraction: applied on mouse leave when returning to unhovered state
+.navigation-sidebar > row,
+.navigation-sidebar > child,
+.navigation-sidebar > flowboxchild,
+sidebar .navigation-sidebar > row,
+placessidebar .navigation-sidebar > row {
+  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Entry microinteraction: applied on mouse enter
+.navigation-sidebar row.activatable:hover,
+.navigation-sidebar child.activatable:hover,
+.navigation-sidebar flowboxchild:hover,
+.navigation-sidebar row.activatable.has-open-popup,
+.navigation-sidebar child.activatable.has-open-popup,
+.navigation-sidebar flowboxchild.has-open-popup {
+  background-color: color-mix(in srgb, currentColor 6%, transparent);
+  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Active press microinteraction: crisp 120ms acknowledgment
+.navigation-sidebar row.activatable:active,
+.navigation-sidebar child.activatable:active,
+.navigation-sidebar flowboxchild:active {
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Selected resting state & exit microinteraction when leaving hover on selected item
+.navigation-sidebar row:selected,
+.navigation-sidebar child:selected,
+.navigation-sidebar flowboxchild:selected {
+  background-color: color-mix(in srgb, currentColor 9%, transparent);
+  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Selected entry microinteraction: applied on mouse enter when item is selected
+.navigation-sidebar row.activatable:selected:hover,
+.navigation-sidebar child.activatable:selected:hover,
+.navigation-sidebar flowboxchild:selected:hover,
+.navigation-sidebar row.activatable:selected.has-open-popup,
+.navigation-sidebar child.activatable:selected.has-open-popup,
+.navigation-sidebar flowboxchild:selected.has-open-popup {
+  background-color: color-mix(in srgb, currentColor 13%, transparent);
+  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Selected active press microinteraction
+.navigation-sidebar row.activatable:selected:active,
+.navigation-sidebar child.activatable:selected:active,
+.navigation-sidebar flowboxchild:selected:active {
+  background-color: color-mix(in srgb, currentColor 16%, transparent);
+  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+// Inline action buttons (unmount, eject, bookmark)
+button.sidebar-button {
+  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+button.sidebar-button:hover {
+  background-color: color-mix(in srgb, currentColor 9%, transparent);
+  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+button.sidebar-button:active {
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
+  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.navigation-sidebar > separator {
+  background-color: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+@media (prefers-contrast: more) {
+  .navigation-sidebar row.activatable:hover,
+  .navigation-sidebar child.activatable:hover,
+  .navigation-sidebar flowboxchild:hover,
+  .navigation-sidebar row.activatable:active,
+  .navigation-sidebar child.activatable:active,
+  .navigation-sidebar flowboxchild:active,
+  .navigation-sidebar row.activatable.has-open-popup,
+  .navigation-sidebar child.activatable.has-open-popup,
+  .navigation-sidebar flowboxchild.has-open-popup,
+  .navigation-sidebar row.activatable:selected:hover,
+  .navigation-sidebar child.activatable:selected:hover,
+  .navigation-sidebar flowboxchild:selected:hover,
+  .navigation-sidebar row.activatable:selected:active,
+  .navigation-sidebar child.activatable:selected:active,
+  .navigation-sidebar flowboxchild:selected:active,
+  .navigation-sidebar row.activatable:selected.has-open-popup,
+  .navigation-sidebar child.activatable:selected.has-open-popup,
+  .navigation-sidebar flowboxchild:selected.has-open-popup {
+    background-color: transparent;
+  }
+  button.sidebar-button:hover,
+  button.sidebar-button:active {
+    background-color: transparent;
+  }
+}

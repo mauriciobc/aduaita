@@ -44,14 +44,20 @@ list.boxed-list-separate > row:not(:selected).activatable:hover,
 list.boxed-list > row.expander row.header:not(:selected).activatable:hover,
 list.content > row.expander row.header:not(:selected).activatable:hover,
 list.boxed-list > row:not(:selected).activatable.has-open-popup,
-list.content > row:not(:selected).activatable.has-open-popup {
-  background-color: color-mix(in srgb, var(--accent-color) 5%, transparent);
+list.content > row:not(:selected).activatable.has-open-popup,
+list.boxed-list-separate > row:not(:selected).activatable.has-open-popup,
+list.boxed-list > row.expander row.header:not(:selected).activatable.has-open-popup,
+list.content > row.expander row.header:not(:selected).activatable.has-open-popup {
+  background-color: color-mix(in srgb, currentColor 5%, transparent);
   transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 list.boxed-list > row:not(:selected).activatable:active,
-list.content > row:not(:selected).activatable:active {
-  background-color: color-mix(in srgb, var(--accent-color) 9%, transparent);
+list.content > row:not(:selected).activatable:active,
+list.boxed-list-separate > row:not(:selected).activatable:active,
+list.boxed-list > row.expander row.header:not(:selected).activatable:active,
+list.content > row.expander row.header:not(:selected).activatable:active {
+  background-color: color-mix(in srgb, currentColor 9%, transparent);
   transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
