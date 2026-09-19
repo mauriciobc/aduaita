@@ -1,17 +1,49 @@
-/* ==== 1d · E3 addendum — resting bevel on idle buttons ================= */
-/* Soft edge treatment for the UNPRESSED state. Paste and judge, then
-   tune the alphas to taste. Remember the resting bevel is a STANDING
-   effect — it should whisper, not speak. If you notice it before the
-   pressed state, it's too strong. */
+/* ==== 1e · NEUMORPHISM — soft extruded buttons ========================= */
+/* Same-surface material: element appears extruded from the background.
+   Requires: element bg ≈ parent bg (Adwaita's window_bg at 84% alpha is
+   close enough — verify visually), light from top-left.
 
-/* R1 — shipped values: hairline highlight top, soft shade bottom */
+   Paste ONE variant, judge, clear, next. Try pressed (V2) on top after.
+
+   Shared: background-color matches the window surface so edges melt.   */
+
 button {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent),
-              inset 0 -1px 0 color-mix(in srgb, black 30%, transparent);
+  background-color: color-mix(in srgb, var(--window-bg-color) 92%, transparent);
+  border: none;
 }
 
-/* R2 — half strength: closer to a whisper */
+/* N1 — classic soft extrude: dual-source inset + outer drop */
 button {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
-              inset 0 -1px 0 color-mix(in srgb, black 15%, transparent);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, white 65%, transparent),
+    inset 0 -1px 2px color-mix(in srgb, black 12%, transparent),
+    2px 2px 5px color-mix(in srgb, black 8%, transparent),
+    -2px -2px 5px color-mix(in srgb, white 55%, transparent);
+}
+
+/* N2 — minimal: single inner top highlight + faint outer, no dual */
+button {
+  border-radius: 9px;
+  box-shadow:
+    inset 0 0.5px 1px color-mix(in srgb, white 45%, transparent),
+    inset 0 -0.5px 1px color-mix(in srgb, black 10%, transparent),
+    0 1px 3px color-mix(in srgb, black 7%, transparent);
+}
+
+/* N3 — "raised card": outer-only soft stacked (flatter, calmer) */
+button {
+  border-radius: 9px;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, black 6%, transparent),
+    0 2px 6px color-mix(in srgb, black 4%, transparent),
+    inset 0 0.5px 0 color-mix(in srgb, white 35%, transparent);
+}
+
+/* N4 —Pressed (pairs with N1): pressed = inverted well */
+button:active {
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, black 10%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, white 30%, transparent);
+  filter: brightness(0.96);
 }
