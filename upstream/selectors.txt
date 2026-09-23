@@ -83,6 +83,7 @@ button:active
 button:checked
 button:disabled
 button:drop(active)
+button:focus:focus-visible
 button:hover
 calendar > grid > label
 calendar > grid > label.day-number:checked

@@ -167,6 +167,10 @@ verdict is recorded. Stop the project if it is a no-go.*
   destructive / osd / opaque; states hover, `:active` (inverted bevel per
   E3), `:checked`, `:disabled`, `:focus-visible`. Ladders on default
   variants only — flat stays flat.
+  **23 Sep 2026:** the 23 Sep review (BACKLOG "Button review") closed the
+  material questions for default / suggested / destructive and the focus
+  ring; what it did not reach is `osd` / `opaque` / `:disabled` on a
+  plain-GTK sheet (B5) and a live checked CTA, so this stays open.
 - [ ] **U2** (P1) Entry + search + password-reveal.
 - [ ] **U3** (P1) Popover + menu — overlay rung of the ladder.
 - [x] **U4** (P2) Splitbutton / dropdown / combobox. (splitbutton inherits
@@ -198,6 +202,10 @@ verdict is recorded. Stop the project if it is a no-go.*
 - [ ] **A2** (P0) Focus visibility audit on bevelled surfaces.
   *Accept:* focus rings clearly visible over bevel + texture in both
   schemes.
+  **23 Sep 2026:** the ring is now 1.5px by user decision (BACKLOG B2,
+  decisions.md "Button review"), and it renders over the bevel as measured
+  there — identical geometry to stock apart from the width. The live eye
+  over bevel + texture is still owed, so this stays open.
 
 ## M7 — Daily driving
 
@@ -265,6 +273,55 @@ and rejected candidates: decisions.md, "Widget-family sweep". Tracking:
   is data. Numbers, rejected variants and the channel HC-ring defect found
   in passing: decisions.md, "Lit channel fills". Values are one edit wide in
   `_primitives.scss` if the dome wants to be stronger or softer.
+
+---
+
+## Button review — 23 Sep 2026
+
+*Verdicts, measurements and the rejected looks: decisions.md, "Button review
+— glass retired, ring thinned". Evidence: gallery `buttons` family, five
+states × light/dark/HC, label pairs measured, plus a 2× crop pass.*
+
+- [x] **B1** (P0) The accent glass (translucent fill + hover/press outer
+  bloom) is retired: `.suggested-action` wears the lit fill (opaque accent
+  under `ov-lit-curve()`, mid stop at zero alpha), `.destructive-action`
+  falls through to the generic material, which also re-hues its hover glow
+  to the destructive hue for free.
+  *Accept:* no CTA label below upstream's own pair, no external drop shadow
+  on a button, one lighting language across the family. **Done** — suggested
+  3.95 / 3.42 / 5.58 / 5.18 against stock 3.77 / 3.27 / 5.46 / 4.99; the gap
+  pixel between two prelight CTAs no longer moves.
+- [x] **B2** (P0) Focus ring 2px → 1.5px (user decision), one rule for every
+  button family, HC restores 2px. Token: `--ov-focus-ring-width`.
+  *Accept:* one weight across flat and opaque buttons; ring still anchored
+  to the button edge. **Done** — +1 contract atom.
+- [ ] **B3** (P1) Destructive hover/press/held sit 0.2-0.7 below stock
+  (4.35 / 3.46 / 2.93 / 2.78 vs 4.60 / 4.15 / 3.06 / 3.06): the house glow
+  and well are added to a container whose own upstream pairs are already
+  3.06. Lever: exempt `.destructive-action` from the hover glow in
+  `_button.scss` (one selector) if the live eye prefers upstream's wash
+  alone.
+- [ ] **B4** (P1) Hover entry is 280ms on the highest-frequency control
+  (`--ov-motion-enter`), 2× the ≤150ms rule for a high-frequency
+  interaction. User-approved in the 19 Sep probe and re-kept in the 23 Sep
+  live pass, so it was left alone: a global motion decision, not a button
+  one.
+- [ ] **B5** (P1) The `:disabled` material resets `background-image: none`
+  outside HC, which erases the *gradient* face a plain-GTK app's disabled
+  button has — the same trap the 19 Sep HC audit found at the resting
+  selector. libadwaita buttons are unaffected (flat `background-color`).
+  *Accept:* a plain-GTK render (X5 card) decides whether the reset drops to
+  `box-shadow` only.
+- [ ] **B6** (P2) The bevel pair is asymmetric in the light scheme: the top
+  hairline moves the fill +1 level, the bottom −13 (measured), so a resting
+  button reads as carrying a bottom rule rather than a bevelled edge.
+  *Accept:* re-balance `--ov-bevel-highlight` / `--ov-bevel-shadow`, or
+  accept as the same-surface whisper — needs the live eye first.
+- [ ] **B7** (P2) A checked toggle may have no press feedback distinct from
+  held: the `:active` rule sits *before* `:checked` in `_button.scss`, so
+  pressing a checked toggle resolves to the held well and only the `filter`
+  dim changes. Not reproduced — no gallery family member carries both
+  flags; needs a targeted render before it is trusted.
 
 ---
 

@@ -21,8 +21,15 @@
   //   depth:   --ov-depth-color: transparent (shared stop colour; all
   //            ladder stops go transparent)
   //   texture: --ov-texture-image: none     (valid whole-property layer)
+  //   focus:   --ov-focus-ring-width: 2px   (upstream's ring weight)
   // ---------------------------------------------------------------------
   --ov-bevel-width: 0.5px;
+  // Focus ring weight — the one button-wide retune outside the material.
+  // Upstream's 2px ring (`button:focus:focus-visible`, gtk.css L240) reads
+  // heavy next to the 0.5px bevel the buttons wear; 1.5px keeps it a ring.
+  // `prefers-contrast: more` restores 2px in _button.scss — the ring is the
+  // only focus cue in that mode. A length component, so var() substitutes.
+  --ov-focus-ring-width: 1.5px;
   --ov-depth-color: color-mix(in srgb, var(--dark-5) 100%, transparent);
 
   // Texture: feTurbulence grain tile (E4: renders). Opacity is baked into

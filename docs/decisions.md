@@ -1109,3 +1109,125 @@ the accent is scheme-independent, so the dome is too), HC flat at
 Rejected on measurement: the bevel-only variant (no gradient, hairlines
 only) — crisp but it loses the dome — and a 42%-top gradient variant, which
 dipped *below* the base colour through the middle.
+
+## Button review — glass retired, ring thinned — 23 Sep 2026
+
+Trigger (user): *"I'm not sold on the buttons… use the appropriate design
+skills to review their implementation"*, then *"the 'glass' effect on the
+buttons is not really very polished"*, and *"use thinner borders on
+outlined buttons"* — clarified to mean the keyboard focus ring.
+
+**Method.** Design-skill review (better-interface, routed through better-ui /
+better-colors / better-accessibility) run against the *rendered* surface, not
+the source: gallery `buttons` family, stock vs overlay, five states ×
+light/dark/HC, the CTA block at 2×, plus a numeric pass over each label pair,
+the focus-ring pixel profile, and the pixels *between* two adjacent CTAs.
+
+### 1. The accent glass is retired (was "Accent luminous glass", 19 Sep)
+
+Label foreground against the fill it actually renders on. 4.5:1 is the
+requirement for a 13px bold label; 3:1 is the large-text floor.
+
+| state | suggested stock | suggested glass | destructive stock | destructive glass |
+| --- | --- | --- | --- | --- |
+| rest  | 3.77 | **2.00** | 4.60 | **2.58** |
+| hover | 3.27 | 2.27     | 4.15 | 3.12     |
+| press | 5.46 | 3.12     | 3.06 | 4.20     |
+
+One root cause — one lighting recipe painted over two different upstream
+materials — produced three defects:
+
+- **The 55% translucent fill is a function of the backdrop.** On the light
+  scheme's near-white window it leaves a pale ghost (2.00:1, *below* even the
+  3:1 floor); the same 55% over the dark window measures 5.44:1. A material
+  whose label contrast swings with whatever sits behind it cannot be called
+  polished.
+- **`.destructive-action` is not a filled variant upstream.** It remaps
+  `--accent-*` and paints a **15% `currentColor` container** with its own hue
+  as the label, plus 20/35/45% washes on hover/active/checked (gtk.css
+  L318-328). The glass's blanket `color: --accent-fg-color` turned that label
+  white on a saturated red slab: an emphasis inversion (the destructive CTA
+  out-shouting the accent one) *and* a 2.58:1 pair.
+- **The hover/press outer bloom** (`0 4px 14px -2px` / `0 12px 28px -6px`)
+  breaks the same-surface law stated in `_primitives.scss` ("buttons never
+  do"), and painted into the 10px gap between two CTAs: one pixel between
+  them, both prelight, moved 249,249,250 → 200,211,236 in light and
+  33,33,37 → 44,57,85 in dark. It had never been decided — no entry in this
+  file, only incidental mentions.
+
+**Decision.** `.suggested-action` wears the house lit fill instead:
+upstream's own **opaque** `--accent-bg-color` under `ov-lit-curve()` at button
+scale, with the mid stop at **zero alpha** so the band the label sits in
+keeps the base colour (the channel curve's white-8% mid cost 0.6 of contrast,
+3.77 → 3.14). Upstream's own hover lift (`image(currentColor 10%)`), press
+darkening (`image(RGB(0 0 6/20%))`) and held darkening
+(`image(RGB(0 0 6/15%))`) are kept as the top layer, because our resting
+declaration replaces their `background-image`; press and held then sink into
+the same `ov-well()` / `ov-well-held()` every other button wears.
+
+`.destructive-action` gets **no CTA material at all** and falls through to the
+generic button material. That restores upstream's container, and re-hues the
+house hover glow for free — upstream remaps `--accent-color` to the
+destructive hue on that node (L318) and `ov-glow()` reads exactly that
+variable.
+
+| light | stock | glass | now |
+| --- | --- | --- | --- |
+| suggested rest / hover / press / held | 3.77 / 3.27 / 5.46 / 4.99 | 2.00 / 2.27 / 3.12 / 3.12 | 3.95 / 3.42 / 5.58 / 5.18 |
+| destructive rest / hover / press / held | 4.60 / 4.15 / 3.06 / 3.06 | 2.58 / 3.12 / 4.20 / 4.20 | 4.35 / 3.46 / 2.93 / 2.78 |
+
+Suggested is now at or *above* upstream on every state. Destructive's
+hover/press/held sit 0.2-0.7 below stock because the house glow and well are
+*added* to a container whose own upstream pairs are already 3.06; that trade
+— the house hover language on every button versus 0.7 of label contrast on
+one state of one variant — is recorded as an open item (BACKLOG B3), not
+hidden. HC: `ov-lit-fill()`'s own revert hands the CTA back to upstream's flat
+fill (suggested rest = exactly stock, 3.77).
+
+### 2. Focus ring: 2px → 1.5px
+
+User decision. Upstream's ring is 2px of `accent 50%` (gtk.css L240 — the
+button focus rule whose selector list ends in the bare `button` atom — plus
+per-family re-sets in the bar / CTA / flat rules). **One** rule at priority
+800 (`src/surfaces/_button.scss`) sets
+`outline-width: var(--ov-focus-ring-width)` for every button family at once,
+flat families included, so a bar icon button and its opaque sibling cannot
+drift apart. New kill-switch token `--ov-focus-ring-width` (`1.5px`; `2px`
+restores upstream). Colour, per-family offset and upstream's own outline
+transition are untouched, so the ring still fades in at `--ov-motion-ring`.
+
+Rendered profile at 1×: 2px covers two device rows solid (117,163,210 twice,
+light scheme); 1.5px covers one solid row plus one half-intensity outer row
+(170,193,218 then 106,156,206) — the ring keeps its edge anchoring and loses a
+quarter of its ink. HC restores 2px (verified: every width variant renders
+92,141,192 + 106,156,206 under `CONTRAST=more`).
+
+Known trade, stated rather than buried: the focus-appearance floor is a 2px
+perimeter, and stock's 2px at 50% alpha is already only ~1px of solid ink;
+1.5px keeps ~0.75px-equivalent. The same one token is the lever for a crisper
+hairline at fractional scale (`1px`) and for the floor (`2px`).
+
+**Contract.** +1 atom (`button:focus:focus-visible`), 169 → 170; guard passes
+against the installed sheet and the pinned archive.
+
+### Verification
+
+- **Blast radius.** Gallery, old sheet vs new sheet, eight families:
+  `buttons` changed (30271 px — the intended restyle), `controls`,
+  `notebook`, `lists`, `popover`, `adw`, `headerbar`, `textview`
+  **pixel-identical** (the `ov-lit-curve()` refactor is neutral).
+- **Gallery `buttons`.** stock vs overlay × rest / hover / press / held /
+  focus-visible × light / dark × normal / HC; every label pair measured as
+  tabulated above; the gap pixel between the two CTAs is identical at rest
+  and at prelight in both schemes (bloom gone).
+- `tools/check-selectors`: OK against installed `1:1.9.4-1` and against the
+  pinned archive.
+- **Not verified:** a checked *or* destructive CTA in a live app (no gallery
+  member wears both flags), and the ring at 1.25×/1.5× scale (X5 card).
+
+### Review findings not acted on
+
+Recorded in BACKLOG under "Button review" (B3-B7): destructive hover/press
+contrast cost, the 280ms hover entry on a high-frequency control, the
+`:disabled` `background-image` reset on plain-GTK buttons, the asymmetric
+bevel pair in the light scheme, and checked-toggle press feedback.

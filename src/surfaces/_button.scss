@@ -23,6 +23,33 @@
 // keeps the material off them at priority 800.
 // Selectors registered in upstream/selectors.txt (exact upstream atoms).
 
+// ---------------------------------------------------------------------
+// Focus ring weight — every button, one weight (user decision, 23 Sep
+// 2026: the 2px ring read heavy beside the 0.5px bevel).
+//
+// Upstream sets `outline-width: 2px` at PRIORITY_THEME in the button focus
+// rule whose selector list ends in the bare `button` atom (gtk.css L240),
+// and the bar/CTA/flat families re-set it in rules of their own. ONE
+// declaration at 800 retunes all of them at once — including the flat
+// families the material deliberately stays off, so a bar icon button and
+// its opaque sibling can never end up with rings of different weight.
+//
+// Only the width is declared. The colour, the per-family offset (0 /
+// -2px / 1px) and upstream's own outline transition stay upstream's, so
+// the ring still fades in at --ov-motion-ring instead of snapping.
+//
+// HC restores 2px, on the same selector at the same priority (a narrower
+// rule would lose to the one it is meant to revert — the lesson from the
+// 19 Sep HC audit): in that mode the ring is the only focus cue, and it is
+// the one place upstream spends extra ink on it (accent 80%).
+// ---------------------------------------------------------------------
+button:focus:focus-visible {
+  outline-width: var(--ov-focus-ring-width);
+  @media (prefers-contrast: more) {
+    outline-width: 2px;
+  }
+}
+
 button:not(.flat):not(.osd):not(:drop(active)) {
   box-shadow: ov-bevel();
   // The resting declaration carries the LEAVE timing for every state
@@ -127,123 +154,93 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
 }
 
 // ---------------------------------------------------------------------
-// Accent luminous glass — COMPLETE restyle for colored CTAs.
-// Glass REQUIRES a translucent fill. Upstream's --accent-bg-color is
-// opaque; stacking washes over it can never look like glass.
-// DELIVERY: background: shorthand (gradient + translucent fill).
-//   rest    — accent@~55% + glass wash + soft 30% alpha highlight
-//   hover   — denser tint + brighter glass + accent bloom
-//   pressed — denser scoop + compressed well
-//   held    — light recessed well
-// HC: solid accent (accessibility). Destructive remaps --accent-*.
+// The suggested CTA — upstream's fill, the house lighting, the house
+// states. The 19 Sep "accent luminous glass" is retired (user verdict,
+// 23 Sep 2026: "the glass effect is not really very polished"). Measured
+// cost of the translucent fill in the light scheme, where the window
+// behind it is near white: the label fell to 2.00:1 against upstream's own
+// 3.77, and a translucent fill makes the pair a function of whatever sits
+// behind the button — the same 55% reads rich in the dark scheme (5.44:1)
+// and ghosted in the light one.
 //
-// The HC revert is repeated on EVERY state, through one mixin: a nested
-// `@media` block only covers the selector it sits on, so the single revert
-// at the end of this rule left the hover bloom, the press well and the
-// checked inset live under HC (found by the structural audit, 23 Sep).
+// What stays: the lighting (ov-lit-curve() at button scale, mid stop at
+// zero alpha so the label band keeps the base colour) and upstream's own
+// state layers. What goes: the translucency, the bespoke per-state
+// gradients, and the hover/press OUTER bloom (`0 4px 14px` / `0 12px 28px`
+// drop shadows): external shadows break the same-surface language
+// (_primitives.scss) and the hover one painted into the gap between two
+// CTAs (measured, both prelight: 249,249,250 -> 200,211,236).
+//
+// Deliberately NOT declared here:
+//   color            — upstream pairs it (--accent-fg-color on
+//                      --accent-bg-color); we do not second-guess it.
+//   background-color — upstream's base, left untouched.
+// Press and held are the house states every other button already wears
+// (ov-well / ov-well-held, with upstream's own press darkening as the top
+// layer) instead of a bespoke scoop. HC: ov-lit-fill emits its own revert,
+// which hands the button back to upstream's flat accent fill; the press
+// rule restates it because an `@media` block only covers the selector it
+// sits on.
+//
+// `.destructive-action` is deliberately NOT styled here — see the note
+// below the press rule.
 // ---------------------------------------------------------------------
-@mixin ov-accent-solid() {
-  border-color: transparent;
-  background: var(--accent-bg-color);
-  color: var(--accent-fg-color);
-  box-shadow: none;
-  filter: none;
+$ov-cta-mid: color-mix(in srgb, white 0%, transparent) 44%;
+
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)) {
+  // The lit fill: upstream's base colour under one lighting curve.
+  @include ov-lit-fill($curve: ov-lit-curve($ov-cta-mid));
 }
 
-button.suggested-action:not(.flat):not(.osd):not(:drop(active)),
-button.destructive-action:not(.flat):not(.osd):not(:drop(active)) {
-  color: var(--accent-fg-color);
-  border-color: transparent;
-  // Translucent accent fill — the surface behind shows through.
-  background:
-    linear-gradient(to bottom,
-      color-mix(in srgb, white 28%, transparent),
-      color-mix(in srgb, white 6%, transparent) 42%,
-      color-mix(in srgb, black 10%, transparent)),
-    color-mix(in srgb, var(--accent-bg-color) 55%, transparent);
-  background-repeat: no-repeat;
-  box-shadow: inset 0 1px 1.5px RGB(255 255 255 / 30%),
-              inset 0 -1px 1.5px RGB(0 0 0 / 10%);
-  @include ov-motion(border-color var(--ov-motion-exit),
-                     box-shadow var(--ov-motion-exit),
-                     filter var(--ov-motion-exit),
-                     background var(--ov-motion-exit));
+// Hover: upstream's own lift, restated as the top layer because the curve
+// above replaced the `background-image: image(currentColor 10%)` it uses
+// (gtk.css L308).
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
+  background-image: image(color-mix(in srgb, currentColor 10%, transparent)),
+                    ov-lit-curve($ov-cta-mid);
+  @include ov-motion(background-image var(--ov-motion-enter),
+                     box-shadow var(--ov-motion-exit));
+}
 
-  &:hover:not(:active):not(:checked):not(:disabled) {
-    border-color: transparent;
-    background:
-      linear-gradient(to bottom,
-        color-mix(in srgb, white 34%, transparent),
-        color-mix(in srgb, white 8%, transparent) 40%,
-        color-mix(in srgb, black 8%, transparent)),
-      color-mix(in srgb, var(--accent-bg-color) 68%, transparent);
-    background-repeat: no-repeat;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-color) 28%, transparent),
-                0 4px 14px -2px color-mix(in srgb, var(--accent-bg-color) 45%, transparent),
-                0 12px 28px -6px color-mix(in srgb, var(--accent-bg-color) 22%, transparent),
-                inset 0 1px 1.5px RGB(255 255 255 / 40%),
-                inset 0 -1px 1.5px RGB(0 0 0 / 8%);
-    @include ov-motion(border-color var(--ov-motion-enter),
-                       box-shadow var(--ov-motion-enter),
-                       background var(--ov-motion-enter));
-    @media (prefers-contrast: more) {
-      @include ov-accent-solid();
-    }
-  }
-
-  &:active,
-  &.keyboard-activating {
-    border-color: transparent;
-    background:
-      linear-gradient(to bottom,
-        color-mix(in srgb, black 16%, transparent),
-        color-mix(in srgb, black 4%, transparent)),
-      color-mix(in srgb, var(--accent-bg-color) 72%, transparent);
-    background-repeat: no-repeat;
-    box-shadow: 0 2px 10px -2px color-mix(in srgb, var(--accent-bg-color) 40%, transparent),
-                inset 0 2.5px 5px RGB(0 0 0 / 22%),
-                inset 0 -1px 1px RGB(255 255 255 / 20%);
-    filter: brightness(0.97);
-    @include ov-motion(border-color var(--ov-motion-press),
-                       box-shadow var(--ov-motion-press),
-                       filter var(--ov-motion-press),
-                       background var(--ov-motion-press));
-    @media (prefers-contrast: more) {
-      @include ov-accent-solid();
-    }
-  }
-
-  &:checked {
-    border-color: transparent;
-    background:
-      linear-gradient(to bottom,
-        color-mix(in srgb, black 10%, transparent),
-        color-mix(in srgb, black 3%, transparent)),
-      color-mix(in srgb, var(--accent-bg-color) 62%, transparent);
-    background-repeat: no-repeat;
-    box-shadow: inset 0 1.5px 3px RGB(0 0 0 / 16%),
-                inset 0 -1px 0 RGB(255 255 255 / 18%);
-    @media (prefers-contrast: more) {
-      @include ov-accent-solid();
-    }
-  }
-
-  &:disabled {
-    border-color: transparent;
-    // Keep translucent so "Instalada" still reads as glass, just quieter.
-    background: color-mix(in srgb, var(--accent-bg-color) 35%, transparent);
-    color: color-mix(in srgb, var(--accent-fg-color) 70%, transparent);
-    box-shadow: none;
-    filter: none;
-    @media (prefers-contrast: more) {
-      @include ov-accent-solid();
-    }
-  }
-
+// Press: the same well every other button sinks into, under upstream's own
+// press darkening (image(RGB(0 0 6/20%)), gtk.css L310).
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)):active,
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)).keyboard-activating {
+  background-image: image(RGB(0 0 6 / 20%)), ov-lit-curve($ov-cta-mid);
+  box-shadow: ov-well();
+  @include ov-motion(background-image var(--ov-motion-press),
+                     box-shadow var(--ov-motion-press));
   @media (prefers-contrast: more) {
-    @include ov-accent-solid();
+    background-image: none;
+    box-shadow: none;
   }
 }
+
+// Held (a checked toggle CTA) — the light well, as everywhere else, under
+// upstream's own held darkening (image(RGB(0 0 6/15%)), gtk.css L312),
+// which the rest curve would otherwise have replaced: without it a checked
+// CTA differs from rest only by the well (measured: fill unchanged and the
+// label pair slipping 4.99 -> 3.95 in the light scheme).
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)):checked {
+  background-image: image(RGB(0 0 6 / 15%)), ov-lit-curve($ov-cta-mid);
+  box-shadow: ov-well-held();
+  @media (prefers-contrast: more) {
+    background-image: none;
+    box-shadow: none;
+  }
+}
+
+// `.destructive-action` gets no CTA material of its own, on purpose.
+// Upstream does not treat the two as one material: `.suggested-action` is a
+// FILLED accent button (`background-color: --accent-bg-color`, L334), while
+// `.destructive-action` is a container — a 15% `currentColor` wash with its
+// own hue as the label, plus 20/35/45% washes on hover/active/checked
+// (L318-328). Painting one lighting recipe over both is what produced the
+// 2.58:1 label and the emphasis inversion (a saturated red slab louder than
+// the accent CTA it should defer to). Falling through to the generic button
+// material restores upstream's fill AND re-hues the house hover glow for
+// free: upstream remaps `--accent-color` to the destructive hue on this
+// node (L318), which is the variable ov-glow() reads.
 
 // ---------------------------------------------------------------------
 // Flat families — upstream paints these buttons flat WITHOUT the .flat
