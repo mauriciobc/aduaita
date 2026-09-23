@@ -1,24 +1,26 @@
-
 #
 #
 #
-#     compound selectors, so the compound atom is what the guard must watch.
-#     not necessarily the atoms the overlay itself writes. E.g. the overlay
-#     silently
-#     targets `.content-pane` directly, but upstream styles it only inside
-#   - an unregistered dependency is invisible to the guard and will break
-#   - register the ATOMS UPSTREAM USES for anything the overlay overrides —
-#   - update this file and the L2 rule in the same commit
-# GTK-core node names (window, dialog, …) do NOT belong here: they are not
-# Hand-written on purpose: adding a line here is a deliberate act of taking
-# Rules:
 # The selector contract. One selector atom per line, sorted.
-# diffs this file against the installed stylesheet on every libadwaita
-# in libadwaita's sheet, the guard would false-positive, and libadwaita
+# Hand-written on purpose: adding a line here is a deliberate act of taking
 # on a dependency on an (undocumented) libadwaita selector. tools/check-selectors
+# diffs this file against the installed stylesheet on every libadwaita
 # upgrade (see hooks/adwaita-overlay.hook) and reports anything missing.
+# GTK-core node names (window, dialog, …) do NOT belong here: they are not
+# in libadwaita's sheet, the guard would false-positive, and libadwaita
 # upgrades cannot move them.
+# Rules:
+#   - update this file and the L2 rule in the same commit
+#   - register the ATOMS UPSTREAM USES for anything the overlay overrides —
+#     not necessarily the atoms the overlay itself writes. E.g. the overlay
+#     targets `.content-pane` directly, but upstream styles it only inside
+#     compound selectors, so the compound atom is what the guard must watch.
+#   - an unregistered dependency is invisible to the guard and will break
+#     silently
 .card
+.card.activatable
+.card.activatable:active
+.card.activatable:hover
 .linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
 .navigation-sidebar > child
 .navigation-sidebar > flowboxchild
@@ -47,12 +49,30 @@
 .navigation-sidebar row:selected
 .sidebar-pane
 .toolbar
+.toolbar button.arrow-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+.toolbar button.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+.toolbar button.image-text-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+.toolbar menubutton.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+.toolbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+.toolbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > menubutton > button
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
+:not(window):drop(active)
 actionbar > revealer > box
+actionbar > revealer > box button.arrow-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+actionbar > revealer > box button.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+actionbar > revealer > box button.image-text-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+actionbar > revealer > box menubutton.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+actionbar > revealer > box splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+actionbar > revealer > box splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > menubutton > button
+actionbar > revealer > box:backdrop
+bottom-sheet > sheet
+bottom-sheet > sheet > stack > button
 button.destructive-action
 button.destructive-action:active
 button.destructive-action:hover
+button.emoji-section.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 button.keyboard-activating
+button.link
 button.sidebar-button
 button.sidebar-button:active
 button.sidebar-button:hover
@@ -62,41 +82,107 @@ button.suggested-action:hover
 button:active
 button:checked
 button:disabled
+button:drop(active)
 button:hover
+calendar > grid > label
+calendar > grid > label.day-number:checked
+calendar > header > button
 check
 check:checked:active
 check:not(:checked):not(:indeterminate):active
 check:not(:checked):not(:indeterminate):hover
+columnview > header > button
 entry
+entry:drop(active)
 entry:focus-within
+expander-widget > box > title
+filechooser #pathbarbox > stack > box > box > button
+filechooser #pathbarbox > stack > box > button
+filechooser #pathbarbox > stack > box > menubutton > button
+floating-sheet > sheet
+flowbox > flowboxchild
+flowbox > flowboxchild:active
+flowbox > flowboxchild:hover
+gridview > child.activatable:active
+gridview > child.activatable:hover
 headerbar
+headerbar button.arrow-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+headerbar button.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+headerbar button.image-text-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+headerbar menubutton.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+headerbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+headerbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > menubutton > button
+headerbar:backdrop
+infobar .close
 levelbar > trough > block.empty
+levelbar > trough > block:not(.empty)
 list.boxed-list > row:not(:selected).activatable:active
 list.boxed-list > row:not(:selected).activatable:hover
 list.content > row:not(:selected).activatable:hover
+menubutton.flat > button
+notebook > header > tabs > arrow
+notebook > header > tabs > tab
+notebook > header > tabs > tab:active
+notebook > header > tabs > tab:hover
 placessidebar .navigation-sidebar > row
 popover > contents
+popover.menu box.circular-buttons button.circular.image-button.model
+popover.menu box.inline-buttons button.image-button.model
+popover.menu list > row
+popover.menu list > row.has-open-popup
+popover.menu list > row:active
+popover.menu list > row:hover
+popover.menu listview > row
+popover.menu listview > row.has-open-popup
+popover.menu listview > row:active
+popover.menu listview > row:hover
 popover.menu modelbutton
 popover.menu modelbutton:active
 popover.menu modelbutton:hover
 progressbar > trough
+progressbar > trough > progress
+progressbar > trough.empty > progress
 radio
 radio:checked:active
 radio:not(:checked):not(:indeterminate):active
 radio:not(:checked):not(:indeterminate):hover
+row.activatable.has-open-popup
+row.activatable:active
+row.activatable:hover
 scale > trough
+scale > trough > highlight
 scale > trough > slider
 scale:active > trough > slider
 scale:disabled > trough > slider
 scale:hover > trough > slider
 scrollbar > range > trough
 searchbar > revealer > box
+searchbar > revealer > box button.arrow-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+searchbar > revealer > box button.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+searchbar > revealer > box button.image-text-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+searchbar > revealer > box menubutton.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+searchbar > revealer > box splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
+searchbar > revealer > box splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > menubutton > button
+searchbar > revealer > box:backdrop
 sidebar .navigation-sidebar > row
+spinbutton
+spinbutton > button.image-button.down:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+spinbutton > button.image-button.up:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
+spinbutton:drop(active)
+splitbutton.flat > button
+splitbutton.flat > menubutton > button
 switch
 switch > slider
+switch > slider:disabled
 switch:active
 switch:checked
+switch:checked:active
+switch:checked:hover
 switch:hover
+tabthumbnail button
 toast
 toolbarview > .top-bar headerbar
 toolbarview > .top-bar.raised
+toolbarview > .top-bar.raised:backdrop
+treeview.view > header > button
+windowcontrols > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque).image-button

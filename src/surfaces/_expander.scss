@@ -1,0 +1,35 @@
+// L2 — GtkExpander. The disclosure title is an activatable row, and the
+// row language says an activatable row answers the pointer with the same
+// flat wash as every other row (5% hover / 9% press — the boxed-list row
+// values, `_boxed-list.scss`; navigation-sidebar rows carry their own
+// 6/10 pair in `_sidebar.scss`). Upstream gives the title no wash at all —
+// only the arrow's opacity, which is feedback on the glyph, not on the row
+// — so this is the one place in the 23 Sep pass where material is ADDED
+// rather than re-timed. The reason is the same one that put a wash on the
+// rows: without it the row reads as static text.
+//
+// Timing is the house spec (280ms approach / 200ms release / 120ms press),
+// emitted through ov-motion(), which also restates upstream's focus-ring
+// motion on the same node. HC reverts to transparent, leaving upstream's
+// 2px outline to carry the state.
+
+expander-widget > box > title {
+  @include ov-motion(background-color var(--ov-motion-exit));
+}
+
+expander-widget > box > title:hover {
+  background-color: color-mix(in srgb, currentColor 5%, transparent);
+  @include ov-motion(background-color var(--ov-motion-enter));
+}
+
+expander-widget > box > title:active {
+  background-color: color-mix(in srgb, currentColor 9%, transparent);
+  @include ov-motion(background-color var(--ov-motion-press));
+}
+
+@media (prefers-contrast: more) {
+  expander-widget > box > title:hover,
+  expander-widget > box > title:active {
+    background-color: transparent;
+  }
+}

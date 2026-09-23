@@ -137,6 +137,19 @@ verdict is recorded. Stop the project if it is a no-go.*
   deferred with Flatpak — proposal amendment 11.)*
 - [ ] **H5** (P0) GO/NO-GO recorded in `docs/decisions.md`. If no-go:
   revert the surfaces, keep the repo, the guard and the pipeline.
+- [x] **H6** (P1) Headerbar/bar backdrop state feedback: upstream's
+  `headerbar:backdrop { background-color: var(--headerbar-backdrop-color);
+  transition: background-color 200ms ease-out; }` never showed, because the
+  overlay's `background:` shorthand set the colour in every state (found
+  in the 23 Sep motion review — window controls still dim via
+  `windowhandle`, the surface did not).
+  *Accept:* decision recorded — either restate the backdrop colour in the
+  overlay's bar rule (surface dims again, with upstream's fade) or accept
+  and strike this with the reason.
+  **Restored** via `--ov-bar-base` / `--ov-bar-backdrop-base` (the colour
+  moves inside the gradient, since the stops are opaque); dark-mode
+  recession measured 232 → 228 and confirmed live; light mode is below the
+  noise floor. Kept 23 Sep 2026.
 
 ## M4 — Lists & cards — density/perf gate
 
@@ -167,6 +180,15 @@ verdict is recorded. Stop the project if it is a no-go.*
   AdwTabBar / viewswitcher — identity surfaces: switch ported, scrollbar
   trough deepened, scale slider + progress channels added; tabbar/viewswitcher
   deferred per U6 decision.
+- [x] **U7** (P2) Disabled switch knob: the overlay's resting
+  `switch > slider` rule outranks upstream's
+  `switch > slider:disabled { box-shadow: 0 2px 4px transparent }`, so a
+  disabled switch keeps a fully raised knob (found in the 23 Sep motion
+  review; state legibility, not motion).
+  *Accept:* the disabled knob reads recessed/flat while the track dims.
+  **Done 23 Sep 2026** — disabled is flat: no drop, no insets, no gradient;
+  the track keeps upstream's own `filter` dim. Evidence in decisions.md,
+  "Widget-family sweep".
 
 ## M6 — Contrast & accessibility
 
@@ -183,6 +205,66 @@ verdict is recorded. Stop the project if it is a no-go.*
   Annoyances are appended to the section below.
 - [ ] **DD2** (P1) After two weeks: final texture keep/drop; only then
   consider `filter`, and only for a surface that demonstrably needs blur.
+
+---
+
+## Widget-family sweep — 23 Sep 2026
+
+*"Apply the recorded design language to all GTK4 widgets." Method, evidence
+and rejected candidates: decisions.md, "Widget-family sweep". Tracking:
+`tools/track` opens the demo page per family; `tools/render-gallery` +
+`tools/gallery-diff` give per-family pixel evidence.*
+
+- [x] **W1** (P0) Material scope: the button material leaked onto every
+  family upstream paints flat without the class (bar icon buttons, window
+  controls, table/calendar headers, spinbutton arrows, thumbnails, model
+  buttons, pathbar crumbs, bottom-sheet actions, `.flat` parents'
+  children). *Accept:* stock look restored on those families, material
+  unchanged on opaque buttons.
+  **Scope verdict kept** (user, 23 Sep 2026): offered the glow back on bar
+  icon buttons, answered "keep it as it is". Also caught `button.link`,
+  which was rendering as a glow chip. Lever if it ever reopens: delete
+  `$ov-flat-bar-contexts` from the loop in `_button.scss`.
+- [x] **W2** (P0) Drop state: `button`/`entry`/`spinbutton`/`.card`
+  `:drop(active)` accent rings were erased by our `box-shadow` at priority
+  800. *Accept:* the accent ring renders again on every drop target.
+- [x] **W3** (P0) `.card` definition ring restated (a white card had no
+  edge on a light window).
+- [x] **W4** (P1) `spinbutton` gets `ov-inset()`, the material the BACKLOG
+  claimed it inherited from `entry` — it does not; `spinbutton` is a
+  sibling node in GTK 4.
+- [x] **W5** (P1) House timing on the content cells that had upstream
+  washes and no timing: bare `row.activatable`, flowbox/gridview children,
+  list-based menu rows, notebook tabs, calendar day cells.
+- [x] **W6** (P1) `expander-widget` title row wash (the one additive
+  material: upstream's only feedback was the arrow's opacity).
+- [x] **W7** (P1) `bottom-sheet` / `floating-sheet` on the window rung
+  (`ov-depth-window()` — the rung had no surface until now).
+- [x] **W8** (P1) `filter: none` on disabled buttons erased upstream's
+  `filter: opacity()` dim across the bar families. *Accept:* disabled
+  buttons dim again.
+- [x] **W9** (P2) Checked-switch hover/press feedback restated (our dish
+  gradient swallowed upstream's second layer).
+- [x] **W10** (P2) `.view` / `textview > text` container scoop — tried and
+  **reverted**: both nodes are content-sized, so the shade scrolls with the
+  content (probes in decisions.md). Keeps upstream's flat fill.
+- [x] **W11** (P2) GtkCalendar verdict: no demo page in
+  `gtk4-widget-factory` or `gtk4-demo` shows a calendar, so the family was
+  judged in `tools/render-gallery`'s `calendar` family instead — stock vs
+  overlay, light/dark/HC, plus `STATE=prelight` for the header wash. No
+  regression; the calendar node itself is stock at rest and only its timing
+  changed. A live witness does not exist on this machine (scanned
+  `/usr/bin`, `/usr/lib` for `gtk_calendar_new` / `GtkCalendarPopover`:
+  telegram-desktop, yad, gtk4-icon-editor, libgtk, libwebkit2gtk — no GNOME
+  surface). *Accept:* verdict recorded; reopen if an app that shows one
+  enters daily use.
+- [x] **W12** (P1) Lit channel fills: the coloured part of a progress bar,
+  a scale and a levelbar block was a flat `background-color` (upstream) and
+  read as a sticker in the recessed trough. *Accept:* the fill reads lit —
+  new L1 register `ov-lit-fill()`, colour underneath left opaque because it
+  is data. Numbers, rejected variants and the channel HC-ring defect found
+  in passing: decisions.md, "Lit channel fills". Values are one edit wide in
+  `_primitives.scss` if the dome wants to be stronger or softer.
 
 ---
 
@@ -204,6 +286,14 @@ verdict is recorded. Stop the project if it is a no-go.*
 - [ ] **X5** Fractional-scale test card: fixed checklist (headerbar,
   button, list, popover at 1×/1.25×/1.5×) run before every milestone
   sign-off.
+- [ ] **X6** Fold `tools/probe-motion` into the X5 card: build it
+  alongside `render-widget`, and run the motion checklist (hover, press,
+  focus ring, row entry) against the built sheet in normal, `REDUCE=1` and
+  `NOANIM=1` before every milestone sign-off. Catches the two failure
+  modes the 23 Sep review fixed: a declaration that replaces upstream's
+  transition list, and entry/exit timing declared on the wrong state.
+  *Accept:* one command reports every state as IN MOTION, INSTANT or NO
+  CHANGE, and the reduce run reports INSTANT for all of them.
 
 ## Found during daily drive
 

@@ -21,12 +21,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* GTK loads $XDG_CONFIG_HOME/gtk-4.0/gtk.css for every process, and on a
+ * machine that has installed this overlay that path is a symlink to the
+ * very sheet under test: the "control" run would silently carry the
+ * overlay too, and every A/B would measure the same file twice. Point
+ * XDG_CONFIG_HOME at an empty directory so the css argument is the only
+ * stylesheet in the process. KEEP_CONFIG=1 restores the real environment. */
+static void
+hermetic_config (void)
+{
+  gchar *dir;
+  if (g_getenv ("KEEP_CONFIG") != NULL)
+    return;
+  dir = g_dir_make_tmp ("render-widget-XXXXXX", NULL);
+  if (dir != NULL) {
+    g_setenv ("XDG_CONFIG_HOME", dir, TRUE);
+    g_free (dir);
+  }
+}
+
 int main(int argc, char **argv)
 {
   if (argc != 6) {
     g_printerr("usage: %s css out widget w h\n", argv[0]);
     return 2;
   }
+  hermetic_config();
   gtk_init();
 
   GdkDisplay *display = gdk_display_get_default();

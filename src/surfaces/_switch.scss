@@ -15,8 +15,14 @@
 //   knob   bg: linear-gradient(#f5f5f5 10%, #eee)
 //          inset: 0 0.1em 0.15em -0.05em white@90%
 //          drop:  0 0.5em 0.3em -0.1em black@25%
-//   transitions: 350ms track / 250ms ease-in-out knob (GTK animates the
-//   knob position natively; the 90ms family does not apply here).
+//   transitions: track on the switch token (180ms, the house value that
+//   matches the native knob slide); GTK animates the knob position
+//   natively, so the 90ms press family does not apply here.
+//
+// Two upstream states the dish gradient would otherwise swallow were found
+// in the 23 Sep gate and are restated here, not dropped:
+//   * the disabled knob (BACKLOG U7),
+//   * the checked track's hover/active modulation.
 
 switch {
   background-color: var(--window-bg-color);
@@ -31,7 +37,29 @@ switch {
                                       color-mix(in srgb, black 4%, transparent));
   }
 
-  transition: background-color 180ms ease-out;
+  // Upstream animates background and box-shadow here; our dish gradient
+  // rides background-image. All three follow the switch duration, which
+  // matches the native knob slide.
+  @include ov-motion(background-color var(--ov-motion-switch),
+                     background-image var(--ov-motion-switch),
+                     box-shadow var(--ov-motion-switch));
+}
+
+// Upstream modulates a checked track with a second image layer on hover
+// and press (`switch:checked:hover`, `switch:checked:active`). The dish is
+// declared for every state, so without this restatement a checked switch
+// lost its hover and press feedback completely. Upstream's own layer is
+// kept verbatim, underneath the dish.
+switch:checked:hover {
+  background-image: image(color-mix(in srgb, currentColor 10%, transparent)),
+                    linear-gradient(color-mix(in srgb, black 12%, transparent),
+                                    color-mix(in srgb, black 4%, transparent));
+}
+
+switch:checked:active {
+  background-image: image(RGB(0 0 6 / 20%)),
+                    linear-gradient(color-mix(in srgb, black 18%, transparent),
+                                    color-mix(in srgb, black 8%, transparent));
 }
 
 switch > slider {
@@ -42,6 +70,17 @@ switch > slider {
   box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
               inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+}
+
+// Disabled knob (BACKLOG U7). Upstream's
+// `switch > slider:disabled { box-shadow: 0 2px 4px transparent }` sits at
+// priority 200 and loses to the resting rule above, so a disabled switch
+// kept a fully raised knob and read as interactive. Disabled is FLAT here:
+// no drop, no insets, no gradient. The state stays legible because the
+// track keeps upstream's own dim (`switch:disabled { filter }`, untouched).
+switch > slider:disabled {
+  background-image: none;
+  box-shadow: none;
 }
 
 // High contrast: back to upstream's state-colored track and knob fill;
@@ -56,5 +95,15 @@ switch > slider {
     background-color: color-mix(in srgb, white 80%, var(--view-bg-color));
     background-image: none;
     box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
+  }
+  // The checked track's restatement (above) outranks the HC rule on
+  // `switch` alone — same priority, more classes — so it is reverted with
+  // its own selectors rather than by a broader one.
+  switch:checked:hover,
+  switch:checked:active {
+    background-image: none;
+  }
+  switch > slider:disabled {
+    box-shadow: none;
   }
 }

@@ -1,0 +1,51 @@
+// L2 — content cells. The families that carry a hover/press wash upstream
+// but none of the house timing, so the wash SNAPS where every row in the
+// recorded language approaches and leaves:
+//
+//   row.activatable            — GtkListBox rows, GtkListView rows,
+//                                GtkColumnView rows (upstream styles them
+//                                with the bare `row` atom)
+//   flowbox > flowboxchild     — GtkFlowBox cells
+//   gridview > child           — GtkGridView cells
+//   popover.menu list > row    — list-based menus (1.9 menu nodes)
+//
+// Scope of the change, per the recorded system-wide micro-interaction
+// rollout (19 Sep): TIMING ONLY, "strictly zero visual design or material
+// alterations". Upstream's own alphas stay untouched (4% hover / 8% press
+// on cells, 10% / 19% in menus), and so does the accent selection pair
+// (`--accent-bg-color` 25% / 32% / 39%) — selection is semantic and is not
+// re-voiced anywhere in this sheet.
+//
+// What moves: the asymmetric house timing — 280ms approach, 200ms release,
+// 120ms press — through ov-motion(), which also restates upstream's
+// focus-ring motion (a transition declaration replaces a list, it never
+// extends it). `has-open-popup` pins the wash like every other row.
+// Boxed-list rows and navigation-sidebar rows carry their own values in
+// their own files and outrank these.
+
+row.activatable,
+flowbox > flowboxchild,
+gridview > child.activatable,
+popover.menu list > row,
+popover.menu listview > row {
+  @include ov-motion(background-color var(--ov-motion-exit));
+}
+
+row.activatable:hover,
+row.activatable.has-open-popup,
+flowbox > flowboxchild:hover,
+gridview > child.activatable:hover,
+popover.menu list > row:hover,
+popover.menu listview > row:hover,
+popover.menu list > row.has-open-popup,
+popover.menu listview > row.has-open-popup {
+  @include ov-motion(background-color var(--ov-motion-enter));
+}
+
+row.activatable:active,
+flowbox > flowboxchild:active,
+gridview > child.activatable:active,
+popover.menu list > row:active,
+popover.menu listview > row:active {
+  @include ov-motion(background-color var(--ov-motion-press));
+}

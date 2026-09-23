@@ -11,7 +11,8 @@
 // multi-token segments like "0 4px 8px red". Upstream's own sheet follows
 // the same rule: per-component vars inside box-shadow lists
 // (--shade-color, --border-opacity), never whole segments. So geometry
-// lives in L1's mixins; L0 owns colours, dimensions and kill switches.
+// lives in L1's mixins; L0 owns colours, dimensions, motion and kill
+// switches.
 
 :root {
   // ---------------------------------------------------------------------
@@ -51,4 +52,60 @@
   // light: #f2f2f4 -> +8/+8/+6 = #fafafa — the old hardcoded value, exact.
   --ov-surface-content: rgb(from var(--window-bg-color) calc(r + 8) calc(g + 8) calc(b + 6));
   --ov-surface-sidebar: transparent;
+
+  // ---------------------------------------------------------------------
+  // Chrome (bar) surface base colour. The bar material is an opaque
+  // gradient built ON this colour, so this token — not a background-color
+  // on the node — is what a bar state can move: the gradient's stops are
+  // opaque, which makes anything painted underneath it invisible.
+  //   rest     — the lit chrome colour (upstream's own)
+  //   backdrop — upstream's backdrop colour, which is @window_bg_color:
+  //              the chrome recedes into the content of an unfocused
+  //              window (light: #ffffff -> #fafafb, a whisper; dark:
+  //              #2e2e32 -> #222226, a real dim).
+  // Kill switch: point --ov-bar-backdrop-base at var(--headerbar-bg-color)
+  // and the bar stays lit in every state (one edit, D5 pattern).
+  // ---------------------------------------------------------------------
+  --ov-bar-base: var(--headerbar-bg-color);
+  --ov-bar-backdrop-base: var(--headerbar-backdrop-color);
+
+  // ---------------------------------------------------------------------
+  // Motion — the house spec (decisions.md 19 Sep 2026) as tokens: one
+  // curve, one duration per role. The whole sheet retunes here, and
+  // reduced motion is one override (below) instead of a rule per surface.
+  // Measured E6: GTK4 4.22 resolves var() inside the transition shorthand,
+  // so durations and curve are usable as single-value tokens (the M2
+  // whole-segment limit does not apply to them). Every declaration using
+  // them must go through ov-motion() in L1 — that is where upstream's own
+  // focus-ring motion is restated (transition replaces a list, never
+  // extends it).
+  //   enter  — hover approach; gentle in, nothing lingers on the way out
+  //   exit   — release / state change (the resting declaration)
+  //   press  — press acknowledgment, crisp and mechanical
+  //   switch — switch track, matched to the native knob slide
+  //   ring   — upstream's own focus-ring timing, restated verbatim by
+  //            ov-motion() so our declarations never silence it
+  // ---------------------------------------------------------------------
+  --ov-motion-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ov-motion-enter: 280ms;
+  --ov-motion-exit: 200ms;
+  --ov-motion-press: 120ms;
+  --ov-motion-switch: 180ms;
+  --ov-motion-ring: 200ms;
+
+  // Reduced motion. GTK's own gtk-enable-animations=false already drops
+  // every transition (measured E6); this query is how GTK 4.22's narrower
+  // gtk-interface-reduced-motion preference reaches CSS. This sheet
+  // animates no movement at all — every effect is a colour or shadow
+  // change, i.e. pure state legibility — so the reduced variant is no
+  // duration rather than a shorter one: untouched state language (nothing
+  // teleports, nothing is hidden), no animation to sit through. One
+  // override, every rule follows.
+  @media (prefers-reduced-motion: reduce) {
+    --ov-motion-enter: 0ms;
+    --ov-motion-exit: 0ms;
+    --ov-motion-press: 0ms;
+    --ov-motion-switch: 0ms;
+    --ov-motion-ring: 0ms;
+  }
 }

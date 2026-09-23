@@ -2,7 +2,8 @@
 // performance gate (C2) measured here (passed: 2.80 vs 3.19 ms/frame).
 //
 // Material decisions:
-//   .card           — FLOATS: restated ladder in our depth language.
+//   .card           — FLOATS: restated ladder in our depth language, with
+//                     upstream's own definition ring kept (below).
 //   boxed-list rows — FLAT surfaces: rows are content; the .boxed-list
 //                     container wears the subtle scoop.
 //
@@ -24,18 +25,32 @@ list.boxed-list-separate {
     color-mix(in srgb, black 0%, transparent) 30%);
 }
 
-.card {
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 10%, transparent),
+// The card's edge. Upstream's first stop (`0 0 0 1px RGB(0 0 6/3%)`) is
+// what defines a card against a light window — a white card on #fafafb is
+// otherwise edgeless. Our ladder replaces the whole box-shadow list, so
+// the ring is restated with it (the documented restatement pattern). It
+// is definition, not depth, so it explicitly does NOT ride the
+// --ov-depth-color kill switch. `:not(:drop(active))` hands the drop
+// state back to upstream's `:not(window):drop(active)` accent ring.
+.card:not(:drop(active)) {
+  box-shadow: 0 0 0 1px RGB(0 0 6 / 3%),
+              0 1px 2px color-mix(in srgb, var(--ov-depth-color) 10%, transparent),
               0 2px 6px color-mix(in srgb, var(--ov-depth-color) 8%, transparent),
               0 6px 16px color-mix(in srgb, var(--ov-depth-color) 4%, transparent);
 }
 
+// Upstream animates background-color, background-image and border-radius on
+// these rows; restated so our state declaration extends that motion instead
+// of replacing it (a transition declaration replaces the whole list). The
+// base rule is the leave/resting timing.
 list.boxed-list > row:not(:selected).activatable,
 list.content > row:not(:selected).activatable,
 list.boxed-list-separate > row:not(:selected).activatable,
 list.boxed-list > row.expander row.header:not(:selected).activatable,
 list.content > row.expander row.header:not(:selected).activatable {
-  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-exit),
+                     background-image var(--ov-motion-exit),
+                     border-radius var(--ov-motion-exit));
 }
 
 list.boxed-list > row:not(:selected).activatable:hover,
@@ -49,7 +64,9 @@ list.boxed-list-separate > row:not(:selected).activatable.has-open-popup,
 list.boxed-list > row.expander row.header:not(:selected).activatable.has-open-popup,
 list.content > row.expander row.header:not(:selected).activatable.has-open-popup {
   background-color: color-mix(in srgb, currentColor 5%, transparent);
-  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  // Entering: the approach is the gentle one.
+  @include ov-motion(background-color var(--ov-motion-enter),
+                     background-image var(--ov-motion-enter));
 }
 
 list.boxed-list > row:not(:selected).activatable:active,
@@ -58,12 +75,44 @@ list.boxed-list-separate > row:not(:selected).activatable:active,
 list.boxed-list > row.expander row.header:not(:selected).activatable:active,
 list.content > row.expander row.header:not(:selected).activatable:active {
   background-color: color-mix(in srgb, currentColor 9%, transparent);
-  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-press),
+                     background-image var(--ov-motion-press));
+}
+
+// Floating cards carry the same interactive language as the rows they sit
+// beside. Upstream delivers the wash as an image layer over
+// --card-bg-color (a background-color here would replace the fill, not
+// tint it), so only the timing moves onto the house spec: 280ms in, 200ms
+// out, 120ms press, instead of one 200ms for everything.
+.card.activatable {
+  @include ov-motion(background var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
+}
+
+.card.activatable:hover {
+  @include ov-motion(background var(--ov-motion-enter),
+                     box-shadow var(--ov-motion-exit));
+}
+
+.card.activatable:active {
+  @include ov-motion(background var(--ov-motion-press),
+                     box-shadow var(--ov-motion-press));
 }
 
 @media (prefers-contrast: more) {
-  .card {
+  // The guard is repeated here: HC is the same provider at the same
+  // priority, so a revert with fewer classes than the rule it reverts
+  // loses (found by the structural audit, 23 Sep — the same trap
+  // `check:checked` and the button hover rule were in).
+  .card:not(:drop(active)) {
     box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+  }
+  // The container scoop is a material effect too: it had no revert at all
+  // before this pass.
+  list.boxed-list,
+  list.content,
+  list.boxed-list-separate {
+    background-image: none;
   }
   list.boxed-list > row:hover,
   list.content > row:hover,

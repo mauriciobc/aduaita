@@ -524,3 +524,588 @@ User approved Option A across remaining candidate controls:
    - 31 selector atoms registered in `upstream/selectors.txt` and verified via `tools/check-selectors`.
    - Clean high-contrast reversion under `prefers-contrast: more` (transparency restores upstream's 1px HC outline).
    - Zero raw hex; dark mode and accent tracking automatic.
+## Motion review — 23 Sep 2026
+
+**Scope.** Every state transition in the stylesheet against the house
+motion spec (19 Sep) — plus what the spec never asked: what GTK 4.22 can
+animate at all, whether the sheet was animating what it said it was, and
+what the platform's accessibility axis leaves to us.
+
+**Method.** Two scratch probes, both kept: `tools/probe-motion.c` loads
+one CSS file at priority 800 (the overlay's own mechanism), walks a real
+`button` and a real `.boxed-list` row through `:hover`/`:active`/
+`:focus-visible` by setting state flags, and reports the widget's
+mean-RGBA at rest, at two samples into the state change and once settled
+(two samples because a state change lands on the frame clock, so a slow
+start must not read as "no change"). A second probe (scratch, `/tmp`)
+tested keyframe replay on a real popover. Rest-state verification stays
+on `tools/render-widget.c`.
+
+### E6 — what GTK 4.22 animates (measured)
+
+- **`var()` resolves inside the `transition` shorthand.** Both
+  `transition: background-color var(--d) linear` and
+  `transition: background-color var(--d) var(--e)` animated with the
+  substituted values (probe: 9/255 vs 18/255 mid-flight, the second
+  matching the house curve's front-load). The M2 whole-segment limit does
+  not apply to single-value tokens inside a list — motion is tokenisable.
+- **`@media (prefers-reduced-motion: reduce)` matches** (GTK 4.22
+  `GtkCssProvider:prefers-reduced-motion` /
+  `GtkSettings:gtk-interface-reduced-motion`, a separate axis from
+  `gtk-enable-animations`), and a `:root` custom-property override inside
+  the query propagates into `transition`. A transition declared *only*
+  inside the query applies only then.
+- **`gtk-enable-animations=false` already zeroes every transition** at the
+  toolkit level. So the reduced-motion axis is ours to deliver.
+- **No popover entry animation is possible.** A keyframe animation on
+  `popover > contents` fires on the *first* map only — sampled mid-flight
+  100 ms after the first `popup()` (green 27) and already at target 100 ms
+  after the second (255). GTK binds animations to style computation, not
+  to mapping, and the popover node survives popdown. GTK also has no exit
+  animation mechanism (`@starting-style` does not exist here). Verdict:
+  popovers keep popping instantly; a one-shot animation is worse than none.
+
+### Defects found and fixed
+
+1. **The overlay was silencing upstream's motion.** `transition` replaces
+   a list, it never extends it — so every overlay rule that declared one
+   dropped upstream's list for that node. Measured on a button:
+   `:focus-visible` was already *landed* at the first 80 ms sample on the
+   19 Sep sheet, while the fixed sheet reads rest 238 → 240,236,233 at
+   80/160 ms → 240,235,232 settled (the 200 ms fade, still climbing at
+   160 ms). Upstream animates the focus-ring trio
+   (`outline-color`/`width`/`offset`, 200 ms, the same house curve) on
+   buttons, rows, entries, switch, scale slider and sidebar buttons — the
+   bare `button` atom carries it in 1:1.9.4-1. `ov-motion()` (L1)
+   restates it on every declaration.
+2. **`list.boxed-list` and popover menu rows had entry/exit inverted.**
+   The resting rule carried 280 ms and `:hover` 200 ms, so the *entry* was
+   the fast one — the opposite of the house spec, of its own comment, and
+   of the later `_sidebar.scss`/`_button.scss`. Measured: the row wash
+   landed by the 160 ms sample before (22 → 26), and is still climbing
+   there after (21 → 24 → 26) — the 280 ms approach.
+3. **The switch track's dish gradient snapped** at the toggle while the
+   accent fill cross-faded over 180 ms. `background-image` is now in the
+   switch list, at the switch duration.
+4. **No reduced-motion path existed at all** — GTK's own animations
+   toggle was the only escape.
+
+### Decisions
+
+- **Motion is tokenised in L0**: `--ov-motion-ease`,
+  `-enter` (280 ms), `-exit` (200 ms), `-press` (120 ms),
+  `-switch` (180 ms), `-ring` (upstream's own 200 ms). Values unchanged;
+  what changed is that they live in one place and every declaration emits
+  through `ov-motion()`, which is what makes the reduced-motion override
+  structural instead of a rule per surface (the D5/D6 pattern).
+- **Reduced motion ⇒ 0 ms, not a gentler duration.** Same state language,
+  no animation: nothing teleports, nothing is hidden, no effect is
+  removed — only the time spent getting there. This sheet animates no
+  movement at all (every effect is a colour or shadow change), so
+  duration is the only axis, and GTK's own `gtk-enable-animations=false`
+  answers the same preference with exactly 0 ms. A third behaviour
+  (shorter fades) would be indistinguishable from the platform one while
+  being harder to reason about.
+- **The restated ring follows the same override**: under reduce, nothing
+  in this sheet animates, upstream's motion included. Tokenised as
+  `--ov-motion-ring` precisely so it can be silenced with everything else
+  instead of staying the one exception.
+- **Not added: a transition on `switch > slider`.** The overlay paints the
+  slider identically in every state (upstream's hover/active white and its
+  disabled shadow are both overridden), so a transition there would
+  animate nothing. Recorded because "the knob should fade too" is the
+  obvious next thought.
+
+### Verification
+
+- Rest rendering **byte-identical** to the 19 Sep build for `button`,
+  `box` (centred button) and `headerbar` — the change is timing, not paint.
+- `tools/probe-motion build/gtk.css` (80 ms samples): hover 129 → 44 → 11,
+  press 196 → 194, row entry 21 → 24 → 26, focus ring 238 → 240,236,233 →
+  settled — every probe IN MOTION.
+- Same probes with `REDUCE=1`: every state lands instantly at both
+  samples; the 19 Sep sheet under the same flag still animates — the
+  before/after proof for the reduce delivery. `NOANIM=1` lands everything
+  instantly too.
+- `tools/check-selectors`: contract OK against 1:1.9.4-1 (no selector
+  changed).
+- **Live pass (user, 23 Sep):** hover approach, list skim and the
+  reduced-motion toggle all feel right — the eyeball half of the review,
+  which no pixel probe can rule on.
+
+### Found while reviewing (not motion, deliberately untouched)
+
+- **Headerbar backdrop dimming is dead.** Upstream's
+  `headerbar:backdrop { background-color: var(--headerbar-backdrop-color);
+  transition: background-color 200ms ease-out; }` can never show, because
+  the overlay's `background:` shorthand (priority 800) sets the colour in
+  every state. The controls still dim (`windowhandle` filter is
+  untouched); the surface does not. → BACKLOG H6.
+- **`switch > slider:disabled`** keeps the overlay's full knob shadow:
+  the overlay's resting rule outranks upstream's
+  `switch > slider:disabled { box-shadow: 0 2px 4px transparent }`. →
+  BACKLOG U7.
+- **`ov-press()` (L1) is unused** by every surface — the button surface
+  writes the same mechanism inline. Pre-existing; left alone.
+
+## H6 — chrome backdrop recession — 23 Sep 2026
+
+**Finding (measured, from the motion review).** Upstream's unfocused-window
+signal was dead on every chrome surface the overlay paints:
+`headerbar:backdrop { background-color: var(--headerbar-backdrop-color) }`
+(and the searchbar/actionbar equivalents) can never show, because our rule
+paints every state. Probe, headerbar mean-RGBA with the upstream sheet
+loaded at 200: rest 233 → settled 233 (light), 232 → 232 (dark) — the
+backdrop state changed nothing at all.
+
+**Why the obvious fix is not a fix.** Re-stating `background-color` under
+`:backdrop` would still show nothing: the bar material's second layer is an
+*opaque* `color-mix()` gradient, so whatever is painted in the
+`background-color` slot underneath it is invisible. The colour has to move
+*inside* the gradient's stops.
+
+**Implementation.** The gradient moved into `ov-bar-surface()` (L1) and its
+base colour into `--ov-bar-base` (L0). A backdrop rule is then one
+declaration:
+
+    headerbar:backdrop, toolbarview > .top-bar:backdrop { --ov-bar-base: var(--ov-bar-backdrop-base); }
+
+`--ov-bar-backdrop-base: var(--headerbar-backdrop-color)`, which upstream
+defines as `@window_bg_color` — the chrome recedes into the content, on the
+house transition (`background`, 200 ms, reduce-aware). Side effects, all
+intended: the dark grain URI now comes from `--ov-texture-image` instead of
+being respelled (the texture kill switch now works in dark mode too), and
+the duplicated gradient stack in `_headerbar.scss`/`_toolbar.scss` collapsed
+into one definition.
+
+**Measured effect** (probe, upstream loaded, forced `:backdrop`):
+
+| scheme | resting base | backdrop base | probe mean (rest → settled) |
+| --- | --- | --- | --- |
+| light | `#ffffff` | `#fafafb` | 233 → 232 — **below the noise floor** |
+| dark | `#2e2e32` | `#222226` | 232 → 230 → 228, progressive (animating) |
+
+So the trade is a whisper in light mode and a real (stock-Adwaita) dim in
+dark mode, where the chrome stops being the brightest thing on an unfocused
+window.
+
+**Kill switch** (one edit, D5 pattern): set
+`--ov-bar-backdrop-base: var(--headerbar-bg-color)` in `_tokens.scss` and
+the bar stays lit in every state.
+
+**Contract.** `--headerbar-backdrop-color` added to `variables.txt`;
+`headerbar:backdrop`, `searchbar > revealer > box:backdrop`,
+`actionbar > revealer > box:backdrop` and `toolbarview > .top-bar.raised:backdrop`
+added to `selectors.txt`; guard passes against 1:1.9.4-1. Rest-state means
+are unchanged (233/232 identical to the pre-change sheet).
+
+**Verdict: KEPT** (user, live look 23 Sep 2026) — the dark-mode recession
+reads right; light mode is unchanged in practice. BACKLOG H6 closed.
+
+**Out of scope, same family.** `.sidebar-pane:backdrop` is also dead (our
+`.sidebar-pane` is deliberately `transparent`), but restoring it would mean
+an opaque colour where the translucency is a user decision from P1.5 —
+a different trade, not taken here.
+
+## Widget-family sweep — 23 Sep 2026
+
+**Scope.** "Apply the recorded design language to all GTK4 widgets" — every
+family the first pass (M0–M5) left outside the material system, judged on
+real widgets through `gtk4-widget-factory` and `gtk4-demo`, tracked per
+family by the new `tools/track`.
+
+**Method.**
+1. **Inventory from the sheet, not from widget names.** The pinned 1:1.9.4-1
+   stylesheet was parsed rule by rule and every declaration of material
+   (`box-shadow`, `background-image`, `background`, `background-color`,
+   `filter`) enumerated per node family, in base, dark and HC. Coverage
+   decisions are therefore stated in terms of upstream's own declarations.
+2. **Fixes are written in the existing vocabulary** — L0 tokens, the L1
+   functions (`ov-bevel`, `ov-well`, `ov-glow`, `ov-inset`, `ov-depth-*`,
+   `ov-bar-surface`), house motion through `ov-motion()`. No new token was
+   needed; `ov-depth-window()` (recorded in Evening 0, unused until now)
+   finally has a surface: sheets.
+3. **Contract.** Every new selector atom registered in
+   `upstream/selectors.txt` (86 → 164 entries).
+   `tools/check-selectors` passes against the installed 1:1.9.4-1.
+
+### Defects this sweep found — all of them our own, all fixed
+
+**1. The button material leaked onto upstream's flat families.** The guard
+was `button:not(.flat):not(.osd)`, but upstream paints whole families flat
+*without* the class: bar icon buttons (`headerbar`/`searchbar`/`actionbar`/
+`.toolbar` + `.image-button`/`.arrow-button`/`.image-text-button`), the
+wrapper-guarded `menubutton`/`splitbutton` children, `windowcontrols`,
+`tabthumbnail`, `notebook` arrows, `columnview`/`treeview` headers,
+`calendar` header, `infobar .close`, popover model buttons, spinbutton
+arrows, pathbar crumbs, bottom-sheet actions. Those buttons were getting
+the bevel, the accent glow and the pressed well — including `windowcontrols`,
+which the proposal lists as out of scope.
+*Fix:* the flat families are neutralised by property (`box-shadow`,
+`background-image`, `filter`) in `_button.scss`, generated from two selector
+lists. The reset selectors carry ≥8 classes, which is what makes one
+non-state rule outrank the richest material rule (7 classes) at equal
+priority — no `!important`, no per-state explosion. Upstream's own
+transition list is restated on the same rule, so their washes still fade.
+*Found later the same day, while rendering the hover register:* `button.link`
+belongs on that list too. It is not flat by a `background: none` rule — it is
+flat because upstream never gives it a surface at all (`button.link { color:
+accent; text-decoration: underline }`), so a body-scan for "background:
+none" could not find it. With the material on, a link rendered as a
+full-width glow chip; `STATE=prelight build/render-gallery build/gtk.css
+… buttons` shows the before/after, and `button.link` is now registered in the
+contract.
+
+**Verdict on the scope — KEPT (user, 23 Sep 2026).** The accent hover glow
+was demonstrably *not* lost on opaque buttons (`hover` mean 228 → 19 under
+the overlay, `Suggested`/`Destructive` bloom intact), but the earlier pass
+took it off the families upstream paints flat. Asked explicitly whether to
+restore it on bar icon buttons — glow only, or bevel+glow+well — the answer
+was **keep it as it is**: the 19 Sep scope stands, bar icons and the other
+flat families stay flat, and the neon register lives on opaque buttons and
+coloured CTAs. The two alternatives stay rendered for reference
+(`/tmp` scratch; regenerate with `STATE=prelight build/render-gallery …`).
+Reopening it means deleting `$ov-flat-bar-contexts` from the loop in
+`_button.scss` — the lever is named here so the decision is one edit wide.
+
+**2. `button:drop(active)` was erased.** Upstream marks a drop target with
+`box-shadow: inset 0 0 0 2px var(--accent-bg-color)`; the overlay's resting
+rule owns `box-shadow` at priority 800, and priority decides before
+specificity, so the accent ring never rendered on any non-flat button. Same
+for `entry:drop(active)`, `spinbutton:drop(active)` and the generic
+`:not(window):drop(active)` that `.card` relies on.
+*Fix:* every material selector carries `:not(:drop(active))`, so the state
+is handed back to upstream's own rule untouched. No restatement needed —
+that is the point.
+
+**3. `.card` lost its definition ring.** Our card ladder replaced the whole
+`box-shadow` list, dropping upstream's first stop, `0 0 0 1px RGB(0 0 6/3%)`
+— the 1px ring outside the card's edge.
+*Fix:* the ring is restated ahead of the ladder and deliberately does **not**
+ride `--ov-depth-color` (it is definition, not depth, so the depth kill
+switch must not remove the edge).
+*Measured* (gallery `lists` family, vertical profile through the card's top
+edge at x=120, grey value of the boundary pixel, page 255): stock 225,
+pre-fix card rule 206, fixed 193 — so the ring was really gone and is really
+back, but the practical damage was smaller than it looked on paper: the
+overlay's own translucent window surface (`--ov-surface-window`, 84%) already
+separates a white card from the page. Recorded as a real defect with a
+modest user impact, not as the near-invisible card the source alone
+suggested.
+
+**4. `switch > slider:disabled` kept a raised knob** (BACKLOG U7): our
+resting slider rule outranked upstream's
+`switch > slider:disabled { box-shadow: 0 2px 4px transparent }`, so a
+disabled switch read as interactive.
+*Fix:* disabled is flat — no drop, no insets, no gradient; the state stays
+legible because the track keeps upstream's own dim.
+
+**5. A checked switch lost its hover and press feedback.** Upstream
+modulates `switch:checked` with a second `image()` layer on `:hover` and
+`:active`; our dish gradient is declared for every state, so it swallowed
+that layer entirely.
+*Fix:* both states restated with upstream's own layer underneath our dish.
+
+**6. `filter: none` on disabled buttons erased upstream's dim.** Several
+families (every bar button family, `label`, `scale`, `switch`) dim with
+`filter: opacity(...)`; a `filter: none` at priority 800 wiped it, so a
+disabled icon button read as enabled.
+*Fix:* the disabled rule now neutralises only `box-shadow` and
+`background-image`. Nothing else of ours may declare `filter` outside the
+press state.
+
+**7. `spinbutton` never received the entry material.** The BACKLOG recorded
+"the spinbutton's text area IS an entry node" as the reason U2 needed no
+work. It is not: in GTK 4 a spinbutton's node is `spinbutton` with
+`spinbutton > text`, a sibling of `entry`. Entries were recessed; every
+spinbutton (GtkSpinButton, AdwSpinRow) stayed stock.
+*Fix:* `_entry.scss` applies `ov-inset()` to both, because upstream gives
+them identical bodies (`widgets/_entry.scss` vs `widgets/_spin-button.scss`).
+
+### The high-contrast audit was passing for the wrong reason
+
+Applying the language to the new families meant auditing their reverts, so
+the 19 Sep "structural audit PASSED" claim was re-run **properly** this
+time: parse the built sheet, take every rule that declares material
+(`box-shadow` / `background-image` with a value other than `none`) outside
+a `prefers-contrast` block, and require an HC rule whose selector is at
+least as specific. The 19 Sep audit had only checked that HC blocks
+existed, so it never noticed that a revert with *fewer* classes than the
+rule it reverts loses: HC is the same provider at the same priority, and
+priority ties are broken by specificity, then by source order.
+
+Eight material declarations were surviving HC as a result:
+
+| Declaration | Why the revert lost |
+| --- | --- |
+| `button:hover` glow | HC listed `…:hover` without the `:not(:active):not(:checked):not(:disabled)` tail (4 classes vs 7) |
+| `button:active` well, `.keyboard-activating` | the press variant was not listed at all |
+| `button.suggested-action`/`destructive-action` hover, active, checked | one revert sat at the end of the rule, covering only the base selector; nested states carry their own selectors |
+| `entry:focus-within` deep scoop | `ov-inset()`'s revert covered the resting selector only |
+| `scale:active > trough > slider` well | HC listed the resting knob only |
+| `check`/`radio` microcavity | HC listed `check`/`radio` bare (0 classes) against a 2-class guard |
+| `list.boxed-list` container scoop | no revert existed at all |
+| `switch:checked:hover/:active` (added in this pass) | same trap, caught before shipping |
+
+**Fix.** Every material rule now carries a revert whose selector matches it
+character for character, and each revert restates what the material took:
+the button HC list was rewritten per state, `ov-inset()` grew a
+`:focus-within` sibling revert, the accent glass gained `ov-accent-solid()`
+repeated through each state, and the boxed-list scoop and the
+scale/check cases got their own. **Audit result: 0 material
+declarations without a matching revert** (was 8).
+
+Two further HC defects surfaced only once the reverts were *measured*
+rather than read, both from reverting with `none` where a restatement was
+owed:
+
+- **`background-image: none` on the resting button erased a fill that the
+  sheet underneath delivers as a gradient.** Measured with
+  `tools/probe-motion` against the system GTK theme (a plain-GTK app:
+  `gtk4-demo`, `gtk4-widget-factory`, and every non-libadwaita app):
+  probed button mean `rgb(238,239,240)/α252` at rest → `rgb(15,16,15)/α40`
+  under HC. libadwaita's own buttons carry **no** `background-image` at
+  all — rest/hover/active are `background-color: color-mix(currentColor
+  10% / 15% / 30%, transparent)` (verified in the pinned sheet) — so a
+  libadwaita app never saw this. The revert now names only what the
+  material declares: background-image is reverted on the hover state,
+  which is the only state that sets one.
+- **`box-shadow: none` erased upstream's own HC ring.** Under HC the ring
+  `inset 0 0 0 1px color-mix(currentColor var(--border-opacity))` is the
+  button's boundary; the revert now restates that expression, so the ring
+  keeps following the palette.
+
+### The harnesses were measuring the wrong baseline (found 23 Sep)
+
+`tools/render-widget`, `tools/probe-motion` and the new
+`tools/render-gallery` all load one CSS file at priority 800 — but GTK
+*also* loads `$XDG_CONFIG_HOME/gtk-4.0/gtk.css` for every process, and on
+a machine that has installed this overlay that path is a symlink to the
+sheet under test. Every "stock" run therefore already carried the overlay:
+proved by `md5sum` on two gallery runs, `none` versus `build/gtk.css`,
+which were byte-identical (`672472ad907272f21cc92b090e29981f` for the
+headerbar family). The A/B was measuring one file twice.
+
+All three harnesses now point `XDG_CONFIG_HOME` at a private empty
+directory before `gtk_init()`, so the CSS arguments are the only
+stylesheets in the process; `KEEP_CONFIG=1` restores the user environment.
+After the fix the same pair reports 15/15 families changed
+(`tools/gallery-diff`, light scheme). libadwaita's own stylesheet is
+unaffected — it arrives from the theme search path, not from the user
+config.
+
+### The language applied to the families the first pass missed
+
+| Family | Change | File |
+| --- | --- | --- |
+| Content cells — bare `row.activatable`, `flowbox > flowboxchild`, `gridview > child.activatable`, `popover.menu list > row` / `listview > row` | House timing only (280 in / 200 out / 120 press). Upstream's alphas and the accent selection pair are untouched: the recorded system-wide rollout was explicitly "timing only, zero material alterations". | `_cells.scss` |
+| Notebook tabs | House timing only, on upstream's own wash. The U6 deferral stands: no material added. | `_notebook.scss` |
+| `expander-widget` titles | The row wash (5% / 9%) **added**, with house timing — the one place material was added rather than re-timed, because upstream's only feedback is the arrow's opacity and the title is an activatable row. | `_expander.scss` |
+| `calendar > grid > label` | House timing on the pointer wash (`:checked`). Selection semantics (`:selected` accent) untouched. | `_calendar.scss` |
+| `bottom-sheet > sheet`, `floating-sheet > sheet` | The window rung of the ladder (`ov-depth-window()`) — the first surface on the rung recorded in Evening 0 for "windows". Follows `--ov-depth-color`, so the depth kill switch reaches sheets. Upstream's `outline` hairline stays. | `_sheet.scss` |
+
+### Reviewed and deliberately NOT changed (evidence first)
+
+- **`.view` and `textview > text` — the container scoop was tried and
+  reverted.** The only node carrying upstream's view fill is content-sized,
+  so a `background-image` there scrolls with the content instead of sitting
+  in the viewport. Probed (scratch `probe-view.c` / `probe-textview.c`,
+  red→blue gradient on the node, 300×200 viewport, two scroll positions):
+  textview content 7218 px — scroll 0 renders the top band `252,0,0` and
+  scroll 1 `6,0,245`; treeview `.view` content 8400 px — the middle band
+  moves `51,0,201 → 170,0,79` between the two positions. A shade that moves
+  while scrolling is the exact failure the E4 texture verdict rejects
+  ("no shimmer while scrolling"), so the file was deleted rather than
+  shipped. GtkTextView and view bodies keep upstream's flat fill.
+- **Tooltip.** Upstream sets `tooltip { box-shadow: none }` deliberately —
+  tooltips are flat dark bubbles. Putting them on the overlay rung would
+  add depth upstream removed on purpose.
+- **Keycaps** (`shortcut > .keycap`, `shortcut-label .keycap`). Already the
+  house language: `inset 0 -2px var(--card-shade-color)`, i.e. shade on the
+  bottom edge from an upstream token.
+- **Paned separators and scroll undershoots.** Already hairlines and
+  alpha-shade gradients in the same idiom as ours
+  (`color-mix(currentColor var(--border-opacity))`,
+  `color-mix(var(--shade-color) 75%)`). Restating them would be churn.
+- **AdwTabBar / AdwViewSwitcher / tabthumbnails.** The U6 deferral stands.
+  The only rule of ours that reaches them is the flat reset, which *removes*
+  our material from `tabthumbnail button`.
+- **GtkCalendar — harness verdict taken, live verdict impossible here.**
+  No demo page shows one (`gtk4-demo --list`, 112 examples; the widget
+  factory's own set — neither carries a calendar), so the family was judged
+  in `tools/render-gallery`'s `calendar` family instead: stock vs overlay at
+  rest 75785/129600 changed pixels (6.65 mean, all of it window and bar
+  surface — the calendar node itself is untouched at rest), and
+  `STATE=prelight` shows the header arrows taking upstream's own hover wash
+  with our timing on it. Light, dark and HC renders all read clean, day
+  numerics, the `:selected` accent and the `today` underline included.
+  A live witness does not exist on this machine: `/usr/bin` and `/usr/lib`
+  were scanned for `gtk_calendar_new` / `GtkCalendarPopover` and the only
+  carriers are `telegram-desktop`, `yad`, `gtk4-icon-editor`, libgtk and
+  libwebkit2gtk — no GNOME surface. Verdict: **no regression, timing
+  accepted on harness evidence**; reopen if an app that shows one enters
+  daily use (BACKLOG W11 closed with this reason).
+- **`upstream/selectors.txt` header.** The 12 comment lines of its header were
+  in a shuffled order (pre-existing — the same order is in HEAD, so it came
+  in with an early commit): the contract's own prose read backwards and in
+  fragments. **Fixed 23 Sep 2026:** the fragments were reordered into the
+  intended reading order and checked word-for-word against `docs/proposal.md`
+  ("Rules" section, hard rule 2), so no text was added, removed or reworded —
+  `sorted(header) == sorted(HEAD header)` and `tools/check-selectors` still
+  passes. The one ambiguous fragment ("silently") was placed per the
+  proposal's own sentence: "An unregistered dependency is invisible to the
+  upgrade guard and will break silently."
+
+## Gallery — 15 families, stock vs overlay
+
+`tools/render-gallery` (new, 23 Sep) renders one window per family offscreen
+with the same provider mechanism as the rest of the toolchain and writes one
+TIFF per family; `tools/gallery-diff` reports `changed_px/total_px`,
+`mean_abs_delta` and `max_delta`. Light scheme, `build/gtk.css` vs no
+provider at all (both runs hermetic — see the baseline note above):
+
+| Family | changed/total | mean Δ | max Δ |
+| --- | --- | --- | --- |
+| adw (toolbarview, banner, tabbar, status page) | 340409/396800 | 9.45 | 40 |
+| buttons | 297510/298080 | 14.67 | 255 |
+| calendar | 75785/129600 | 6.65 | 40 |
+| cells (flowbox, gridview) | 100227/316960 | 3.63 | 40 |
+| columns (columnview + headers) | 112681/210800 | 6.12 | 40 |
+| controls (switch, scale, progress, level, scrollbar) | 305877/312000 | 10.86 | 62 |
+| dnd (drop-active button + entry) | 174815/176800 | 11.36 | 57 |
+| entries | 278633/279360 | 12.45 | 63 |
+| expander | 153173/153600 | 11.14 | 40 |
+| headerbar | 111415/112000 | 11.74 | 40 |
+| lists (listbox, boxed-list, card) | 193842/291200 | 7.30 | 40 |
+| notebook | 219860/228800 | 10.82 | 40 |
+| popover | 198143/218400 | 10.48 | 40 |
+| spinbutton | 146786/147200 | 12.55 | 63 |
+| textview | 158782/239200 | 7.41 | 40 |
+
+15/15 families changed in every scheme (light, dark, HC). Two readings to
+keep honest: the delta proves the overlay *reaches* a family, not that the
+result is right — that is what the image review and the live pass are for;
+and under HC the remaining delta is the *surface* set (translucent window
+and panes), which is deliberately not reverted, because a surface tint is
+not a material effect.
+
+### Verification
+
+- `tools/check-selectors`: contract OK against the installed 1:1.9.4-1 —
+  169 entries, both axes (86 → 169; every new atom taken from the pinned
+  sheet, not invented, `button.link` and the four channel-fill atoms last).
+- `tools/build`: compiles, 861 lines, `!important` count 0, raw hex
+  count 0.
+- Structural HC audit (script above): 0 material declarations without a
+  matching revert (53 material selectors in the final sheet).
+- Motion matrix (`tools/probe-motion`, 80 ms samples, upstream sheet
+  loaded, hermetic baseline): normal, `SCHEME=dark`, `CONTRAST=more`,
+  `REDUCE=1` and `NOANIM=1` all report the expected verdicts — the press
+  well, the row wash and the focus ring are IN MOTION in the animated
+  runs, and every probed state lands instantly under `REDUCE=1` and
+  `NOANIM=1` (the reduce/no-animation runs were repeated *with* the
+  upstream sheet at the end of the session: without it the headerbar row
+  is a no-op, because `--headerbar-bg-color` is undefined and the whole
+  background declaration is invalid at computed-value time — the README
+  warns about exactly this, and the first pass of this matrix skipped it).
+  The hover glow lands inside the first sample in both schemes, which is
+  the state the 23 Sep motion review recorded (a background-image swap,
+  not a fade).
+- Gallery (`tools/render-gallery`, 15 families, stock vs overlay, diffed
+  by `tools/gallery-diff`) re-run on the final sheet: 15/15 families
+  changed in light (largest: adw, 340409/396800), dark (338378) and HC
+  (319485) — numbers below.
+- Contrast of every pair this pass touches, computed from the palette the
+  pinned sheet defines (translucent colours composited over the surface
+  they render on, not estimated):
+
+  | Pair | Light | Dark |
+  | --- | --- | --- |
+  | body text on window | 12.22:1 | 15.85:1 |
+  | text on a row wash at hover (5%) | 11.20:1 | 13.71:1 |
+  | text on a row wash at press (9%) | 10.42:1 | 12.06:1 |
+  | text on the check/radio cavity at press (30%) | 6.87:1 | 5.87:1 |
+  | destructive label on the HC solid fill | 4.83:1 | 6.11:1 |
+
+  Every pair clears 4.5:1; the tightest is the destructive label on its
+  solid fill, which is upstream's own pair (`--destructive-bg-color` /
+  `--accent-fg-color`) and unchanged by this pass. The row/expander washes
+  move the text contrast by at most 1.5 points, so the new expander wash
+  costs nothing legible.
+- Visual: the `headerbar`, `columns`, `lists` and `spinbutton` families
+  were read as images in both runs. The bar's icon buttons and the column
+  headers are indistinguishable from stock (the flat-family reset), the
+  card edge is present in both, and the spinbutton carries the new inset
+  while its up/down arrows stay flat.
+- Live pass: `tools/track <family>` opens the demo page for each family;
+  `tools/track <family> -i` opens the same page under GTK Inspector. The
+  user's eyeball verdict rides with daily driving (M7).
+
+## Lit channel fills — 23 Sep 2026
+
+**Request.** "Progress bar is still looking rather flat (the coloured bits)."
+
+**Diagnosis.** Correct, and by construction: upstream paints every filled
+channel — `progressbar > trough > progress`, `scale > trough > highlight`
+(one shared rule upstream, so one shared material here) and
+`levelbar > trough > block` — with a flat `background-color` (accent,
+`--warning-bg-color`, `--success-bg-color`) and nothing else. Ours only
+recessed the trough around it, so the fill sat in a groove as a sticker.
+
+**Decision.** A new L1 register, `ov-lit-fill()`, and **the colour stays
+opaque underneath it**. Two reasons: a progress bar's colour is data, and a
+levelbar's low/high/full distinction is meaning — diluting either to make
+glass would trade information for shine. So the lighting is layered on top
+(one light source, top): a 3-stop top-light gradient plus a 1px lit lip and
+shadowed foot, in white/black physics constants only, exactly like
+`ov-raised()` and `ov-glow()`. No kill switch of its own (the glow has
+none either); the HC revert is the escape hatch, and it flattens the fill to
+upstream's solid colour.
+
+Values are the CTA glass's own curve (white 28% → 6% at 42% → black 10%),
+compressed for a 4-12px bar and tuned by measurement: the first pass
+(white 22% / black 10%) moved the top row from `rgb(53,132,228)` to
+`rgb(146,189,241)` — one lit pixel out of four, still flat to the eye at 1×.
+The shipped pair (30%, 8% at 45%, black 14%; insets white 55% / black 22%):
+
+| node | before (every row) | after (top → foot) |
+| --- | --- | --- |
+| `scale > trough > highlight` | `rgb(53,132,228)` | `rgb(186,213,246)` → `rgb(41,95,161)` |
+| `progressbar > trough > progress` | `rgb(53,132,228)` | `rgb(189,214,246)` → `rgb(39,92,158)` |
+| `levelbar > trough > block` | `rgb(53,132,228)` | `rgb(189,214,246)` → `rgb(39,92,158)` |
+
+(measured in the gallery `controls` family; each selector was first proved to
+hit a painted node by painting it a flat probe colour and locating the
+pixels, the same technique the textview question used.)
+
+**Scope.** `progressbar.osd` and an empty trough are excluded, because
+upstream unsets the fill there (`progressbar > trough.empty > progress { all:
+unset }`). Motion: upstream animates `background` and `box-shadow` on these
+nodes; both are restated through `ov-motion()`, plus `background-image`
+(ours), so the colour fade keeps the house exit timing.
+
+**Defect found in passing.** The channel's HC revert set `box-shadow: none`,
+which erased upstream's own 1px HC ring on `scale > trough`,
+`progressbar > trough` and `levelbar > trough > block.empty` — the third
+instance of the same trap (buttons, card, now channels). The ring is
+restated instead. Only the ring: we never touch the channel's
+`background-color`, so upstream's HC value applies untouched.
+
+**Contract.** +4 atoms (`scale > trough > highlight`,
+`progressbar > trough > progress`, `progressbar > trough.empty > progress`,
+`levelbar > trough > block:not(.empty)`), 165 → 169; guard passes.
+
+**Verdict: KEPT** (user, 23 Sep 2026) — "nice and subtle, approved". The
+register ships as measured above; the tuning lever stays `ov-lit-fill()` in
+`_primitives.scss`, one edit wide, with the variant numbers on record if it
+ever wants to be stronger (the bevel-only and 42%-top variants were rejected
+on measurement, not on taste).
+
+**Verification.** Gallery `controls` in light and dark (identical output —
+the accent is scheme-independent, so the dome is too), HC flat at
+`rgb(53,132,228)` on every row, contract OK, sheet parses, 861 lines, 0
+`!important`, 0 raw hex. Live verdict rides with the user's eye:
+`tools/track factory` (progress bar) and `tools/track style-classes`.
+Rejected on measurement: the bevel-only variant (no gradient, hairlines
+only) — crisp but it loses the dome — and a 42%-top gradient variant, which
+dipped *below* the base colour through the middle.

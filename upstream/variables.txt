@@ -10,6 +10,7 @@
 #   - every upstream var() referenced by src/_tokens.scss must appear here
 #   - update this file and _tokens.scss in the same commit
 
---window-bg-color
 --dark-5
+--headerbar-backdrop-color
 --light-1
+--window-bg-color

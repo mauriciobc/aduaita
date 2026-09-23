@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# tools/track — the eyeball half of the loop. Opens the demo page that shows
+# a widget family on a real widget, so a material change can be judged where
+# it lives instead of in a pixel probe.
+#
+#   tools/track                 list every family, its demo page and the
+#                               source file that implements it
+#   tools/track <family>        launch that page
+#   tools/track <family> -i     launch it under GTK Inspector
+#                               (node tree + live CSS editor)
+#   tools/track factory         the whole-surface sweep
+#
+# Two demo surfaces, both from gtk4-demos (pacman -S gtk4-demos):
+#   gtk4-widget-factory   one window, all the common widgets — the sweep
+#   gtk4-demo --run=<X>   one example per page, for the families the factory
+#                         does not carry (views, tabs, panes, dnd, …)
+#
+# Coverage notes from building this table (23 Sep 2026):
+#   * `gtk4-demo --list` names 112 examples; the table below is the subset
+#     that matters to this overlay.
+#   * GtkCalendar has NO demo page in either binary, and GtkTextView only
+#     appears inside the factory — those two are probed, not demoed.
+#   * The factory has no page selector: it opens whole. Everything else is
+#     reachable as a single example.
+#
+# Nothing here writes to the repo: it is a launcher, not a test. A running
+# app reads ~/.config/gtk-4.0/gtk.css once at startup, so reopen the page
+# after `tools/build` (which already kills the --gapplication-service
+# daemons that would otherwise keep painting the old sheet).
+set -euo pipefail
+
+# family|command|surface file that implements the family
+table='
+factory|gtk4-widget-factory|all of src/surfaces/
+buttons|gtk4-widget-factory|_button.scss
+entries|gtk4-demo --run=search_entry|_entry.scss
+spinbutton|gtk4-demo --run=spinbutton|_entry.scss
+style-classes|gtk4-demo --run=theming_style_classes|_switch.scss, _controls.scss
+lists|gtk4-demo --run=listbox|_boxed-list.scss, _cells.scss
+boxed-rows|gtk4-demo --run=listview_settings|_boxed-list.scss
+columns|gtk4-demo --run=listview_colors|_cells.scss
+trees|gtk4-demo --run=tree_store|_cells.scss
+cells|gtk4-demo --run=flowbox|_cells.scss
+icons|gtk4-demo --run=iconview|_cells.scss
+notebook|gtk4-demo --run=tabs|_notebook.scss
+expander|gtk4-demo --run=expander|_expander.scss
+panes|gtk4-demo --run=panes|_window.scss
+shortcuts|gtk4-demo --run=shortcuts|(none: keycaps are upstream-styled)
+popover|gtk4-demo --run=popover|_popover.scss
+dnd|gtk4-demo --run=dnd|_button.scss (drop state)
+headerbar|gtk4-demo --run=headerbar|_headerbar.scss
+toolbar|gtk4-demo --run=theming_style_classes|_toolbar.scss
+'
+
+if [[ $# -eq 0 ]]; then
+  printf '%-14s %-38s %s\n' FAMILY COMMAND SURFACE
+  while IFS='|' read -r family command surface; do
+    [[ -z "$family" ]] && continue
+    printf '%-14s %-38s %s\n' "$family" "$command" "$surface"
+  done <<<"$table"
+  echo
+  echo "usage: tools/track <family> [-i]"
+  exit 0
+fi
+
+family="$1"
+shift
+inspect=no
+for arg in "$@"; do
+  [[ "$arg" == "-i" ]] && inspect=yes
+done
+
+command=""
+while IFS='|' read -r f c _; do
+  [[ "$f" == "$family" ]] && command="$c"
+done <<<"$table"
+
+if [[ -z "$command" ]]; then
+  echo "error: unknown family '$family' (run tools/track for the list)" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC2086
+set -- $command
+if ! command -v "$1" >/dev/null; then
+  echo "error: $1 not found — install gtk4-demos (pacman -S gtk4-demos)" >&2
+  exit 1
+fi
+
+if [[ "$inspect" == yes ]]; then
+  echo "GTK_DEBUG=interactive $command"
+  GTK_DEBUG=interactive exec "$@"
+fi
+
+echo "$command"
+exec "$@"

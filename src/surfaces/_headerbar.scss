@@ -1,5 +1,5 @@
 // L2 — headerbar. The floating surface: accent-free gradient (14/10,
-// user-tuned) + scheme-split grain tile @5%, over --headerbar-bg-color.
+// user-tuned) + scheme-split grain tile @5%, over --ov-bar-base.
 //
 // In AdwToolbarView apps (Nautilus, etc.), the top bar is a container
 // `toolbarview > .top-bar` wrapping a vertical GtkBox. When multiple bars
@@ -9,30 +9,27 @@
 // We style `toolbarview > .top-bar` to cover the full container and set
 // `background: none` on its nested `headerbar` to prevent double-painting.
 //
-// The grain URI is in --ov-texture-image (L0); the scheme-split dark
-// tile swaps in via prefers-color-scheme here.
+// The material itself is `ov-bar-surface()` (L1): gradient + grain over
+// --ov-bar-base, which is what lets the backdrop state move the whole
+// surface by re-pointing one token.
 
 headerbar,
 toolbarview > .top-bar {
-  background:
-    var(--ov-texture-image),
-    linear-gradient(to bottom,
-      color-mix(in srgb, white 14%, var(--headerbar-bg-color)),
-      color-mix(in srgb, black 10%, var(--headerbar-bg-color))),
-    var(--headerbar-bg-color);
-  background-repeat: repeat, no-repeat, no-repeat;
-  @media (prefers-color-scheme: dark) {
-    background:
-      url("file:///home/mauriciobc/Documentos/Code/aduaita/assets/grain-dark.png"),
-      linear-gradient(to bottom,
-        color-mix(in srgb, white 4%, var(--headerbar-bg-color)),
-        color-mix(in srgb, black 8%, var(--headerbar-bg-color))),
-      var(--headerbar-bg-color);
-    background-repeat: repeat, no-repeat, no-repeat;
-  }
-  @media (prefers-contrast: more) {
-    background: var(--headerbar-bg-color);
-  }
+  @include ov-bar-surface();
+}
+
+// Unfocused windows. Upstream's own signal (`headerbar:backdrop` →
+// var(--headerbar-backdrop-color) == @window_bg_color) is otherwise dead
+// here, twice over: our rule paints every state, and the gradient's stops
+// are opaque, so painting a different background-color underneath would
+// still show nothing. Re-pointing the base token moves the real thing.
+// The transition comes from ov-bar-surface() on the rule above.
+// In AdwToolbarView apps upstream dims `toolbarview > .top-bar.raised:backdrop`
+// and switches the nested headerbar's transition off; we paint the whole
+// container, so the whole container recedes.
+headerbar:backdrop,
+toolbarview > .top-bar:backdrop {
+  --ov-bar-base: var(--ov-bar-backdrop-base);
 }
 
 toolbarview > .top-bar headerbar {

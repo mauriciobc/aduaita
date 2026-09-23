@@ -1,0 +1,19 @@
+// L2 — notebook tabs. GtkNotebook's tabs already speak the wash language
+// (upstream: `currentColor 7%` hover/active, accent underline when
+// checked) — the recorded U6 decision (19 Sep) defers restyling them, and
+// nothing here adds material. What they lack is the house timing: their
+// rest rule animates only the outline trio, so the hover wash snaps.
+// Timing only, per the system-wide micro-interaction rollout; AdwTabBar
+// and AdwViewSwitcher stay deferred with them (U6).
+
+notebook > header > tabs > tab {
+  @include ov-motion(background-color var(--ov-motion-exit));
+}
+
+notebook > header > tabs > tab:hover {
+  @include ov-motion(background-color var(--ov-motion-enter));
+}
+
+notebook > header > tabs > tab:active {
+  @include ov-motion(background-color var(--ov-motion-press));
+}

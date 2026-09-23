@@ -1,7 +1,10 @@
 // L2 — the bar family: searchbar, actionbar, .toolbar. They share the
 // headerbar's surface language (upstream styles them with
 // --headerbar-bg-color and the same hairline shadows), so they wear the
-// same material: gradient + scheme-split grain, flat under HC.
+// same material — one `ov-bar-surface()` definition, flat under HC, and
+// the same backdrop recession as the headerbar (upstream dims
+// `searchbar > revealer > box:backdrop` and `actionbar > revealer > box:backdrop`
+// the same way).
 //
 // Buttons inside them follow the button surface's own scoping (the
 // flat-by-default rule is upstream's and already excludes them via
@@ -10,23 +13,11 @@
 searchbar > revealer > box,
 actionbar > revealer > box,
 .toolbar {
-  background:
-    var(--ov-texture-image),
-    linear-gradient(to bottom,
-      color-mix(in srgb, white 14%, var(--headerbar-bg-color)),
-      color-mix(in srgb, black 10%, var(--headerbar-bg-color))),
-    var(--headerbar-bg-color);
-  background-repeat: repeat, no-repeat, no-repeat;
-  @media (prefers-color-scheme: dark) {
-    background:
-      url("file:///home/mauriciobc/Documentos/Code/aduaita/assets/grain-dark.png"),
-      linear-gradient(to bottom,
-        color-mix(in srgb, white 4%, var(--headerbar-bg-color)),
-        color-mix(in srgb, black 8%, var(--headerbar-bg-color))),
-      var(--headerbar-bg-color);
-    background-repeat: repeat, no-repeat, no-repeat;
-  }
-  @media (prefers-contrast: more) {
-    background: var(--headerbar-bg-color);
-  }
+  @include ov-bar-surface();
+}
+
+searchbar > revealer > box:backdrop,
+actionbar > revealer > box:backdrop,
+.toolbar:backdrop {
+  --ov-bar-base: var(--ov-bar-backdrop-base);
 }

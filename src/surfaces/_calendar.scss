@@ -1,0 +1,17 @@
+// L2 — GtkCalendar. The day grid keeps upstream's semantics untouched: both
+// accent states it paints on the grid (`:selected` and `:checked`) are
+// meaning, not material, so neither value moves. What moves is the timing:
+// upstream's grid label animates only the outline trio, so the day-to-day
+// pointer wash snaps. Timing only, on the house spec (280ms approach /
+// 200ms release).
+//
+// GtkCalendar usually arrives inside a popover (GtkCalendarPopover), which
+// already wears the overlay rung through L2/_popover.scss.
+
+calendar > grid > label {
+  @include ov-motion(background-color var(--ov-motion-exit));
+}
+
+calendar > grid > label.day-number:checked {
+  @include ov-motion(background-color var(--ov-motion-enter));
+}

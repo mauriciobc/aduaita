@@ -37,7 +37,7 @@
 .navigation-sidebar > flowboxchild,
 sidebar .navigation-sidebar > row,
 placessidebar .navigation-sidebar > row {
-  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-exit));
 }
 
 // Entry microinteraction: applied on mouse enter
@@ -48,7 +48,7 @@ placessidebar .navigation-sidebar > row {
 .navigation-sidebar child.activatable.has-open-popup,
 .navigation-sidebar flowboxchild.has-open-popup {
   background-color: color-mix(in srgb, currentColor 6%, transparent);
-  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-enter));
 }
 
 // Active press microinteraction: crisp 120ms acknowledgment
@@ -56,7 +56,7 @@ placessidebar .navigation-sidebar > row {
 .navigation-sidebar child.activatable:active,
 .navigation-sidebar flowboxchild:active {
   background-color: color-mix(in srgb, currentColor 10%, transparent);
-  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-press));
 }
 
 // Selected resting state & exit microinteraction when leaving hover on selected item
@@ -64,7 +64,7 @@ placessidebar .navigation-sidebar > row {
 .navigation-sidebar child:selected,
 .navigation-sidebar flowboxchild:selected {
   background-color: color-mix(in srgb, currentColor 9%, transparent);
-  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-exit));
 }
 
 // Selected entry microinteraction: applied on mouse enter when item is selected
@@ -75,7 +75,7 @@ placessidebar .navigation-sidebar > row {
 .navigation-sidebar child.activatable:selected.has-open-popup,
 .navigation-sidebar flowboxchild:selected.has-open-popup {
   background-color: color-mix(in srgb, currentColor 13%, transparent);
-  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-enter));
 }
 
 // Selected active press microinteraction
@@ -83,24 +83,24 @@ placessidebar .navigation-sidebar > row {
 .navigation-sidebar child.activatable:selected:active,
 .navigation-sidebar flowboxchild:selected:active {
   background-color: color-mix(in srgb, currentColor 16%, transparent);
-  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-press));
 }
 
 // Inline action buttons (unmount, eject, bookmark)
 button.sidebar-button {
-  transition: background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-exit),
+                     color var(--ov-motion-exit));
 }
 
 button.sidebar-button:hover {
   background-color: color-mix(in srgb, currentColor 9%, transparent);
-  transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-enter),
+                     color var(--ov-motion-enter));
 }
 
 button.sidebar-button:active {
   background-color: color-mix(in srgb, currentColor 14%, transparent);
-  transition: background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-color var(--ov-motion-press));
 }
 
 .navigation-sidebar > separator {

@@ -4,61 +4,124 @@
 //   hover   — ov-glow(): layered soft rim in the theme accent (bevel stays)
 //   pressed — ov-well(): amplified inset well + 0.96 brightness
 //   held    — ov-well-held(): light inset on :checked
-// Transitions: house motion (280ms hover entry / 200ms exit / 120ms press).
+// Transitions: house motion via ov-motion() (280ms hover entry / 200ms
+// exit / 120ms press), which also restates upstream's focus-ring motion.
 //
-// Scope ("not all buttons"): .flat and .osd stay stock.
+// SCOPE — the material is for OPAQUE buttons only (recorded decision,
+// 19 Sep 2026). Two guards carry that:
+//   :not(.flat):not(.osd)  — the classes upstream marks flat explicitly.
+//   :not(:drop(active))    — the material owns box-shadow, so it stands
+//                            aside in the drop state and lets upstream's
+//                            accent ring through (widgets/_button.scss
+//                            `button:drop(active)`); without this the ring
+//                            was erased on every non-flat button.
+// Upstream also paints whole button FAMILIES flat without the class —
+// bar icon buttons, spinbutton arrows, table and calendar headers, window
+// controls, tab thumbnails, popover model buttons, pathbar crumbs,
+// bottom-sheet actions, infobar close, `.flat` parents' children. Those
+// are neutralised at the bottom of this file ($ov-flat-*), which is what
+// keeps the material off them at priority 800.
 // Selectors registered in upstream/selectors.txt (exact upstream atoms).
 
-button:not(.flat):not(.osd) {
+button:not(.flat):not(.osd):not(:drop(active)) {
   box-shadow: ov-bevel();
-  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background-image 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  // The resting declaration carries the LEAVE timing for every state
+  // below (a transition is taken from the after-change style).
+  @include ov-motion(box-shadow var(--ov-motion-exit),
+                     filter var(--ov-motion-exit),
+                     background-image var(--ov-motion-exit),
+                     background-color var(--ov-motion-exit));
 }
 
-button:not(.flat):not(.osd):hover:not(:active):not(:checked):not(:disabled) {
+button:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
   background-image: ov-glow();
-  transition: background-image 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  // Entering: the glow approaches over the slower house duration.
+  @include ov-motion(background-image var(--ov-motion-enter),
+                     box-shadow var(--ov-motion-exit));
 }
 
-button:not(.flat):not(.osd):active,
-button:not(.flat):not(.osd).keyboard-activating,
-menubutton:active > button:not(.flat):not(.osd) {
+button:not(.flat):not(.osd):not(:drop(active)):active,
+button:not(.flat):not(.osd):not(:drop(active)).keyboard-activating,
+menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
   box-shadow: ov-well();
   filter: brightness(0.96);
-  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  // Press: crisp, mechanical, immediate.
+  @include ov-motion(box-shadow var(--ov-motion-press),
+                     filter var(--ov-motion-press));
 }
 
-button:not(.flat):not(.osd):checked {
+button:not(.flat):not(.osd):not(:drop(active)):checked {
   box-shadow: ov-well-held();
 }
 
-button.toggle:checked:not(.flat):not(.osd),
-.toggle:checked button:not(.flat):not(.osd) {
+button.toggle:checked:not(.flat):not(.osd):not(:drop(active)),
+.toggle:checked button:not(.flat):not(.osd):not(:drop(active)) {
   box-shadow: ov-well-held();
 }
 
-button:not(.flat):not(.osd):disabled {
+// Disabled: the material goes, nothing else does. `filter` is deliberately
+// NOT reset here — upstream dims disabled surfaces with
+// `filter: opacity(...)` on several families (label, scale, switch, and
+// every bar button family), so a `filter: none` at priority 800 erased the
+// dim and a disabled bar icon button read as enabled.
+button:not(.flat):not(.osd):not(:drop(active)):disabled {
   box-shadow: none;
   background-image: none;
-  filter: none;
 }
 
-// High contrast: bevel, glow, well, held — all revert flat.
-button:not(.flat):not(.osd),
-button:not(.flat):not(.osd):hover,
-button:not(.flat):not(.osd):active,
-button:not(.flat):not(.osd).keyboard-activating,
-button:not(.flat):not(.osd):checked,
-button:not(.flat):not(.osd):disabled,
-button.toggle:checked:not(.flat):not(.osd),
-.toggle:checked button:not(.flat):not(.osd) {
+// High contrast: bevel, glow, well, held — all revert flat. The selector
+// list mirrors the material rules above CHARACTER FOR CHARACTER: HC is the
+// same provider at the same priority, so anything narrower loses to the
+// rule it is meant to revert. (The 19 Sep list omitted the
+// `:not(:active):not(:checked):not(:disabled)` tail and the
+// `.keyboard-activating` press variant, so the hover glow and the press
+// well survived HC — found by the structural audit, 23 Sep.)
+//
+// Each entry reverts only what its material rule DECLARES. That matters:
+// `background-image: none` on the resting selector also erased a fill that
+// the sheet underneath delivers as a gradient — measured with
+// tools/probe-motion against the system GTK theme, the probed button's mean
+// went from rgb(238,239,240)/alpha 252 to rgb(15,16,15)/alpha 40 under HC
+// (23 Sep). libadwaita's own buttons use no background-image, so a
+// libadwaita app was unaffected; a plain-GTK app (the demo apps included)
+// lost the button's face. The plain button only ever gets a background-image
+// from the hover glow, so only the hover entry reverts it.
+//
+// `:not(:disabled)` is the one deliberate divergence from the list above:
+// a disabled bar-family button carries upstream's `filter: opacity()` dim,
+// and a `filter: none` here would erase it in HC — the one mode where
+// losing it hurts most. Disabled material is already zeroed by the rule
+// above, outside HC, so nothing is left unreverted.
+//
+// The revert for box-shadow RESTATES upstream's own ring rather than
+// clearing the property: under `prefers-contrast: more` that ring is the
+// button's boundary (measured: `box-shadow: none` here made the probed
+// button's press state read 240,241,242 — identical to rest — where stock
+// HC reads 204,208,212). Restating the expression means the ring keeps
+// following `--border-opacity` and the HC palette for free.
+$ov-button-ring: "inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity), transparent)";
+
+button:not(.flat):not(.osd):not(:drop(active)):not(:disabled),
+button:not(.flat):not(.osd):not(:drop(active)):checked,
+button.toggle:checked:not(.flat):not(.osd):not(:drop(active)),
+.toggle:checked button:not(.flat):not(.osd):not(:drop(active)) {
+  @media (prefers-contrast: more) {
+    box-shadow: #{$ov-button-ring};
+  }
+}
+
+button:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
   @media (prefers-contrast: more) {
     background-image: none;
-    box-shadow: none;
+    box-shadow: #{$ov-button-ring};
+  }
+}
+
+button:not(.flat):not(.osd):not(:drop(active)):active,
+button:not(.flat):not(.osd):not(:drop(active)).keyboard-activating,
+menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
+  @media (prefers-contrast: more) {
+    box-shadow: #{$ov-button-ring};
     filter: none;
   }
 }
@@ -73,9 +136,22 @@ button.toggle:checked:not(.flat):not(.osd),
 //   pressed — denser scoop + compressed well
 //   held    — light recessed well
 // HC: solid accent (accessibility). Destructive remaps --accent-*.
+//
+// The HC revert is repeated on EVERY state, through one mixin: a nested
+// `@media` block only covers the selector it sits on, so the single revert
+// at the end of this rule left the hover bloom, the press well and the
+// checked inset live under HC (found by the structural audit, 23 Sep).
 // ---------------------------------------------------------------------
-button.suggested-action:not(.flat):not(.osd),
-button.destructive-action:not(.flat):not(.osd) {
+@mixin ov-accent-solid() {
+  border-color: transparent;
+  background: var(--accent-bg-color);
+  color: var(--accent-fg-color);
+  box-shadow: none;
+  filter: none;
+}
+
+button.suggested-action:not(.flat):not(.osd):not(:drop(active)),
+button.destructive-action:not(.flat):not(.osd):not(:drop(active)) {
   color: var(--accent-fg-color);
   border-color: transparent;
   // Translucent accent fill — the surface behind shows through.
@@ -88,10 +164,10 @@ button.destructive-action:not(.flat):not(.osd) {
   background-repeat: no-repeat;
   box-shadow: inset 0 1px 1.5px RGB(255 255 255 / 30%),
               inset 0 -1px 1.5px RGB(0 0 0 / 10%);
-  transition: border-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(border-color var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit),
+                     filter var(--ov-motion-exit),
+                     background var(--ov-motion-exit));
 
   &:hover:not(:active):not(:checked):not(:disabled) {
     border-color: transparent;
@@ -107,9 +183,12 @@ button.destructive-action:not(.flat):not(.osd) {
                 0 12px 28px -6px color-mix(in srgb, var(--accent-bg-color) 22%, transparent),
                 inset 0 1px 1.5px RGB(255 255 255 / 40%),
                 inset 0 -1px 1.5px RGB(0 0 0 / 8%);
-    transition: border-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                background 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    @include ov-motion(border-color var(--ov-motion-enter),
+                       box-shadow var(--ov-motion-enter),
+                       background var(--ov-motion-enter));
+    @media (prefers-contrast: more) {
+      @include ov-accent-solid();
+    }
   }
 
   &:active,
@@ -125,10 +204,13 @@ button.destructive-action:not(.flat):not(.osd) {
                 inset 0 2.5px 5px RGB(0 0 0 / 22%),
                 inset 0 -1px 1px RGB(255 255 255 / 20%);
     filter: brightness(0.97);
-    transition: border-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                background 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    @include ov-motion(border-color var(--ov-motion-press),
+                       box-shadow var(--ov-motion-press),
+                       filter var(--ov-motion-press),
+                       background var(--ov-motion-press));
+    @media (prefers-contrast: more) {
+      @include ov-accent-solid();
+    }
   }
 
   &:checked {
@@ -141,6 +223,9 @@ button.destructive-action:not(.flat):not(.osd) {
     background-repeat: no-repeat;
     box-shadow: inset 0 1.5px 3px RGB(0 0 0 / 16%),
                 inset 0 -1px 0 RGB(255 255 255 / 18%);
+    @media (prefers-contrast: more) {
+      @include ov-accent-solid();
+    }
   }
 
   &:disabled {
@@ -150,13 +235,108 @@ button.destructive-action:not(.flat):not(.osd) {
     color: color-mix(in srgb, var(--accent-fg-color) 70%, transparent);
     box-shadow: none;
     filter: none;
+    @media (prefers-contrast: more) {
+      @include ov-accent-solid();
+    }
   }
 
   @media (prefers-contrast: more) {
-    border-color: transparent;
-    background: var(--accent-bg-color); // solid for accessibility
-    color: var(--accent-fg-color);
-    box-shadow: none;
-    filter: none;
+    @include ov-accent-solid();
+  }
+}
+
+// ---------------------------------------------------------------------
+// Flat families — upstream paints these buttons flat WITHOUT the .flat
+// class, so the class guard alone let the material leak onto them.
+// Neutralised by property, not by restating upstream's look: the material
+// owns exactly box-shadow / background-image / filter, so resetting those
+// three hands the family back to upstream's own rules (and its own
+// transition list, restated here because our declaration replaced it).
+// Source files: widgets/_header-bar.scss, _search-bar.scss,
+// _action-bar.scss, _toolbar.scss, _spin-button.scss, _column-view.scss,
+// _tree-view.scss, _calendar.scss, _window-controls.scss, _notebook.scss,
+// _infobar.scss, popover/_menu.scss, _bottom-sheet.scss, _file-chooser.scss,
+// _tab-view.scss.
+//
+// The guard is upstream's own ":not(.raised):not(.suggested-action)
+// :not(.destructive-action):not(.opaque)" plus .flat, the drop state and
+// :disabled: every reset selector therefore carries eight or more classes,
+// which is what makes one non-state rule outrank every material rule (the
+// richest, `:hover`, carries seven) at equal priority — no `!important`,
+// no state-per-family explosion.
+//
+// `:not(:disabled)` also keeps upstream's disabled treatment intact: the
+// bar families dim with `filter: opacity()` on the state, and a reset that
+// matched a disabled button would flatten that dim away.
+// ---------------------------------------------------------------------
+@mixin ov-flat-button() {
+  box-shadow: none;
+  background-image: none;
+  filter: none;
+  @include ov-motion(background var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
+}
+
+$ov-flat-opaque: ":not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)";
+$ov-flat-self: ":not(.flat)#{$ov-flat-opaque}:not(:drop(active)):not(:disabled)";
+
+// Icon-bearing buttons inside the bar contexts: flat unless upstream's
+// own opaque classes say otherwise. The toolbarview wrappers are NOT a
+// context here — upstream flattens inside the headerbar/searchbar/actionbar
+// they contain, and a reset on the bare wrapper would flatten buttons
+// upstream keeps opaque.
+$ov-flat-bar-contexts: "headerbar",
+                       "searchbar > revealer > box",
+                       "actionbar > revealer > box",
+                       ".toolbar";
+$ov-flat-bar-self-shapes: "button.image-button",
+                          "button.arrow-button",
+                          "button.image-text-button";
+
+// Structural flat buttons: flat by where they live, not by class.
+$ov-flat-structural: "windowcontrols > button.image-button",
+                     "tabthumbnail button",
+                     "notebook > header > tabs > arrow",
+                     "calendar > header > button",
+                     "columnview > header > button",
+                     "treeview.view > header > button",
+                     "infobar .close",
+                     "button.link",
+                     "button.emoji-section.image-button",
+                     "popover.menu box.inline-buttons button.image-button.model",
+                     "popover.menu box.circular-buttons button.circular.image-button.model",
+                     "spinbutton > button.image-button.up",
+                     "spinbutton > button.image-button.down",
+                     "bottom-sheet > sheet > stack > button",
+                     "filechooser #pathbarbox > stack > box > button",
+                     "filechooser #pathbarbox > stack > box > box > button",
+                     "filechooser #pathbarbox > stack > box > menubutton > button",
+                     "menubutton.flat > button",
+                     "splitbutton.flat > button",
+                     "splitbutton.flat > menubutton > button";
+
+@each $context in $ov-flat-bar-contexts {
+  @each $shape in $ov-flat-bar-self-shapes {
+    #{$context} #{$shape}#{$ov-flat-self} {
+      @include ov-flat-button();
+    }
+  }
+  // Upstream puts the opaque guard on the WRAPPER for these three, so the
+  // child's own class list is not what makes it flat — mirroring that is
+  // what keeps `headerbar menubutton.opaque > button` materialised.
+  #{$context} menubutton.image-button#{$ov-flat-opaque} > button#{$ov-flat-self} {
+    @include ov-flat-button();
+  }
+  #{$context} splitbutton#{$ov-flat-opaque} > button#{$ov-flat-self} {
+    @include ov-flat-button();
+  }
+  #{$context} splitbutton#{$ov-flat-opaque} > menubutton > button#{$ov-flat-self} {
+    @include ov-flat-button();
+  }
+}
+
+@each $family in $ov-flat-structural {
+  #{$family}#{$ov-flat-self} {
+    @include ov-flat-button();
   }
 }

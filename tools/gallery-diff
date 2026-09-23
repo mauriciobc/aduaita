@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Compare two render-gallery output directories, pixel by pixel.
+#
+#   tools/gallery-diff <dirA> <dirB>
+#
+# Each directory holds one .tiff per widget family (see tools/render-gallery).
+# For every family present in BOTH directories the two images are loaded with
+# python3 + PIL and one line is printed:
+#
+#   <family>  <changed_px>/<total_px>  <mean_abs_delta>  <max_delta>
+#
+# changed_px counts pixels whose largest per-channel absolute delta exceeds 2
+# (antialiasing noise); mean_abs_delta is averaged over every channel and
+# rounded to 2 decimals; max_delta is the largest single-channel delta.
+# Families present in only one directory are reported on a MISSING line, and
+# a summary line closes the output.
+#
+# Exit status: 0 after a comparison, 1 for a usage error or a missing
+# directory (never for a diff — a changed gallery is not a failure).
+set -euo pipefail
+
+usage() {
+  echo "usage: $(basename "$0") <dirA> <dirB>" >&2
+}
+
+if [[ $# -ne 2 ]]; then
+  usage
+  exit 1
+fi
+
+for dir in "$1" "$2"; do
+  if [[ ! -d "$dir" ]]; then
+    echo "error: not a directory: $dir" >&2
+    usage
+    exit 1
+  fi
+done
+
+python3 - "$1" "$2" <<'PY'
+import os
+import sys
+
+from PIL import Image, ImageChops
+
+NOISE = 2  # per-channel delta tolerated before a pixel counts as changed
+
+
+def families(directory):
+    return {name[:-5] for name in os.listdir(directory) if name.endswith(".tiff")}
+
+
+def compare(path_a, path_b):
+    """(changed_px, total_px, mean_abs_delta, max_delta) for two TIFFs."""
+    with Image.open(path_a) as img_a, Image.open(path_b) as img_b:
+        a = img_a.convert("RGBA")
+        b = img_b.convert("RGBA")
+    if a.size != b.size:
+        raise ValueError(f"{a.size[0]}x{a.size[1]} vs {b.size[0]}x{b.size[1]}")
+
+    diff = ImageChops.difference(a, b)
+    bands = diff.split()
+    total_channels = 0
+    sum_delta = 0
+    max_delta = 0
+    mask = None
+    for band in bands:
+        hist = band.histogram()
+        total_channels += sum(hist)
+        sum_delta += sum(value * count for value, count in enumerate(hist))
+        top = max(value for value, count in enumerate(hist) if count)
+        max_delta = max(max_delta, top)
+        noisy = band.point(lambda value: 255 if value > NOISE else 0)
+        mask = noisy if mask is None else ImageChops.lighter(mask, noisy)
+
+    changed = mask.histogram()[255]
+    total_px = total_channels // len(bands)
+    return changed, total_px, sum_delta / total_channels, max_delta
+
+
+dir_a, dir_b = sys.argv[1], sys.argv[2]
+families_a, families_b = families(dir_a), families(dir_b)
+
+rows = []
+for family in sorted(families_a & families_b):
+    path_a = os.path.join(dir_a, family + ".tiff")
+    path_b = os.path.join(dir_b, family + ".tiff")
+    try:
+        changed, total, mean, worst = compare(path_a, path_b)
+    except ValueError as exc:
+        print(f"{family}  size-mismatch: {exc}")
+        continue
+    rows.append((family, changed, total))
+    print(f"{family}  {changed}/{total}  {mean:.2f}  {worst}")
+
+for only, directory in ((families_a - families_b, dir_b), (families_b - families_a, dir_a)):
+    if only:
+        print(f"MISSING from {directory}: {' '.join(sorted(only))}")
+
+changed_rows = [row for row in rows if row[1] > 0]
+if changed_rows:
+    family, changed, total = max(changed_rows, key=lambda row: row[1])
+    largest = f"{family} ({changed}/{total})"
+else:
+    largest = "none"
+
+
+def plural(count):
+    return f"{count} famil{'y' if count == 1 else 'ies'}"
+
+
+print(
+    f"summary: {plural(len(rows))} compared, {plural(len(changed_rows))} changed, "
+    f"largest: {largest}"
+)
+PY

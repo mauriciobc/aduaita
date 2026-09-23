@@ -1,0 +1,30 @@
+// L2 — sheets (AdwBottomSheet, AdwFloatingSheet). The newest floating
+// surfaces in libadwaita 1.9, and until now the only ones outside the
+// language: upstream gives them a 3-stop shadow built from opaque black
+// constants plus a 250ms box-shadow transition.
+//
+// They land on the deepest rung of the ladder — `ov-depth-window()`, the
+// rung recorded in Evening 0 for "headerbar cluster, windows" and, before
+// this pass, used by nothing. A sheet that slides over content is exactly
+// that: a window over the surface. The rung follows --ov-depth-color, so
+// the depth kill switch (--ov-depth-color: transparent) flattens sheets
+// along with cards, popovers and toasts.
+//
+// The sheet's own definition is upstream's `outline` / `> outline` node
+// (a 7% white hairline), which is untouched here — the ladder replaces
+// only the shadow list. ov-motion() restates the transition list so
+// upstream's border-radius timing survives alongside ours.
+// Selectors registered in upstream/selectors.txt.
+
+bottom-sheet > sheet,
+floating-sheet > sheet {
+  box-shadow: ov-depth-window();
+  @include ov-motion(box-shadow var(--ov-motion-exit));
+}
+
+@media (prefers-contrast: more) {
+  bottom-sheet > sheet,
+  floating-sheet > sheet {
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+  }
+}

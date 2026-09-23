@@ -1,10 +1,27 @@
-// L2 — entries. The recessed material (ov-inset): scoop gradient + soft
-// line at rest, deeper well on focus, upstream's focus outline
-// coexisting, the 1px currentColor ring restated in every state.
+// L2 — entries and spinbuttons. The recessed material (ov-inset): scoop
+// gradient + soft line at rest, deeper well on focus, upstream's focus
+// outline coexisting, the 1px currentColor ring restated in every state.
 //
 // user-tuned live 19 Sep ("AWESOME"); values in _primitives.scss.
+//
+// Scope: `:not(:drop(active))` stands the material aside in the drop
+// state so upstream's accent ring shows (`entry:drop(active)`,
+// `spinbutton:drop(active)`). The material owns box-shadow, so without
+// the guard a 2-class rule at priority 800 erased a 1-class upstream rule
+// at priority 200 — priority decides before specificity does.
+//
+// Gate 23 Sep 2026: `spinbutton` is NOT an entry node in GTK 4. Its node
+// name is `spinbutton` and its text area is `spinbutton > text`, so
+// `entry` never matched it and the whole family (GtkSpinButton,
+// AdwSpinRow) kept stock Adwaita while entries were recessed. Upstream
+// gives the two identical bodies (widgets/_entry.scss vs
+// widgets/_spin-button.scss), so they now carry the identical material.
 // Selectors registered in upstream/selectors.txt.
 
-entry {
+entry:not(:drop(active)) {
+  @include ov-inset();
+}
+
+spinbutton:not(:drop(active)) {
   @include ov-inset();
 }

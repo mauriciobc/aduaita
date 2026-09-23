@@ -19,6 +19,15 @@
 @import "surfaces/boxed-list";
 @import "surfaces/popover";
 @import "surfaces/controls";
+// Added 23 Sep 2026 — the widget families the first pass left uncovered:
+// views and documents, content cells, notebook tabs, expanders, the
+// calendar grid, sheets. Generic selectors live here, after the family
+// files whose narrower rules must outrank them.
+@import "surfaces/cells";
+@import "surfaces/notebook";
+@import "surfaces/expander";
+@import "surfaces/calendar";
+@import "surfaces/sheet";
 
 // L3 — contrast reverts are emitted inline by the L1 mixins, not by a
 // separate block, so no material rule can ever drift from its revert.

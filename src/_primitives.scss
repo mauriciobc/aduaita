@@ -11,6 +11,8 @@
 //             external shadows break the same-surface language.
 //   inset   — permanent recessed material for container-ish surfaces
 //             (entries): scoop gradient + hairline, DEEPER on focus.
+//   fill    — the lit colour of a filled channel (progress / scale /
+//             levelbar): top light over an opaque semantic colour.
 //   texture — grain tiles (scheme-split); headerbar garnish.
 //
 // GTK constraint (measured, decisions.md M2): var() substitutes single
@@ -26,6 +28,68 @@
 // Overriding box-shadow or background-image REPLACES upstream's value —
 // surface rules must restate upstream's stops/images alongside the
 // overlay's ($upstream parameters); the pinned version makes that safe.
+
+// ---------------------------------------------------------------------
+// Motion — the house state transitions (L0 tokens, one curve).
+//
+// transition is NOT additive: a declaration REPLACES the whole list, so an
+// overlay rule that animates would otherwise silence upstream's own motion
+// on the same node. Upstream animates the focus-ring trio
+// (outline-color/width/offset, 200ms on this very curve — tokenised as
+// --ov-motion-ring) on every surface this overlay touches: buttons, rows,
+// entries, switch, scale slider, sidebar buttons (verified against
+// 1:1.9.4-1, where the bare `button` atom carries it). So every ov-motion()
+// call restates that trio: the ring keeps fading in at stock speed instead
+// of snapping — and still follows the reduced-motion override.
+//
+// $specs pairs are "<property> <duration token>"; the curve and the
+// restatement are the mixin's business.
+// ---------------------------------------------------------------------
+$ov-upstream-ring: outline-color, outline-width, outline-offset;
+
+@mixin ov-motion($specs...) {
+  $list: ();
+  @each $spec in $specs {
+    $list: append($list, nth($spec, 1) nth($spec, 2), comma);
+  }
+  @each $prop in $ov-upstream-ring {
+    $list: append($list, $prop var(--ov-motion-ring) var(--ov-motion-ease), comma);
+  }
+  transition: $list;
+}
+
+// ---------------------------------------------------------------------
+// Bar surface — the chrome material (headerbar, top-bar, searchbar /
+// actionbar box, .toolbar). One definition because the surface has two
+// states that must not drift: rest and backdrop. The base colour is the
+// token --ov-bar-base (L0), so a backdrop rule re-points the token instead
+// of restating six layers — and the stops are opaque, so the token is the
+// *only* way to move this surface.
+// Grain URI comes from --ov-texture-image (scheme-split, killed by the
+// texture kill switch); the dark block only diverges in gradient strength.
+// ---------------------------------------------------------------------
+@mixin ov-bar-surface() {
+  background:
+    var(--ov-texture-image),
+    linear-gradient(to bottom,
+      color-mix(in srgb, white 14%, var(--ov-bar-base)),
+      color-mix(in srgb, black 10%, var(--ov-bar-base))),
+    var(--ov-bar-base);
+  background-repeat: repeat, no-repeat, no-repeat;
+  @include ov-motion(background var(--ov-motion-exit));
+  @media (prefers-color-scheme: dark) {
+    background:
+      var(--ov-texture-image),
+      linear-gradient(to bottom,
+        color-mix(in srgb, white 4%, var(--ov-bar-base)),
+        color-mix(in srgb, black 8%, var(--ov-bar-base))),
+      var(--ov-bar-base);
+    background-repeat: repeat, no-repeat, no-repeat;
+  }
+  @media (prefers-contrast: more) {
+    background: var(--ov-bar-base);
+  }
+}
 
 // ---------------------------------------------------------------------
 // Bevel — the tuned 0.5px hairline pair (same-surface button rest).
@@ -126,14 +190,14 @@
 // decisions.md; the pinned version makes restating safe).
 // Selector family includes menubutton wrapper→child bridge.
 @mixin ov-press($upstream: ()) {
-  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(box-shadow var(--ov-motion-exit),
+                     filter var(--ov-motion-exit));
   &:active,
   &.keyboard-activating {
     box-shadow: ov-well();
     filter: brightness(0.96);
-    transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                filter 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    @include ov-motion(box-shadow var(--ov-motion-press),
+                       filter var(--ov-motion-press));
     @media (prefers-contrast: more) {
       box-shadow: #{if(length($upstream) > 0, $upstream, none)};
       filter: none;
@@ -165,7 +229,7 @@
   box-shadow: $ring,
               inset 0 1px 3px color-mix(in srgb, black 9%, transparent),
               inset 0 -1px 0 color-mix(in srgb, white 20%, transparent);
-  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(box-shadow var(--ov-motion-exit));
   &:focus-within {
     background-image: linear-gradient(to bottom,
       color-mix(in srgb, black 5%, transparent),
@@ -177,6 +241,58 @@
   @media (prefers-contrast: more) {
     background-image: none;
     box-shadow: #{if(length($upstream) > 0, $upstream, $ring)};
+    // The focused state outranks this rule (same priority, one more
+    // class), so it needs its own revert or a focused entry keeps the
+    // deep scoop under HC (found by the structural audit, 23 Sep).
+    &:focus-within {
+      background-image: none;
+      box-shadow: #{if(length($upstream) > 0, $upstream, $ring)};
+    }
+  }
+}
+
+// ---------------------------------------------------------------------
+// The LIT FILL — the coloured part of a channel: a progress bar, the
+// filled side of a scale, a levelbar block. Upstream paints all three with
+// a flat `background-color` (accent / warning / success) and nothing else,
+// which reads as a sticker on the surface; the house register for a
+// coloured surface is a top-lit one (the same lighting curve the accent
+// glass uses on CTAs: light at the top, shade at the bottom, one light
+// source, everywhere).
+//
+// The colour underneath stays OPAQUE and untouched. A progress bar's
+// colour is data and a levelbar's low/high/full distinction is meaning, so
+// the lighting is layered over the colour rather than replacing it — this
+// is garnish on a semantic fill, not a new fill.
+//
+// Physics constants only (white/black), like ov-raised() and ov-glow(), so
+// the treatment follows every palette and both schemes for free. No kill
+// switch of its own, matching the glow: the HC revert is the escape hatch.
+//
+// The values are the CTA glass's lighting curve, compressed: a channel fill
+// is 4-12px tall, so first pass — white 22% top, black 10% bottom — moved a
+// fill's top pixel row from rgb(53,132,228) to rgb(146,189,241) against a
+// flat rgb(53,132,228) before: one lit pixel out of four, which still reads
+// as flat at 1×. Raised to the glass's own 30% register with a deeper pair,
+// an 8px fill reads rgb(189,214,246) → rgb(95,158,234) → rgb(57,126,211) →
+// rgb(39,92,158): a lit top, a shadowed foot, a visible dome.
+// ---------------------------------------------------------------------
+@mixin ov-lit-fill() {
+  background-image: linear-gradient(to bottom,
+    color-mix(in srgb, white 30%, transparent),
+    color-mix(in srgb, white 8%, transparent) 45%,
+    color-mix(in srgb, black 14%, transparent));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, white 55%, transparent),
+              inset 0 -1px 1px color-mix(in srgb, black 22%, transparent);
+  // Upstream animates `background` and `box-shadow` on exactly these nodes;
+  // restated (plus background-image, which is ours) so the fill colour still
+  // fades at the house exit timing instead of snapping.
+  @include ov-motion(background var(--ov-motion-exit),
+                     background-image var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
+  @media (prefers-contrast: more) {
+    background-image: none;
+    box-shadow: none;
   }
 }
 

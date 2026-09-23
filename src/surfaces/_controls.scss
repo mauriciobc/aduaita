@@ -5,11 +5,13 @@
 //                we only deepen its resting visibility slightly so the
 //                scoop language reaches it. No knob styling: the slider
 //                is a precision control, not a surface.
-//   spinbutton — its inner buttons already inherit the button surface
-//                (ov-press via the button selector). Only the entry part
-//                gets ov-inset — and it does automatically, because the
-//                spinbutton's text area IS an entry node. Nothing to do
-//                here beyond not breaking it: excluded from double-styling.
+//   spinbutton — its inner up/down buttons are one of upstream's flat
+//                families (button.image-button.up/.down: transparent, no
+//                shadow), so they are excluded from the button material in
+//                _button.scss. The entry-like part is NOT inherited from
+//                `entry`: in GTK 4 a spinbutton is its own node
+//                (`spinbutton > text`), so the recessed material is applied
+//                to it directly in _entry.scss. Nothing to do here.
 //   dropdown   — its popup is a popover (covered); its button is a
 //                button (covered). Nothing new needed.
 //   scale/progress — trough wears the recessed channel (analogue to switch track);
@@ -25,12 +27,27 @@ scrollbar > range > trough {
 
 // ---------------------------------------------------------------------
 // Sliders & Progress (scale, progressbar, levelbar)
+//   trough — recessed mechanical channel (top shade + bottom reflection),
+//            matching the switch track.
+//   fill   — the COLOURED part wears ov-lit-fill(): top light, inner
+//            hairlines, opaque semantic colour underneath. progressbar,
+//            levelbar and the scale's own highlight are the same idiom
+//            upstream — it gives `scale > trough > highlight` and
+//            `progressbar > trough > progress` one shared rule — so they
+//            get one shared material here. `progressbar.osd` and an empty
+//            trough are excluded: upstream unsets the fill there.
 // ---------------------------------------------------------------------
 scale > trough,
 progressbar:not(.osd) > trough,
 levelbar > trough > block.empty {
   box-shadow: inset 0 1px 1px -1px color-mix(in srgb, black 40%, transparent),
               0 1px 1px -1px color-mix(in srgb, white 70%, transparent);
+}
+
+scale > trough > highlight,
+progressbar:not(.osd) > trough:not(.empty) > progress,
+levelbar > trough > block:not(.empty) {
+  @include ov-lit-fill();
 }
 
 scale > trough > slider {
@@ -41,20 +58,20 @@ scale > trough > slider {
   box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
               inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
-  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background-image 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(box-shadow var(--ov-motion-exit),
+                     background-image var(--ov-motion-exit));
 }
 
 scale:hover > trough > slider {
-  transition: background-image 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(background-image var(--ov-motion-enter),
+                     box-shadow var(--ov-motion-exit));
 }
 
 scale:active > trough > slider {
   box-shadow: 0 1px 2px RGB(0 0 6 / 25%),
               inset 0 1px 2px color-mix(in srgb, black 12%, transparent),
               inset 0 -1px 1px color-mix(in srgb, white 40%, transparent);
-  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(box-shadow var(--ov-motion-press));
 }
 
 scale:disabled > trough > slider {
@@ -69,23 +86,23 @@ check:not(:checked):not(:indeterminate),
 radio:not(:checked):not(:indeterminate) {
   box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 15%, transparent),
               inset 0 1px 2px color-mix(in srgb, black 10%, transparent);
-  transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              background-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  @include ov-motion(box-shadow var(--ov-motion-exit),
+                     background-color var(--ov-motion-exit));
 
   &:hover {
     box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent),
                 inset 0 1px 2px color-mix(in srgb, black 12%, transparent);
     background-color: color-mix(in srgb, currentColor 5%, transparent);
-    transition: background-color 280ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    @include ov-motion(background-color var(--ov-motion-enter),
+                       box-shadow var(--ov-motion-exit));
   }
 
   &:active {
     box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent),
                 inset 0 2px 4px color-mix(in srgb, black 16%, transparent);
     background-color: color-mix(in srgb, currentColor 25%, transparent);
-    transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                background-color 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    @include ov-motion(box-shadow var(--ov-motion-press),
+                       background-color var(--ov-motion-press));
   }
 }
 
@@ -94,7 +111,10 @@ radio:checked:active,
 check:indeterminate:active,
 radio:indeterminate:active {
   box-shadow: inset 0 1px 2px color-mix(in srgb, black 18%, transparent);
-  transition: box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  // Upstream darkens the fill with a background-image on this same press;
+  // restated so it fades at press speed instead of snapping.
+  @include ov-motion(box-shadow var(--ov-motion-press),
+                     background var(--ov-motion-press));
 }
 
 // ---------------------------------------------------------------------
@@ -114,10 +134,15 @@ toast {
     background-color: color-mix(in srgb, currentColor 20%, transparent);
   }
 
+  // Upstream gives the channel a 1px ring under HC, and that ring IS the
+  // channel's boundary there: reverting our hairlines with `box-shadow:
+  // none` erased it (found 23 Sep, same trap as the button and the card).
+  // Only the ring is restated — we never touch the channel's
+  // background-color, so upstream's own HC value applies untouched.
   scale > trough,
   progressbar:not(.osd) > trough,
   levelbar > trough > block.empty {
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity), transparent);
   }
 
   scale > trough > slider {
@@ -126,8 +151,18 @@ toast {
     box-shadow: 0 0 0 1px var(---slider-border-color, currentColor), 0 2px 4px RGB(0 0 6 / 20%);
   }
 
+  // The dragged knob's well outranks the resting revert (same priority,
+  // more classes) — reverted with its own selector.
+  scale:active > trough > slider {
+    box-shadow: 0 0 0 1px var(---slider-border-color, currentColor), 0 2px 4px RGB(0 0 6 / 20%);
+  }
+
   check,
-  radio {
+  radio,
+  // ...and the guarded resting pair likewise: `check` alone is two
+  // classes short of the rule it reverts.
+  check:not(:checked):not(:indeterminate),
+  radio:not(:checked):not(:indeterminate) {
     box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
   }
 
