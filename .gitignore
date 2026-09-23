@@ -1,2 +1,16 @@
 upstream/cache/
 build/
+
+# Agent-harness scaffolding: the coding harness installs its skills into the
+# project directory (one dir per harness entry point, all symlinks to the
+# same skill set). Not part of the theme, never committed, never read by the
+# build. Exactly these paths — the theme's own src/, tools/, docs/, hooks/,
+# assets/ and upstream/ are the project and stay tracked.
+.agents/
+.claude/
+.commandcode/
+.hermes/
+.kiro/
+.pi/
+skills/
+skills-lock.json
