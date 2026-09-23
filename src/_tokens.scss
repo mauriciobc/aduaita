@@ -54,8 +54,18 @@
   // ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5). The old file hardcoded
   // rgba(242, 242, 244, …), which forced light values in dark mode; the
   // derivations below track both schemes for free.
+  //
+  // Retuned 23 Sep 2026. 84% was the migrated alpha verbatim, and 16% of
+  // whatever sits behind the window is a *readable* layer, not a tint: a
+  // window over another window showed the backdrop's own text through its
+  // content — measured on the headerbar family, body pixels composite at
+  // alpha 215/255 = 84%, i.e. 38/255 of contrast against a #0f1419
+  // backdrop, which the eye resolves as text. 96% keeps the translucency
+  // as a tint (4% bleed, ~10/255 — under the legibility floor) while the
+  // window still picks up the backdrop's cast. One number; `dialog` rides
+  // the same token.
   // ---------------------------------------------------------------------
-  --ov-surface-window: color-mix(in srgb, var(--window-bg-color) 84%, transparent);
+  --ov-surface-window: color-mix(in srgb, var(--window-bg-color) 96%, transparent);
   // light: #f2f2f4 -> +8/+8/+6 = #fafafa — the old hardcoded value, exact.
   --ov-surface-content: rgb(from var(--window-bg-color) calc(r + 8) calc(g + 8) calc(b + 6));
   --ov-surface-sidebar: transparent;

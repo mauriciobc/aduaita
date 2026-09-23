@@ -354,7 +354,16 @@ states × light/dark/HC, label pairs measured, plus a 2× crop pass.*
 
 ## Found during daily drive
 
-*(append entries here as they appear; nothing yet)*
+- [x] **DD1** (P0) Window translucency read as a layer, not a tint: the
+  Extensions window over a browser showed the page's own body text through
+  its content. `--ov-surface-window` was the 84% alpha migrated verbatim at
+  P1.5 — 16% bleed, ~38/255 of ghost contrast.
+  *Accept:* no backdrop text legible through a window in either scheme, the
+  backdrop's cast still present, one number changed. **Done** — surface
+  alpha measured 215/255 → 245/255 (light and dark); ghost contrast 37/255
+  → 9/255 over a #0f1419-on-white backdrop; gallery `headerbar` is the only
+  family that moved. Verdict: decisions.md, "Window translucency: 84% →
+  96%".
 
 ---
 

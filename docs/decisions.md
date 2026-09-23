@@ -788,10 +788,10 @@ switch must not remove the edge).
 edge at x=120, grey value of the boundary pixel, page 255): stock 225,
 pre-fix card rule 206, fixed 193 — so the ring was really gone and is really
 back, but the practical damage was smaller than it looked on paper: the
-overlay's own translucent window surface (`--ov-surface-window`, 84%) already
-separates a white card from the page. Recorded as a real defect with a
-modest user impact, not as the near-invisible card the source alone
-suggested.
+overlay's own translucent window surface (`--ov-surface-window`, 84% then —
+96% since the retune of 23 Sep 2026) already separates a white card from the
+page. Recorded as a real defect with a modest user impact, not as the
+near-invisible card the source alone suggested.
 
 **4. `switch > slider:disabled` kept a raised knob** (BACKLOG U7): our
 resting slider rule outranked upstream's
@@ -1231,3 +1231,39 @@ Recorded in BACKLOG under "Button review" (B3-B7): destructive hover/press
 contrast cost, the 280ms hover entry on a high-frequency control, the
 `:disabled` `background-image` reset on plain-GTK buttons, the asymmetric
 bevel pair in the light scheme, and checked-toggle press feedback.
+
+## Window translucency: 84% → 96% — 23 Sep 2026
+
+**Report.** A window over another window (the Extensions app over a browser):
+the page's own body text read through the window's content, in the space
+where the app paints nothing (list gaps, page padding — most of a plain
+window). Not a new rule: the migrated P1.5 alpha.
+
+**Cause.** `--ov-surface-window` (L0) mixes the window colour 84% with
+transparent, i.e. 16% of whatever is behind the window reaches the screen.
+On a light page over a dark text run that is ~38/255 of contrast — the eye
+resolves that as text, not as tint.
+
+**Measured** (gallery `headerbar`, the family that renders a real window,
+bare-surface pixels). Surface alpha 215/255 = 0.843 — the token exactly; the
+header bar over it stays opaque (255). Composited over #0f1419 text on a
+#ffffff page: the ghost reads 213/255 against a 250/255 surface, 37/255 of
+contrast. Same in dark (rgb(33,33,37) body).
+
+**Decision.** 96% — one number in L0. Bleed drops to 4% and ghost contrast
+to 9/255 (~3.5%, under the legibility floor), while the surface still takes
+the backdrop's cast: the translucency survives as a tint. `dialog` rides
+the same token; `.content-pane` already derives opaque and `.sidebar-pane`
+is transparent, so both follow the window and neither needed an edit. No
+contrast variant is added: HC must not remove surface definition, and this
+direction is toward opaque anyway.
+
+**Verification.** render-gallery `headerbar`, light and dark: surface alpha
+245/255 in both, bar unchanged at 255 (`/tmp/ov-before`, `/tmp/ov-after`,
+`/tmp/ov-after-dark`). `tools/gallery-diff` old→new: `headerbar`
+86188/112000 changed, mean 6.11, max 30 (the alpha channel is compared).
+`tools/build` reinstalled the sheet and restarted the two service daemons,
+so windows opened from here get it. **Not verified:** a live window over
+another window after the rebuild — the compositor path is the one the
+report itself exercised at 84%, and the render-node alpha is the only
+thing that changed.
