@@ -189,14 +189,43 @@ verdict is recorded. Stop the project if it is a no-go.*
   floor. Peak deltas vs baseline, light/dark: **A 7/7, B 9/16, C 12/16**;
   the opaque rest bevel measures **+1/−10 (light), +17/−3 (dark)** on the
   same page, so B/C land *at* the house's own rest amplitude and A at about
-  half (a closed contour reads heavier at the same delta). Blast radius:
+  half (a closed contour reads heavier at the same delta). **Light bump,
+  same day (user: "almost invisible in light"):** the physics constants are
+  not scheme-symmetric — a white highlight moves a near-white page by +1
+  (measured on the opaque button's own top hairline), so in the light scheme
+  only the *shade* half of a candidate can act, while dark is the mirror of
+  that. B and C therefore gained per-scheme values, calibrated to equal
+  measured presence across candidates and schemes: **B and C both 17 (light)
+  / 16 (dark)**, dark blocks left byte-identical to the values above.
+  Peak at equal amplitude, distribution differs, and that *is* the choice:
+  over the button's lower third B spreads 11.8/255 of shade against C's
+  4.1/255, i.e. C puts its presence into the 0.5px rule at the edge (a
+  surface with a bottom rule, exactly how the opaque buttons themselves read
+  in light per B6) and B spreads it into a foot ramp (a soft lift, which in
+  light reads as a shadow at the foot). Blast radius:
   only `.flat` buttons — the matched node set from a solid-red probe equals
   the noise-filtered diff, and 12 of 15 families are pixel-clean; HC is
-  clean in all 15 for all three; the hover wash is intact (button mean
-  −13.9 baseline vs −13.4…−13.9 candidates). Decision **open**; harness,
-  picker and Inspector blocks: `/tmp/ov-flat-variants` (`pick.sh A|B|C`,
-  `pick.sh baseline`). Guarded but not measured: `:not(:disabled)` — the
-  gallery carries no disabled `.flat` button.
+  clean in all 15 for all three, both schemes; the hover wash is intact
+  (button mean
+  −13.9 baseline vs −13.4…−13.9 candidates). **Landed 25 Sep 2026 — verdict
+  C (user), with B kept as a valid variation.** Promoted as L1
+  `ov-flat-register()` + four L0 tokens (`--ov-flat-edge-top/-bottom`,
+  `--ov-flat-hilite`, `--ov-flat-shade`); the three `.flat`-parent bridges
+  moved out of `$ov-flat-structural` into the variation. B is preserved as a
+  token variation of the same rule (edges → `transparent`, higher shade), not
+  as dead code. The register is the sheet's one primitive that guards itself
+  with `(prefers-contrast: no-preference)` instead of replaying a
+  `prefers-contrast: more` revert, because upstream's `button.flat` owns
+  box-shadow in its own states — reasons and the measured cells in
+  decisions.md, "Flat register". Verified after promotion: 12 of 15 families
+  pixel-identical, HC 0 px in rest *and* hover × both schemes,
+  `probe-motion` unchanged, contract OK. Harness (A + the renders):
+  `/tmp/ov-flat-variants`, disposable. Still open: register **scope** (the
+  implicit flat families keep the 23 Sep reset; carve-outs needed for
+  `button.link` and `windowcontrols` if it ever widens), the flat rung's
+  press/held **states** (still upstream's), and the disabled cell
+  (`:not(:disabled)` is structural, not measured — no disabled `.flat`
+  button in the gallery).
 - [ ] **U2** (P1) Entry + search + password-reveal.
 - [ ] **U3** (P1) Popover + menu — overlay rung of the ladder.
 - [x] **U4** (P2) Splitbutton / dropdown / combobox. (splitbutton inherits

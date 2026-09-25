@@ -124,7 +124,11 @@ material system with no extra work. L0 declares no selectors other than
 families: `bevel()` (mechanism decided by the Evening 0 experiments),
 `texture()` (layered `background-image` composited with
 `background-blend-mode`), `depth()` (`box-shadow` ladders; `filter` banned
-in v1). Every mixin emits its own `prefers-contrast: more` revert inline.
+in v1). Every mixin emits its own `prefers-contrast: more` revert inline —
+with one documented exception, `ov-flat-register()`, which guards its
+declarations inside `(prefers-contrast: no-preference)` instead: upstream's
+`button.flat` owns `box-shadow` in its states (a ring on hover / active /
+checked), so a `none` revert would erase them (decisions.md, "Flat register").
 
 **L2 — surfaces.** The only layer that names upstream selectors. One file
 per node family, each calling L1 mixins with L0 tokens. No raw colour
@@ -143,6 +147,7 @@ mixins themselves, so no material rule can drift from its revert.
 | `--ov-texture-*` | Tile URL, opacity, blend mode, scale | `--ov-texture-opacity` |
 | `--ov-depth-*` | Shadow offsets, blur radii, ladder stops | `--ov-depth-raised` |
 | `--ov-surface-*` | Per-surface tints layered over upstream backgrounds | `--ov-surface-tint` |
+| `--ov-flat-*` | The `.flat` variation's rest material: edge pair + sheen | `--ov-flat-edge-top` |
 
 Documented exceptions to the scheme: the per-family kill switches
 `--ov-bevel` / `--ov-texture` / `--ov-depth`. Setting one to `none`

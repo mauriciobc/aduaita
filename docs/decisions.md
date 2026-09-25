@@ -1350,3 +1350,103 @@ libadwaita apps). `tools/check-selectors`: contract OK against installed
 probe covers dark), and the browser after the sheet was already loaded — GTK
 reads user CSS at process start, so the running Helium instance needs a
 restart to pick this up.
+
+## Flat register — 25 Sep 2026
+
+**Ask.** "Our current 'flat' variation button is ALL FLAT" (user): the flat rung
+should read as ours without becoming a chip. Run as a `variant` pass — three
+candidates on one axis, *what carries the register's presence at rest* —
+judged in the gallery, so the decision came from pixels rather than taste.
+
+**What the sheet did before.** Nothing at all to `.flat`: the material's guard
+is `button:not(.flat)` and the reset's guard is `:not(.flat)` too, so a `.flat`
+button was upstream's own look (`background: transparent; box-shadow: none`,
+gtk.css L338) plus upstream's washes and rings — while the families upstream
+paints flat *without* the class were hard-zeroed by the 23 Sep reset. Two
+registers sharing one name.
+
+**Candidates.** `A` contour (0.5px `currentColor` ring), `B` sheen (lit top →
+shade foot, no edge), `C` bevel-lite (the house pair at reduced amplitude over
+a whisper sheen). Peaks against the sheet before them, light/dark: **A 7/7,
+B 9/16, C 12/16**, where the opaque rest bevel measures **+1/−10 (light)** and
+**+17/−3 (dark)** on the same page.
+
+**A rejected.** Scheme-symmetric and clean, but a closed contour has no light
+direction — it breaks the one-light-source rule and reads as a drawn outline
+(a bordered field), not as material.
+
+**The light-scheme finding.** The physics constants are not scheme-symmetric:
+white over the light scheme's near-white page moves it by **+1/255** (measured
+on the opaque button's own top hairline), black over the dark bar by about
+**−2/255**. In light only a candidate's *shade* half can act; in dark only its
+*highlight* half. That is why B and C measured 9 and 12 in light against 16 in
+dark, and why they read "almost invisible in light" (user). Both then gained
+per-scheme values, calibrated to **equal measured presence: 17/255 light,
+16/255 dark** — matching a fill-less rung to the weight an opaque button gets
+from its 19/255 fill plus its 10/255 foot line.
+
+**Verdict (user, 25 Sep 2026): C, with B kept as a valid variation.** C is the
+house's own material one notch down in both schemes — light carries it on the
+bottom rule (how the opaque buttons themselves read in light, B6), dark on the
+top rule — so it adds no second lighting language. At equal peak the two
+differ in *distribution*, not amplitude: across the button's lower third B
+spreads 11.8/255 of shade against C's 4.1/255, because a rule with no edge has
+to ride its whole presence on the gradient, and in light what that ink does is
+imitate a shadow under the button (the register the house bans on buttons). B
+survives as a *token* variation of the same rule — point
+`--ov-flat-edge-{top,bottom}` at `transparent` and raise `--ov-flat-shade` —
+rather than as dead code.
+
+**Promoted.** L1 `ov-flat-register()`, called from the `.flat` variation block
+at the bottom of `surfaces/_button.scss`; four L0 tokens
+(`--ov-flat-edge-top`, `--ov-flat-edge-bottom`, `--ov-flat-hilite`,
+`--ov-flat-shade`, the last two re-pointed under `prefers-color-scheme: dark`).
+The three `.flat`-parent bridges (`menubutton.flat`, `splitbutton.flat`) moved
+out of `$ov-flat-structural` into the variation: same register, and the reset's
+8-class selector would otherwise outrank the variation's 7-class one.
+
+**The HC mechanism, deliberately different from every other primitive.** This
+one declares its material inside `(prefers-contrast: no-preference)` instead of
+emitting a `prefers-contrast: more` revert, because upstream's `button.flat`
+owns `box-shadow` in its own states: `none` at rest, a `currentColor` ring on
+hover / active / checked, 50% of it under HC. A revert block could only restate
+`none` — which erases those rings — so the register declines to participate in
+HC at all and hands the node back to upstream in every state. Measured: the
+ring does not render on the gallery's flat button even in stock HC + prelight
+(`--border-opacity` reaches a `color-mix()` whose node has nothing to mix), so
+this is belt and braces rather than a visible repair.
+
+**What is NOT touched.** The implicit flat families keep the 23 Sep reset
+(BACKLOG W1): `button.link`, window controls, spinbutton arrows, pathbar
+crumbs, popover model buttons, tab thumbnails, notebook arrows, calendar and
+column/tree headers, infobar close, bottom-sheet actions. The flat rung's
+press / held / checked states keep upstream's washes and rings.
+
+**Verification.** `promoted.py` cells, every one noise-filtered: rest ×
+{light, dark} across all 15 families; HC rest, hover and HC hover ×
+{light, dark} across the four families that carry `.flat` nodes. Result: the
+register moves *only* `.flat` nodes — `buttons` peak 17 (light) / 16 (dark),
+`headerbar` 16/13, `adw` 17/12 — and 12 of 15 families are pixel-identical to
+the sheet before it; HC is 0 px in all four cells. The matched-node set from a
+solid-red probe equals the noise-filtered diff, so the scope claim is
+geometric, not statistical. `tools/check-selectors`: contract OK against
+installed `1:1.9.4-1`. `tools/probe-motion build/gtk.css`: hover and press
+INSTANT (state landed), row hover and focus-visible IN MOTION — unchanged from
+before the rule. The register's transition list is byte-for-byte the set
+upstream gives those nodes (`outline-*` + `background` + `box-shadow`, 200ms on
+the same curve), so it silences no upstream motion.
+
+**Method note, worth keeping.** `render-gallery` is not run-to-run
+deterministic: two renders of *one* sheet differ by up to ~19k px of text
+antialiasing in `buttons`, `lists`, `columns` and `notebook` (and by 0 in the
+shapes-only families). Every number above is measured against that floor — a
+per-cell noise mask subtracted from the A/B diff — because without it the noise
+alone reads as a 15-20/255 "change" on a label glyph. Any future gallery
+comparison should do the same, or report `changed_px` as meaningless below the
+floor.
+
+**Not verified.** The live eye over a populated bar in daily apps (the user's
+sweep is the gate, as always); fractional scale (X5 card); a disabled `.flat`
+button — the guard is `:not(:disabled)` and upstream's `filter: opacity(30%)`
+dim is never declared by us, but the gallery carries no disabled `.flat`
+button, so that one is structural rather than measured.

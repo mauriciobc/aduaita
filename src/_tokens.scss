@@ -100,6 +100,32 @@
   --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 8%, transparent);
 
   // ---------------------------------------------------------------------
+  // Flat register — the `.flat` VARIATION's rest material (25 Sep 2026,
+  // decisions.md "Flat register"). The same bevel pair one notch down plus
+  // a whisper sheen: the flat rung is our material at lower amplitude, not
+  // a second material. Scheme-split because the physics constants do not
+  // carry the effect symmetrically — a white highlight moves the light
+  // scheme's near-white page by +1/255 (measured on the opaque button's own
+  // top hairline), a black shade moves the dark bar by ~2/255, so light acts
+  // through the shade half and dark through the highlight half. Values are
+  // calibrated to equal measured presence in both schemes (17/255 light,
+  // 16/255 dark on the gallery's flat button).
+  //
+  // Not a kill switch: setting --ov-flat-edge-{top,bottom} to `transparent`
+  // and raising --ov-flat-shade is the *sheen-only* variation kept on
+  // record — no drawn edge, the whole presence riding the gradient
+  // (measured equal at hilite light@8%, shade dark@7% light / dark@4% dark).
+  // ---------------------------------------------------------------------
+  --ov-flat-edge-top: color-mix(in srgb, var(--ov-up-light-1) 8%, transparent);
+  --ov-flat-edge-bottom: color-mix(in srgb, var(--ov-up-dark-5) 9%, transparent);
+  --ov-flat-hilite: color-mix(in srgb, var(--ov-up-light-1) 3%, transparent);
+  --ov-flat-shade: color-mix(in srgb, var(--ov-up-dark-5) 2.5%, transparent);
+  @media (prefers-color-scheme: dark) {
+    --ov-flat-edge-bottom: color-mix(in srgb, var(--ov-up-dark-5) 6%, transparent);
+    --ov-flat-shade: color-mix(in srgb, var(--ov-up-dark-5) 2%, transparent);
+  }
+
+  // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay
   // ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5). The old file hardcoded
   // rgba(242, 242, 244, …), which forced light values in dark mode; the

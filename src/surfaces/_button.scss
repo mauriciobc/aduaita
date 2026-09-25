@@ -15,6 +15,9 @@
 //                            accent ring through (widgets/_button.scss
 //                            `button:drop(active)`); without this the ring
 //                            was erased on every non-flat button.
+// The `.flat` VARIATION is not left bare any more: it wears
+// ov-flat-register(), the same pair at reduced amplitude (bottom of this
+// file, verdict 25 Sep 2026).
 // Upstream also paints whole button FAMILIES flat without the class —
 // bar icon buttons, spinbutton arrows, table and calendar headers, window
 // controls, tab thumbnails, popover model buttons, pathbar crumbs,
@@ -307,10 +310,7 @@ $ov-flat-structural: "windowcontrols > button.image-button",
                      "bottom-sheet > sheet > stack > button",
                      "filechooser #pathbarbox > stack > box > button",
                      "filechooser #pathbarbox > stack > box > box > button",
-                     "filechooser #pathbarbox > stack > box > menubutton > button",
-                     "menubutton.flat > button",
-                     "splitbutton.flat > button",
-                     "splitbutton.flat > menubutton > button";
+                     "filechooser #pathbarbox > stack > box > menubutton > button";
 
 @each $context in $ov-flat-bar-contexts {
   @each $shape in $ov-flat-bar-self-shapes {
@@ -335,5 +335,42 @@ $ov-flat-structural: "windowcontrols > button.image-button",
 @each $family in $ov-flat-structural {
   #{$family}#{$ov-flat-self} {
     @include ov-flat-button();
+  }
+}
+
+// ---------------------------------------------------------------------
+// The flat VARIATION — the `.flat` class itself. Nothing touched it before
+// 25 Sep 2026: the material's guard is `:not(.flat)` and the reset's is
+// `:not(.flat)` too, so a `.flat` button was stock Adwaita and nothing
+// else. Verdict (user, 25 Sep 2026, decisions.md "Flat register"): it
+// wears the house material one notch down — ov-flat-register().
+//
+// Why the variation and not the families: `.flat` is what an app asks for
+// when it calls gtk_button_set_has_frame (FALSE) (GTK maps that to this
+// class) — a *deliberate* quiet button, which is the register that gains
+// from having an edge. The families upstream paints flat WITHOUT the class
+// keep the reset above (23 Sep verdict, BACKLOG W1): `button.link`, the
+// window controls, spinbutton arrows, pathbar crumbs and the rest are
+// untouched by this rule — measured, 12 of the gallery's 15 families are
+// pixel-identical to the sheet without it.
+//
+// The three `.flat`-parent bridges moved here out of $ov-flat-structural:
+// a `.flat` menubutton/splitbutton is the same variation, and the reset's
+// 8-class selector would otherwise outrank this 7-class one.
+//
+// Kept valid, not shipped: the *sheen-only* variation, with no drawn edge
+// at all. Point --ov-flat-edge-{top,bottom} at `transparent` and raise
+// --ov-flat-shade (values in _tokens.scss) — with no edge, the whole
+// presence has to ride the gradient.
+// ---------------------------------------------------------------------
+$ov-flat-variation: "button.flat",
+                    "menubutton.flat > button",
+                    "splitbutton.flat > button",
+                    "splitbutton.flat > menubutton > button";
+$ov-flat-variation-guard: ":not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque):not(:drop(active)):not(:disabled)";
+
+@each $sel in $ov-flat-variation {
+  #{$sel}#{$ov-flat-variation-guard} {
+    @include ov-flat-register();
   }
 }

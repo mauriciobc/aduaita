@@ -6,6 +6,8 @@
 // Mechanism (decided Evening 0 + M2, docs/decisions.md):
 //   bevel   — 0.5px hairline pair, values user-tuned; THE same-surface
 //             rest language for regular buttons (inset-only — no drops).
+//   flat    — the same pair at reduced amplitude over a whisper sheen: the
+//             `.flat` VARIATION's rest material (ov-flat-register()).
 //   depth   — container ladders (popover/menu/window). Floating knobs
 //             (switch/scale) may use ov-raised*; buttons never do —
 //             external shadows break the same-surface language.
@@ -97,6 +99,45 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
           inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
+}
+
+// ---------------------------------------------------------------------
+// The FLAT REGISTER — the `.flat` variation's rest material (25 Sep 2026,
+// decisions.md "Flat register"). The bevel pair at reduced amplitude over a
+// whisper sheen: the same lighting language as ov-bevel()/ov-well(), one
+// notch down, because a `.flat` button carries no fill for that language to
+// sit on. Values are L0 tokens, scheme-split there (the physics constants do
+// not carry the effect symmetrically — see _tokens.scss).
+//
+// Scope is the `.flat` class and the `.flat` parents' child bridges, not the
+// families upstream paints flat without the class; those keep the reset in
+// surfaces/_button.scss (23 Sep verdict, BACKLOG W1).
+//
+// HC — the one primitive here that guards its effect instead of reverting it,
+// deliberately (recorded in decisions.md, "Flat register"). Upstream's
+// `button.flat` owns box-shadow in its own states: `none` at rest, a
+// currentColor ring on hover / active / checked, and 50% of it under
+// prefers-contrast: more (a revert block could only restate `none`, i.e.
+// erase those rings). Declaring the material inside
+// `(prefers-contrast: no-preference)` instead hands the node back to upstream
+// untouched in *every* state and in both environments (libadwaita and
+// plain-GTK, where --border-opacity resolves to nothing anyway).
+//
+// The transition stays outside the guard: ov-motion() restates exactly the
+// list upstream gives these nodes (ring trio + background + box-shadow), so
+// it is the same list in both modes, with the house durations.
+// ---------------------------------------------------------------------
+@mixin ov-flat-register() {
+  @media (prefers-contrast: no-preference) {
+    box-shadow: inset 0 var(--ov-bevel-width) 0 var(--ov-flat-edge-top),
+                inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-flat-edge-bottom);
+    background-image: linear-gradient(to bottom,
+      var(--ov-flat-hilite),
+      color-mix(in srgb, var(--ov-up-light-1) 0%, transparent) 45%,
+      var(--ov-flat-shade));
+  }
+  @include ov-motion(background var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
 }
 
 // ---------------------------------------------------------------------
