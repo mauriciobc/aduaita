@@ -171,6 +171,32 @@ verdict is recorded. Stop the project if it is a no-go.*
   material questions for default / suggested / destructive and the focus
   ring; what it did not reach is `osd` / `opaque` / `:disabled` on a
   plain-GTK sheet (B5) and a live checked CTA, so this stays open.
+  **25 Sep 2026 — the flat rung reopened (user): "the flat variation is ALL
+  FLAT".** What the sheet does today: `.flat` is touched by *nothing* —
+  `button:not(.flat)` keeps it out of the material and `:not(.flat)` keeps
+  it out of the reset — while the families upstream paints flat *without*
+  the class are hard-zeroed. So the run scoped to the variation itself
+  (`button.flat` + the three `.flat`-parent bridges, which promotion moves
+  out of `$ov-flat-structural`; the implicit families stay where the 23 Sep
+  verdict left them) and produced three candidates for one axis — what
+  carries the register's presence at rest: **A contour** (0.5px
+  `currentColor` ring), **B sheen** (lit top → shade foot, no edge),
+  **C bevel-lite** (the house bevel pair at reduced amplitude + a whisper
+  sheen). Evidence: gallery `buttons` / `headerbar` / `adw` × light/dark/HC/
+  prelight, twice each pass — the renderer is *not* run-to-run
+  deterministic (up to 19k px of text antialiasing differ between two
+  renders of one sheet), so every diff is noise-filtered against that
+  floor. Peak deltas vs baseline, light/dark: **A 7/7, B 9/16, C 12/16**;
+  the opaque rest bevel measures **+1/−10 (light), +17/−3 (dark)** on the
+  same page, so B/C land *at* the house's own rest amplitude and A at about
+  half (a closed contour reads heavier at the same delta). Blast radius:
+  only `.flat` buttons — the matched node set from a solid-red probe equals
+  the noise-filtered diff, and 12 of 15 families are pixel-clean; HC is
+  clean in all 15 for all three; the hover wash is intact (button mean
+  −13.9 baseline vs −13.4…−13.9 candidates). Decision **open**; harness,
+  picker and Inspector blocks: `/tmp/ov-flat-variants` (`pick.sh A|B|C`,
+  `pick.sh baseline`). Guarded but not measured: `:not(:disabled)` — the
+  gallery carries no disabled `.flat` button.
 - [ ] **U2** (P1) Entry + search + password-reveal.
 - [ ] **U3** (P1) Popover + menu — overlay rung of the ladder.
 - [x] **U4** (P2) Splitbutton / dropdown / combobox. (splitbutton inherits
