@@ -25,6 +25,6 @@ floating-sheet > sheet {
 @media (prefers-contrast: more) {
   bottom-sheet > sheet,
   floating-sheet > sheet {
-    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   }
 }

@@ -1267,3 +1267,86 @@ so windows opened from here get it. **Not verified:** a live window over
 another window after the rebuild — the compositor path is the one the
 report itself exercised at 84%, and the render-node alpha is the only
 thing that changed.
+
+## Foreign apps: Helium came up black — 25 Sep 2026
+
+**Report.** Helium 0.18.1.1 (Chromium 154, `imputnet/helium`) with its default
+`extensions.theme.system_theme = 1` (`ui::SystemTheme::kGtk`, i.e. "follow the
+GTK theme") opened with a black tab strip, a black toolbar and a black
+viewport: a completely dark browser window in a light session. Helium is a
+plain GTK4 app — it never loads libadwaita's stylesheet, so none of our
+`--ov-*` tokens derived from libadwaita custom properties resolve in it.
+
+**Cause.** A libadwaita custom property exists only when libadwaita's sheet is
+loaded. In an app that never calls `adw_init()` the reference is undefined, and
+GTK does **not** fall back to the theme's own colour for that property: the
+declaration computes to nothing and the node paints no background at all. So
+`window { background-color: var(--ov-surface-window) }` and the bar material
+(which removes upstream's gradient and repaints from `var(--headerbar-bg-color)`)
+both rendered as nothing.
+
+Chromium turns "nothing" into black. It builds its Linux palette out of
+*rendered* GTK nodes — `ui/gtk/gtk_util.cc` `GetBgColor()` renders the node
+into a 24x24 cairo surface and averages it, `ui/gtk/gtk_color_mixers.cc`
+consumes the result — and forces the frame opaque:
+
+```c
+frame_color = SkColorSetA(GetBgColor("headerbar.header-bar.titlebar"),
+                          SK_AlphaOPAQUE);
+```
+
+An empty render averages to `0x00000000` (`a == 0` in `GetAveragePixelValue`),
+`SkColorSetA(..., 255)` makes it `#ff000000`, and `kColorPrimaryBackground`
+(averaged `window.background`) stays transparent: black frame, black toolbar,
+black viewport.
+
+**Measured — `tools/probe-foreign` (new, offline, exits 1 on any input that
+paints nothing), same selectors and averaging as `gtk_color_mixers.cc`:**
+
+| input | pre-fix sheet | fixed sheet | stock GTK |
+| --- | --- | --- | --- |
+| `GetBgColor("")` (primary bg) | `#00000000` | `#f5f6f5f4` | `#fff6f5f4` |
+| `opaque(bg(headerbar))` (frame) | `#ff000000` | `#ffe4e3e2` | `#ffdddad6` |
+| `bg("") over frame` (toolbar) | `#ff000000` | `#fff5f4f3` | `#fff6f5f4` |
+| inputs that paint nothing | 9 of 31 | 0 | 0 |
+
+**Live A/B in the running session** (second Helium instance, `--gtk-version=4`,
+`system_theme=1`, fresh profile, same 900x600 window, captured per window;
+sheet swapped by `XDG_CONFIG_HOME`): window pixels classified as pure black —
+stock 36367, pre-fix 79598, fixed 36386; the top chrome rows (y=10-19) read
+`#eeedeb` / `#000000` / `#ededec`, i.e. the fix is stock-identical, not merely
+"less black".
+
+**Decision.** L0 gains an explicit upstream-alias layer: **one `--ov-up-*`
+token per libadwaita custom property the sheet reads**, each carrying the
+fallback that keeps the sheet painting when libadwaita is absent — GTK's own
+built-in named colours (`@theme_bg_color`, `@theme_base_color`,
+`@theme_selected_bg_color`, `@accent_color`), which are the same palette
+libadwaita's variables alias and track the scheme for free (Default-light /
+Default-dark define the same names — dark reads `#353535` window / `#3e3e3e`
+bar). `black` and `white` appear only as the physics constants for `--dark-5`
+and `--light-1`; `--ov-up-border-opacity` keeps the `100%` fallback the sheet
+already used, and `--ov-up-slider-border` keeps `currentColor`. Surfaces and
+primitives now reference the aliases and nothing else, so the sheet can no
+longer compute a colour to nothing in *any* GTK4 app, and
+`upstream/variables.txt` finally lists all ten variables it depends on
+(`--headerbar-bg-color`, `--accent-color`, `--accent-bg-color`,
+`--view-bg-color`, `--border-opacity` and `---slider-border-color` were
+missing from the contract).
+
+**Consequence, deliberate.** A foreign app now wears the overlay's material in
+the stock palette rather than stock GTK (frame `#ffe4e3e2` vs stock
+`#ffdddad6`); CSS cannot ask whether libadwaita is loaded, and painting our
+material with sane colours is the only alternative to painting nothing.
+Helium's own appearance setting (Classic) sidesteps GTK colours entirely for
+anyone who wants the browser untouched.
+
+**Verification.** `tools/probe-foreign`: 9 → 0 inputs painting nothing, light
+and dark, plus the live-session A/B above. `tools/gallery-diff` on
+`render-gallery` output, old sheet vs new, **light and dark: 15/15 families
+pixel-identical, 0 changed** (the alias layer is a pure rename inside
+libadwaita apps). `tools/check-selectors`: contract OK against installed
+`1:1.9.4-1`. **Not verified:** a dark-scheme live Helium window (only the
+probe covers dark), and the browser after the sheet was already loaded — GTK
+reads user CSS at process start, so the running Helium instance needs a
+restart to pick this up.

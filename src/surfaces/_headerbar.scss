@@ -19,7 +19,7 @@ toolbarview > .top-bar {
 }
 
 // Unfocused windows. Upstream's own signal (`headerbar:backdrop` →
-// var(--headerbar-backdrop-color) == @window_bg_color) is otherwise dead
+// var(--ov-up-bar-backdrop) == @window_bg_color) is otherwise dead
 // here, twice over: our rule paints every state, and the gradient's stops
 // are opaque, so painting a different background-color underneath would
 // still show nothing. Re-pointing the base token moves the real thing.

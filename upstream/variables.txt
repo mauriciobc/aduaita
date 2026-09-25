@@ -1,5 +1,5 @@
 # The variable contract for L0. One upstream custom property per line,
-# sorted — every upstream variable that src/_tokens.scss derives from.
+# sorted — every upstream variable that src/_tokens.scss reads.
 #
 # L0 is the load-bearing layer: a renamed upstream variable silently nukes
 # every --ov-* token, and the selector contract alone would never notice.
@@ -8,9 +8,23 @@
 #
 # Rules:
 #   - every upstream var() referenced by src/_tokens.scss must appear here
+#   - src/_tokens.scss is the ONLY place that references them: each one is
+#     read by exactly one --ov-up-* alias, which carries the fallback that
+#     keeps the sheet painting in an app without libadwaita (decisions.md,
+#     "Foreign apps", 25 Sep 2026)
+#   - --slider-border-color is spelled with three dashes in libadwaita's
+#     own sheet (---slider-border-color, defined on `scale`); the extractor
+#     in tools/_lib.sh matches it from the second dash on, so it is listed
+#     here as the extractor sees it
 #   - update this file and _tokens.scss in the same commit
 
+--accent-bg-color
+--accent-color
+--border-opacity
 --dark-5
 --headerbar-backdrop-color
+--headerbar-bg-color
 --light-1
+--slider-border-color
+--view-bg-color
 --window-bg-color

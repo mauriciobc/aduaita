@@ -18,7 +18,8 @@ assets/         SVG texture tiles (data: URIs preferred); 9-slice descoped —
                 border-image does not follow border-radius (decisions.md E1)
 upstream/       pinned-version, selector + variable contracts, cache/ (gitignored)
 tools/          fetch-upstream, check-selectors, build, render-widget.c,
-                probe-motion.c, render-gallery.c, gallery-diff, track
+                probe-motion.c, probe-foreign.c, render-gallery.c,
+                gallery-diff, track
 hooks/          pacman PostTransaction hook
 docs/           proposal, decisions, evening-0 experiments
 build/          sassc output (gitignored)
@@ -119,14 +120,47 @@ animation); `gtk-enable-animations=false` already does that globally in
 GTK itself. Rationale and measurements: `docs/decisions.md`, "Motion
 review — 23 Sep 2026".
 
+## Foreign apps (no libadwaita)
+
+GTK loads this sheet in **every** GTK4 process, including apps that never
+call `adw_init()` — Chromium and its forks (Helium), anything GTK4 without
+libadwaita. libadwaita's custom properties do not exist there, and a
+declaration whose only value is an undefined `var()` computes to *nothing*:
+GTK paints no background at all rather than falling back to the theme's own
+colour. Chromium builds its whole Linux palette out of rendered GTK nodes
+(`ui/gtk/gtk_color_mixers.cc` over `gtk_util.cc`'s `GetBgColor`) and forces
+the frame colour opaque, so "paints nothing" became a completely black
+browser window (decisions.md, "Foreign apps: Helium came up black",
+25 Sep 2026).
+
+The rule that keeps that from happening: every libadwaita variable the sheet
+reads is read in exactly one L0 alias (`--ov-up-*`), each carrying a GTK
+built-in named-colour fallback; surfaces and primitives reference the
+aliases and nothing else.
+
+`probe-foreign` reimplements Chromium's colour mixer against a bare GTK4 app
+and prints the inputs it reads plus the derived frame/toolbar colours. It
+exits 1 when any painted input comes out fully transparent — the exact
+condition Chromium renders as black:
+
+```
+gcc -O1 -o build/probe-foreign tools/probe-foreign.c \
+    $(pkg-config --cflags --libs gtk4)
+build/probe-foreign                    # what this machine reads now
+build/probe-foreign none               # stock GTK control
+build/probe-foreign build/gtk.css      # ...or any sheet, in isolation
+SCHEME=dark build/probe-foreign build/gtk.css
+CONTRAST=more build/probe-foreign build/gtk.css
+```
+
 ## The contracts
 
 - `upstream/selectors.txt` — every selector atom L2 depends on upstream
   having. Hand-written on purpose: adding a line is a deliberate act of
   taking on a dependency.
-- `upstream/variables.txt` — every upstream variable L0 derives from. Guards
-  the load-bearing layer; a renamed upstream variable is caught here, not by
-  the selector contract.
+- `upstream/variables.txt` — every upstream variable L0 reads, all of them
+  through the `--ov-up-*` aliases. Guards the load-bearing layer; a renamed
+  upstream variable is caught here, not by the selector contract.
 
 `tools/check-selectors` exits 1 on any miss. The pacman hook runs it against
 the installed sheet after every libadwaita upgrade — no network, nothing

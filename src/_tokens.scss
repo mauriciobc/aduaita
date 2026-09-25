@@ -16,6 +16,56 @@
 
 :root {
   // ---------------------------------------------------------------------
+  // Upstream palette aliases — the ONLY reads of libadwaita's custom
+  // properties in the whole sheet; every surface goes through these.
+  // Second documented exception to the three-part naming rule (`up` names
+  // the upstream palette input, not a role); the kill switches below are
+  // the first.
+  //
+  // The fallbacks are load-bearing, added 25 Sep 2026 after Helium (a
+  // Chromium build: GTK4, no libadwaita) came up completely black. A
+  // libadwaita custom property exists only when libadwaita's stylesheet is
+  // loaded. In an app that never calls adw_init() the reference is
+  // undefined, and GTK does NOT fall back to the theme's own colour for
+  // that property: the declaration computes to nothing, so no background
+  // is painted at all.
+  //
+  // Chromium builds its entire Linux UI palette out of rendered GTK
+  // backgrounds (ui/gtk/gtk_util.cc GetBgColor renders the node into a
+  // 24x24 surface and averages it; ui/gtk/gtk_color_mixers.cc consumes
+  // the result) and forces the frame colour opaque —
+  // `SkColorSetA(GetBgColor("headerbar.header-bar.titlebar"),
+  // SK_AlphaOPAQUE)`. A window and a headerbar that paint nothing average
+  // to 0x00000000, so that line produced #ff000000: window, toolbar and
+  // tab strip went pure black. Measured with tools/probe-foreign: the
+  // frame colour read #ff000000 before this block and #fff6f5f4 after.
+  //
+  // The fallback is the matching colour from GTK's own built-in Adwaita
+  // (@theme_bg_color, @theme_base_color, @theme_selected_bg_color,
+  // @accent_color) — the same palette libadwaita's variables alias, so a
+  // foreign app keeps stock colours instead of nothing, and it tracks the
+  // scheme for free (Default-light / Default-dark define the same names).
+  // `black` and `white` appear only as the physics constants for the two
+  // palette steps libadwaita names directly. No libadwaita app is
+  // affected: there the var() wins and the fallback is never read.
+  // ---------------------------------------------------------------------
+  --ov-up-window-bg: var(--window-bg-color, @theme_bg_color);
+  --ov-up-view-bg: var(--view-bg-color, @theme_base_color);
+  --ov-up-bar-bg: var(--headerbar-bg-color, @theme_bg_color);
+  --ov-up-bar-backdrop: var(--headerbar-backdrop-color, @theme_bg_color);
+  --ov-up-accent: var(--accent-color, @accent_color);
+  --ov-up-accent-fill: var(--accent-bg-color, @theme_selected_bg_color);
+  --ov-up-light-1: var(--light-1, white);
+  --ov-up-dark-5: var(--dark-5, black);
+  // A percentage, not a colour: upstream's border alpha for
+  // `color-mix(in srgb, currentColor var(--border-opacity), transparent)`.
+  // 100% keeps the fallback the sheet already used where it named one.
+  --ov-up-border-opacity: var(--border-opacity, 100%);
+  // Three dashes upstream, on `scale` only (hence the pre-existing
+  // currentColor fallback): libadwaita 1.9.4, gtk.css L2171.
+  --ov-up-slider-border: var(---slider-border-color, currentColor);
+
+  // ---------------------------------------------------------------------
   // Kill switches — one edit per family:
   //   bevel:   --ov-bevel-width: 0px        (length component; collapses)
   //   depth:   --ov-depth-color: transparent (shared stop colour; all
@@ -30,7 +80,7 @@
   // `prefers-contrast: more` restores 2px in _button.scss — the ring is the
   // only focus cue in that mode. A length component, so var() substitutes.
   --ov-focus-ring-width: 1.5px;
-  --ov-depth-color: color-mix(in srgb, var(--dark-5) 100%, transparent);
+  --ov-depth-color: color-mix(in srgb, var(--ov-up-dark-5) 100%, transparent);
 
   // Texture: feTurbulence grain tile (E4: renders). Opacity is baked into
   // the tile at 0.05, the budget ceiling — data: URIs cannot read CSS
@@ -46,8 +96,8 @@
   // Inspector tune: whisper alphas so rest barely registers.
   // Same-surface button rest (inset-only; no external drops).
   // ---------------------------------------------------------------------
-  --ov-bevel-highlight: color-mix(in srgb, var(--light-1) 16%, transparent);
-  --ov-bevel-shadow: color-mix(in srgb, var(--dark-5) 8%, transparent);
+  --ov-bevel-highlight: color-mix(in srgb, var(--ov-up-light-1) 16%, transparent);
+  --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 8%, transparent);
 
   // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay
@@ -65,9 +115,9 @@
   // window still picks up the backdrop's cast. One number; `dialog` rides
   // the same token.
   // ---------------------------------------------------------------------
-  --ov-surface-window: color-mix(in srgb, var(--window-bg-color) 96%, transparent);
+  --ov-surface-window: color-mix(in srgb, var(--ov-up-window-bg) 96%, transparent);
   // light: #f2f2f4 -> +8/+8/+6 = #fafafa — the old hardcoded value, exact.
-  --ov-surface-content: rgb(from var(--window-bg-color) calc(r + 8) calc(g + 8) calc(b + 6));
+  --ov-surface-content: rgb(from var(--ov-up-window-bg) calc(r + 8) calc(g + 8) calc(b + 6));
   --ov-surface-sidebar: transparent;
 
   // ---------------------------------------------------------------------
@@ -80,11 +130,11 @@
   //              the chrome recedes into the content of an unfocused
   //              window (light: #ffffff -> #fafafb, a whisper; dark:
   //              #2e2e32 -> #222226, a real dim).
-  // Kill switch: point --ov-bar-backdrop-base at var(--headerbar-bg-color)
+  // Kill switch: point --ov-bar-backdrop-base at var(--ov-up-bar-bg)
   // and the bar stays lit in every state (one edit, D5 pattern).
   // ---------------------------------------------------------------------
-  --ov-bar-base: var(--headerbar-bg-color);
-  --ov-bar-backdrop-base: var(--headerbar-backdrop-color);
+  --ov-bar-base: var(--ov-up-bar-bg);
+  --ov-bar-backdrop-base: var(--ov-up-bar-backdrop);
 
   // ---------------------------------------------------------------------
   // Motion — the house spec (decisions.md 19 Sep 2026) as tokens: one

@@ -125,8 +125,8 @@ button:not(.flat):not(.osd):not(:drop(active)):disabled {
 // button's boundary (measured: `box-shadow: none` here made the probed
 // button's press state read 240,241,242 — identical to rest — where stock
 // HC reads 204,208,212). Restating the expression means the ring keeps
-// following `--border-opacity` and the HC palette for free.
-$ov-button-ring: "inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity), transparent)";
+// following `--ov-up-border-opacity` and the HC palette for free.
+$ov-button-ring: "inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent)";
 
 button:not(.flat):not(.osd):not(:drop(active)):not(:disabled),
 button:not(.flat):not(.osd):not(:drop(active)):checked,

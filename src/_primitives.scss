@@ -128,24 +128,24 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // ---------------------------------------------------------------------
 @function ov-glow() {
   @return linear-gradient(to bottom,
-           color-mix(in srgb, var(--accent-color) 16%, transparent) 0%,
-           color-mix(in srgb, var(--accent-color) 7%, transparent) 14%,
-           color-mix(in srgb, var(--accent-color) 0%, transparent) 38%),
+           color-mix(in srgb, var(--ov-up-accent) 16%, transparent) 0%,
+           color-mix(in srgb, var(--ov-up-accent) 7%, transparent) 14%,
+           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
           linear-gradient(to top,
-           color-mix(in srgb, var(--accent-color) 14%, transparent) 0%,
-           color-mix(in srgb, var(--accent-color) 6%, transparent) 14%,
-           color-mix(in srgb, var(--accent-color) 0%, transparent) 38%),
+           color-mix(in srgb, var(--ov-up-accent) 14%, transparent) 0%,
+           color-mix(in srgb, var(--ov-up-accent) 6%, transparent) 14%,
+           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
           linear-gradient(to right,
-           color-mix(in srgb, var(--accent-color) 11%, transparent) 0%,
-           color-mix(in srgb, var(--accent-color) 5%, transparent) 16%,
-           color-mix(in srgb, var(--accent-color) 0%, transparent) 40%),
+           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
+           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
+           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
           linear-gradient(to left,
-           color-mix(in srgb, var(--accent-color) 11%, transparent) 0%,
-           color-mix(in srgb, var(--accent-color) 5%, transparent) 16%,
-           color-mix(in srgb, var(--accent-color) 0%, transparent) 40%),
+           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
+           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
+           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
           radial-gradient(ellipse at center,
-           color-mix(in srgb, var(--accent-color) 5%, transparent) 0%,
-           color-mix(in srgb, var(--accent-color) 0%, transparent) 70%);
+           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 0%,
+           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 70%);
 }
 
 // ---------------------------------------------------------------------
@@ -222,7 +222,7 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // doesn't strip it (the ring survives as the entry's border).
 // ---------------------------------------------------------------------
 @mixin ov-inset($upstream: ()) {
-  $ring: inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+  $ring: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   background-image: linear-gradient(to bottom,
     color-mix(in srgb, black 5%, transparent),
     color-mix(in srgb, black 0%, transparent) 40%);

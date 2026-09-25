@@ -105,7 +105,7 @@ list.content > row.expander row.header:not(:selected).activatable:active {
   // loses (found by the structural audit, 23 Sep — the same trap
   // `check:checked` and the button hover rule were in).
   .card:not(:drop(active)) {
-    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   }
   // The container scoop is a material effect too: it had no revert at all
   // before this pass.

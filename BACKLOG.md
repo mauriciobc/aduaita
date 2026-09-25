@@ -365,6 +365,21 @@ states × light/dark/HC, label pairs measured, plus a 2× crop pass.*
   family that moved. Verdict: decisions.md, "Window translucency: 84% →
   96%".
 
+- [x] **DD3** (P0) Helium (Chromium 154, GTK4, `system_theme = kGtk`) opened
+  completely black: tab strip, toolbar and viewport. L0 derived its tokens from
+  libadwaita custom properties, which do not exist in an app without
+  libadwaita — the declarations computed to nothing, and Chromium's GTK colour
+  mixer turns "paints nothing" into an opaque black frame (`SkColorSetA(...,
+  SK_AlphaOPAQUE)` over an empty 24x24 render). DD2 is the reserved M7 texture
+  call.
+  *Accept:* no GTK4 app paints nothing; libadwaita apps pixel-identical.
+  **Done** — L0 grew the `--ov-up-*` alias layer (one alias per upstream
+  variable, GTK named-colour fallback), `upstream/variables.txt` now lists all
+  ten, `tools/probe-foreign` reports 9 → 0 inputs painting nothing, gallery
+  15/15 families pixel-identical in both schemes, and a live A/B in the
+  session reads stock (36386 black px) where the old sheet read 79598.
+  Verdict: decisions.md, "Foreign apps: Helium came up black".
+
 ---
 
 ## Out of scope — explicit, do not creep

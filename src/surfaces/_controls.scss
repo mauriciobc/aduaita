@@ -51,10 +51,10 @@ levelbar > trough > block:not(.empty) {
 }
 
 scale > trough > slider {
-  background-color: color-mix(in srgb, var(--light-1) 86%, var(--view-bg-color));
+  background-color: color-mix(in srgb, var(--ov-up-light-1) 86%, var(--ov-up-view-bg));
   background-image: linear-gradient(to bottom,
-    color-mix(in srgb, var(--light-1) 96%, transparent),
-    color-mix(in srgb, var(--light-1) 80%, transparent));
+    color-mix(in srgb, var(--ov-up-light-1) 96%, transparent),
+    color-mix(in srgb, var(--ov-up-light-1) 80%, transparent));
   box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
               inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
@@ -142,19 +142,19 @@ toast {
   scale > trough,
   progressbar:not(.osd) > trough,
   levelbar > trough > block.empty {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity), transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   }
 
   scale > trough > slider {
-    background-color: color-mix(in srgb, white 80%, var(--view-bg-color));
+    background-color: color-mix(in srgb, white 80%, var(--ov-up-view-bg));
     background-image: none;
-    box-shadow: 0 0 0 1px var(---slider-border-color, currentColor), 0 2px 4px RGB(0 0 6 / 20%);
+    box-shadow: 0 0 0 1px var(--ov-up-slider-border), 0 2px 4px RGB(0 0 6 / 20%);
   }
 
   // The dragged knob's well outranks the resting revert (same priority,
   // more classes) — reverted with its own selector.
   scale:active > trough > slider {
-    box-shadow: 0 0 0 1px var(---slider-border-color, currentColor), 0 2px 4px RGB(0 0 6 / 20%);
+    box-shadow: 0 0 0 1px var(--ov-up-slider-border), 0 2px 4px RGB(0 0 6 / 20%);
   }
 
   check,
@@ -163,7 +163,7 @@ toast {
   // classes short of the rule it reverts.
   check:not(:checked):not(:indeterminate),
   radio:not(:checked):not(:indeterminate) {
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   }
 
   check:not(:checked):not(:indeterminate):hover,
@@ -186,6 +186,6 @@ toast {
   }
 
   toast {
-    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity, 100%), transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
   }
 }
