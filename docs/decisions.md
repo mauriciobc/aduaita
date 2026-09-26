@@ -1555,9 +1555,12 @@ strip at x 488-495, y 471-510 — the scrollbar thumb. A sheet changed by a
 *comment only* reproduces the same 316 px in the same strip, so it is
 parse/render timing against upstream's `scrollbar … transition: all 200ms
 linear`, not a rule. Masking x >= 480 leaves **0 px** in both HC cells:
-the reverts are structural in dark as well as light. Any future A/B that lands
-on a scrolling family must mask the scrollbar strip or use a comment-only
-control sheet.
+the reverts are structural in dark as well as light. The same artifact shows up
+in `adw` (x 620-624, y 346-598) when that family is rendered *after* fourteen
+others in an all-family run, and vanishes (0 px) when `adw` is rendered alone in
+the same conditions — so it tracks when the family is rendered, not what the
+sheet says. Any future A/B that lands on a scrolling family must mask the
+scrollbar strip or use a comment-only control sheet.
 
 ## Pen dial pass 3/4: the accent's own light on the CTA — 26 Sep 2026
 
