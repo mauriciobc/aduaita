@@ -4,13 +4,15 @@
 // accessibility rule is enforced structurally instead of by discipline.
 //
 // Mechanism (decided Evening 0 + M2, docs/decisions.md):
-//   bevel   — 0.5px hairline pair, values user-tuned; THE same-surface
-//             rest language for regular buttons (inset-only — no drops).
+//   bevel   — 0.5px hairline pair, values user-tuned; the rest language
+//             for regular buttons, together with ov-drop().
+//   drop    — the soft two-stop drop a raised button sits on (26 Sep 2026,
+//             decisions.md "Rest register"); collapses on press, which is
+//             what makes the press read as the button sinking.
 //   flat    — the same pair at reduced amplitude over a whisper sheen: the
 //             `.flat` VARIATION's rest material (ov-flat-register()).
 //   depth   — container ladders (popover/menu/window). Floating knobs
-//             (switch/scale) may use ov-raised*; buttons never do —
-//             external shadows break the same-surface language.
+//             (switch/scale) may use ov-raised*.
 //   inset   — permanent recessed material for container-ish surfaces
 //             (entries): scoop gradient + hairline, DEEPER on focus.
 //   fill    — the lit colour of a filled channel (progress / scale /
@@ -23,9 +25,10 @@
 //
 // Governing principle (user, M2 session): "everything that has depth
 // keeps it in all states; interaction only MODULATES depth." Regular
-// buttons wear ov-bevel() at rest (same-surface hairlines); press
-// replaces it with ov-well(). External drop shadows are banned on
-// buttons. Flat/osd stay flat.
+// buttons wear ov-bevel() + ov-drop() at rest; press replaces both with
+// ov-well(). The 19 Sep ban on external drops for buttons was retired on
+// 26 Sep (user) — the drop is small enough to stay inside the gap between
+// two buttons. Flat/osd stay flat.
 //
 // Overriding box-shadow or background-image REPLACES upstream's value —
 // surface rules must restate upstream's stops/images alongside the
@@ -94,11 +97,25 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// Bevel — the tuned 0.5px hairline pair (same-surface button rest).
+// Bevel — the tuned 0.5px hairline pair (button rest).
 // ---------------------------------------------------------------------
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
           inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
+}
+
+// ---------------------------------------------------------------------
+// Drop — the surface a raised button sits on (26 Sep 2026, decisions.md
+// "Rest register"). Two stops, contact + ambient, the pattern both
+// reference pens use (xxyEYMJ's --shadow ladder, gOjNdog's lifted cap).
+// Deliberately tiny: 5px of blur, 2px of offset, so a drop never reaches
+// across the 4-6px gap to the neighbouring button (the retired CTA bloom
+// did — 0 12px 28px — which is why buttons were banned from drops before).
+// Rides --ov-depth-color, so the depth kill switch removes it too.
+// ---------------------------------------------------------------------
+@function ov-drop() {
+  @return 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 12%, transparent),
+          0 2px 5px color-mix(in srgb, var(--ov-depth-color) 8%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -142,7 +159,8 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 
 // ---------------------------------------------------------------------
 // Depth ladders — container surfaces only (popover/menu/wall if ever).
-// Buttons never wear these (external drops break same-surface language).
+// Buttons wear the much smaller ov-drop() instead (26 Sep 2026): a ladder
+// this size would paint into the gap between two buttons.
 // ---------------------------------------------------------------------
 @function ov-depth-raised() {
   @return 0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
@@ -204,9 +222,9 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// Raised chip — FLOATING knobs only (switch/scale). Drop shadow is
-// intentional here: knobs sit ON a track. Buttons must NOT use these —
-// they are same-surface and external shadows break that language.
+// Raised chip — FLOATING knobs only (switch/scale). Knobs sit ON a track,
+// so their drop is deeper than a button's ov-drop(); buttons do not use
+// these.
 // ---------------------------------------------------------------------
 @function ov-raised() {
   @return 0 2px 4px RGB(0 0 6 / 20%),
@@ -397,12 +415,18 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
   @return ov-lit-curve($mid, var(--ov-lit-edge-top), var(--ov-lit-edge-bottom));
 }
 
+// $outer: extra outset layers after the hairlines — the CTA passes
+// ov-drop() so it sits raised like every button; channel fills pass nothing.
 @mixin ov-lit-fill($curve: ov-lit-curve(),
                    $edge-top: color-mix(in srgb, white 55%, transparent),
-                   $edge-bottom: color-mix(in srgb, black 22%, transparent)) {
+                   $edge-bottom: color-mix(in srgb, black 22%, transparent),
+                   $outer: ()) {
   background-image: $curve;
-  box-shadow: inset 0 1px 1px $edge-top,
-              inset 0 -1px 1px $edge-bottom;
+  $shadow: (inset 0 1px 1px $edge-top, inset 0 -1px 1px $edge-bottom);
+  @if length($outer) > 0 {
+    $shadow: join($shadow, $outer, comma);
+  }
+  box-shadow: $shadow;
   // Upstream animates `background` and `box-shadow` on exactly these nodes;
   // restated (plus background-image, which is ours) so the fill colour still
   // fades at the house exit timing instead of snapping.

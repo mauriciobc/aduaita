@@ -1,6 +1,7 @@
-// L2 — buttons. Same-surface material: buttons feel part of the
-// background (no external drop shadows — those break the language).
-//   rest    — ov-bevel(): 0.5px top highlight + bottom shade hairlines
+// L2 — buttons. Raised material: a bevel pair on a soft drop, sinking into
+// a well on press (the drop was added 26 Sep 2026; before it, buttons were
+// same-surface with no external shadow — decisions.md "Rest register").
+//   rest    — ov-bevel() + ov-drop(): 0.5px hairline pair over a 2px drop
 //   hover   — ov-glow(): layered soft rim in the theme accent (bevel stays)
 //   pressed — ov-well(): amplified inset well + 0.96 brightness
 //   held    — ov-well-held(): light inset on :checked
@@ -54,7 +55,7 @@ button:focus:focus-visible {
 }
 
 button:not(.flat):not(.osd):not(:drop(active)) {
-  box-shadow: ov-bevel();
+  box-shadow: ov-bevel(), ov-drop();
   // The resting declaration carries the LEAVE timing for every state
   // below (a transition is taken from the after-change style).
   @include ov-motion(box-shadow var(--ov-motion-exit),
@@ -174,9 +175,10 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
 // pair is the accent's too — the pen pass, decisions.md "Pen dial pass
 // 3/4". What goes: the translucency, the bespoke per-state
 // gradients, and the hover/press OUTER bloom (`0 4px 14px` / `0 12px 28px`
-// drop shadows): external shadows break the same-surface language
-// (_primitives.scss) and the hover one painted into the gap between two
-// CTAs (measured, both prelight: 249,249,250 -> 200,211,236).
+// drop shadows): the hover one painted into the gap between two CTAs
+// (measured, both prelight: 249,249,250 -> 200,211,236). The CTA does wear
+// the small ov-drop() at rest since 26 Sep, like every raised button —
+// that one stays inside the gap by construction (_primitives.scss).
 //
 // Deliberately NOT declared here:
 //   color            — upstream pairs it (--accent-fg-color on
@@ -202,9 +204,11 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)) {
   // accent by construction; the semantic fills (progressbar variants, levelbar
   // blocks) keep the physics pair, where mixing toward the accent would move
   // the meaning.
+  // Raised like every other button: the lit hairlines over the house drop.
   @include ov-lit-fill($curve: ov-lit-curve-accent($ov-cta-mid),
                        $edge-top: var(--ov-lit-edge-top),
-                       $edge-bottom: var(--ov-lit-edge-bottom));
+                       $edge-bottom: var(--ov-lit-edge-bottom),
+                       $outer: ov-drop());
 }
 
 // Hover: upstream's own lift, restated as the top layer because the curve

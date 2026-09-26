@@ -61,6 +61,10 @@
   // `color-mix(in srgb, currentColor var(--border-opacity), transparent)`.
   // 100% keeps the fallback the sheet already used where it named one.
   --ov-up-border-opacity: var(--border-opacity, 100%);
+  // Also a percentage: upstream's disabled alpha (50%, 40% under HC),
+  // restated only where an overlay HC revert must reproduce upstream's own
+  // dimmed ring (surfaces/_toggle-group.scss). 50% = upstream's default.
+  --ov-up-disabled-opacity: var(--disabled-opacity, 50%);
   // Three dashes upstream, on `scale` only (hence the pre-existing
   // currentColor fallback): libadwaita 1.9.4, gtk.css L2171.
   --ov-up-slider-border: var(---slider-border-color, currentColor);
@@ -92,12 +96,19 @@
 
   // ---------------------------------------------------------------------
   // Bevel edge pair — one light source: the top. 0.5px sub-pixel
-  // hairlines (GSK-antialiased). Softened further from the 30/15
-  // Inspector tune: whisper alphas so rest barely registers.
-  // Same-surface button rest (inset-only; no external drops).
+  // hairlines (GSK-antialiased).
+  // Raised 4x on 26 Sep 2026 (decisions.md "Rest register"): the 19 Sep
+  // "whisper" tune (16%/8%) moved a button's edges by +3/-2 of 255 — the
+  // user's benchmark screenshots (calculator, Settings, a browser, an EQ)
+  // all read as flat, and both reference pens carry a rest register
+  // roughly 10x louder. Candidates x2 / x4 / pen-proportion, each with and
+  // without a drop, were rendered; x4 + drop won: pen-proportion drew the
+  // foot as a hard line rather than a falloff.
+  // The drop itself is ov-drop() in L1 — the same-surface rule was retired
+  // for buttons the same day.
   // ---------------------------------------------------------------------
-  --ov-bevel-highlight: color-mix(in srgb, var(--ov-up-light-1) 16%, transparent);
-  --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 8%, transparent);
+  --ov-bevel-highlight: color-mix(in srgb, var(--ov-up-light-1) 64%, transparent);
+  --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 32%, transparent);
 
   // ---------------------------------------------------------------------
   // Flat register — the `.flat` VARIATION's rest material (25 Sep 2026,
