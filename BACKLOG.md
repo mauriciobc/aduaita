@@ -461,6 +461,15 @@ Four moves, landed separately because each one is a visual change.
   and 189-200, 0 px in the label band (178-188); `controls` 0 px; HC 0 px
   (decisions.md, "Pen dial pass 3/4").
 
+- [x] **PN4** (P1) `--ov-debug`, as a build rather than a token: an outline on
+  every node for hunting a rule that is aimed at the wrong node.
+  *Accept:* `tools/build --debug` installs an outlined sheet and a plain
+  `tools/build` restores the previous one; the shipped sheet carries no
+  `outline` on `*`; defaults emit nothing.
+  **Done 26 Sep 2026** — debug sheet 864 lines to the shipped 858, `controls`
+  10541 px vs the shipped sheet; shipped sheet has no `* {` rule
+  (decisions.md, "Debug build").
+
 - [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
   *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
   accent's own light instead of the white/black hairline pair; both schemes;

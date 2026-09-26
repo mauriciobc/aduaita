@@ -1594,3 +1594,37 @@ Top hairline rgb(189,214,245) → rgb(117,168,219); foot rgb(36,89,154) →
 rgb(3,71,140): the same two rungs, now in the fill's own hue instead of white
 over black. The direction is the point — the CTA reads as a lit accent surface
 rather than as a blue one with a grey light on it.
+
+## Debug build — 26 Sep 2026
+
+**From the pen.** `xxyEYMJ` keeps a `--debug: 0` token and one declaration on
+`*` (`outline: calc(var(--debug) * 1px) dotted hsl(… 60% 60%)`) that outlines
+every box in the document when it is flipped on. The idea is worth keeping: an
+L2 rule that is "not winning" is nearly always a rule aimed at the wrong node,
+and the box answers that in one look.
+
+**Why it is a build here, and not a token.** `outline` on `*` at priority 800
+outranks every upstream focus ring. At a hypothetical `--debug: 0` the
+declaration is still *there* — `0px dotted` — and it still replaces the ring
+upstream draws for the keyboard. Nothing this sheet paints may cost the
+keyboard its focus cue, not even while invisible. So the rule exists only in a
+debug build: `src/_debug.scss` gated on `$ov-debug` (default false, so an
+accidental import emits nothing), `src/overlay-debug.scss` as the entry point
+(the same `@import`s in the same order, so anything the debug sheet renders
+differently is the debug rule and nothing else), and `tools/build --debug` to
+compile it into `build/gtk-debug.css` and install that.
+
+**Verified.** `tools/build --debug --no-restart` writes build/gtk-debug.css
+(864 lines against the shipped 858), repoints
+`~/.config/gtk-4.0/gtk.css` at it and says DEBUG in the install line; a plain
+`tools/build` repoints it back at build/gtk.css. The shipped sheet contains no
+`* {` rule at all (grep). Rendering `controls` from build/gtk-debug.css against
+the same family from the shipped sheet: **10541 px changed, max 182** — the
+switch and its thumb, the scale's trough and slider, the captions, the
+scrollbar and the bar's grain band, every one of them outlined.
+
+The hue is `RGB(203 66 203)` — deliberately outside the palette, so an outline
+can never be read as material — spelled in GTK's own `RGB()` form because
+libsass claims `hsl()` for its own comma-separated signature. The first attempt
+failed the build with "Function hsl is missing argument $saturation"; the trap
+is recorded because it will recur in any future inline colour.

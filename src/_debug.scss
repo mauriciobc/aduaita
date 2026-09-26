@@ -1,0 +1,40 @@
+// Debug channel — the pen pass's one inspection aid (26 Sep 2026,
+// decisions.md "Debug build").
+//
+// The pen (codepen xxyEYMJ) keeps a `--debug: 0` token and one declaration
+// on `*`:
+//
+//   outline: calc(var(--debug) * 1px) dotted hsl(calc(var(--debug) * 10 * 1deg) 60% 60%);
+//
+// which paints every box in the document when it is flipped on. The idea is
+// worth keeping — an L2 rule that is "not winning" is nearly always a rule
+// aimed at the wrong node, and a box outline answers that in one look.
+//
+// It cannot ship inert in GTK, which is why it is a BUILD and not a token:
+// `outline` at priority 800 on `*` outranks every upstream focus ring, so at
+// `--debug: 0` the declaration would still be there, replacing the focus ring
+// with a 0px one. Nothing this sheet paints may cost the keyboard its focus
+// cue, not even while it is invisible.
+//
+// Usage (README): tools/build --debug — compiles src/overlay-debug.scss into
+// build/gtk-debug.css and installs THAT as ~/.config/gtk-4.0/gtk.css, so an
+// app started afterwards shows every node's box. Run tools/build again to go
+// back. Offscreen renders take the sheet directly:
+//
+//   build/render-gallery build/gtk-debug.css /tmp/boxes controls
+//
+// $ov-debug defaults to false, so importing this file into the shipped sheet
+// by accident emits nothing. One hue for every box, as in the pen: what
+// distinguishes two boxes here is the box, not the colour. The hue is
+// deliberately outside the palette — nothing this sheet paints is magenta, so
+// an outline can never be read as material. Written as GTK's own RGB() form
+// rather than hsl(): libsass claims `hsl()` first and expects its own
+// comma-separated signature, and this file is not worth an interpolation
+// escape hatch.
+$ov-debug: false !default;
+
+@if $ov-debug {
+  * {
+    outline: 1px dotted RGB(203 66 203);
+  }
+}

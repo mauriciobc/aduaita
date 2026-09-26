@@ -1,0 +1,12 @@
+// adwaita-overlay, debug build — the shipped sheet plus the box outline on
+// every node (src/_debug.scss). Built by `tools/build --debug` into
+// build/gtk-debug.css; never installed by a plain `tools/build`.
+//
+// The only difference from overlay.scss is the flag below, so anything the
+// debug sheet renders that the normal sheet does not is the debug rule — the
+// overlay itself is compiled from the same sources in the same order.
+
+$ov-debug: true;
+
+@import "overlay";
+@import "debug";

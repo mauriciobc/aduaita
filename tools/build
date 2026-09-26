@@ -4,20 +4,44 @@
 # --gapplication-service daemons (Nautilus, the file picker, …) keep
 # painting the old look until killed; they respawn on demand.
 #
-# Usage: tools/build [--no-restart]
+# Usage: tools/build [--debug] [--no-restart]
+#
+#   --debug  build src/overlay-debug.scss instead — the same sheet plus a
+#            1px dotted outline on every node (src/_debug.scss), written to
+#            build/gtk-debug.css and installed in its place. Run a plain
+#            tools/build to go back to the shipped sheet.
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-out="$repo/build/gtk.css"
-confdir="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-4.0"
+debug=0
+restart=1
+
+for arg in "$@"; do
+  case "$arg" in
+    --debug) debug=1 ;;
+    --no-restart) restart=0 ;;
+    *)
+      echo "usage: $(basename "$0") [--debug] [--no-restart]" >&2
+      exit 2
+      ;;
+  esac
+done
 
 if [[ $EUID -eq 0 ]]; then
   echo "error: run as your user, not root (root's XDG config is the wrong target)" >&2
   exit 1
 fi
 
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-4.0"
+src="$repo/src/overlay.scss"
+out="$repo/build/gtk.css"
+if (( debug )); then
+  src="$repo/src/overlay-debug.scss"
+  out="$repo/build/gtk-debug.css"
+fi
+
 mkdir -p "$repo/build" "$confdir"
-sassc "$repo/src/overlay.scss" "$out"
+sassc "$src" "$out"
 
 target="$confdir/gtk.css"
 if [[ -e "$target" && ! -L "$target" ]]; then
@@ -26,9 +50,13 @@ if [[ -e "$target" && ! -L "$target" ]]; then
   exit 1
 fi
 ln -sfn "$out" "$target"
-echo "installed: $target -> $out ($(wc -l < "$out") lines)"
+if (( debug )); then
+  echo "installed: $target -> $out ($(wc -l < "$out") lines, DEBUG: every node outlined)"
+else
+  echo "installed: $target -> $out ($(wc -l < "$out") lines)"
+fi
 
-if [[ "${1:-}" != "--no-restart" ]]; then
+if (( restart )); then
   pids="$(pgrep -f -- '--gapplication-service' || true)"
   if [[ -n "$pids" ]]; then
     # Killing only forces a fresh CSS read; the daemons respawn on demand.
