@@ -14,6 +14,36 @@
 // lives in L1's mixins; L0 owns colours, dimensions, motion and kill
 // switches.
 
+// ---------------------------------------------------------------------
+// The ACCENT REGISTER — every token derived from --ov-up-accent, in one
+// place so it can be derived twice (26 Sep 2026, decisions.md "Neon hover").
+//
+// GTK computes a custom property that holds var() on the element that
+// declares it, and children inherit the computed value. So --ov-up-accent,
+// declared on :root, is the ROOT accent everywhere — upstream re-pointing
+// --accent-color on `.destructive-action` (gtk.css L488, L1682) never reached
+// anything derived from it. Measured: the hover ring on a destructive button
+// came out accent-blue on its red fill. The fix re-declares the alias AND its
+// derivations on the nodes upstream re-points (the block after :root): the
+// second of two documented exceptions to "L0 declares nothing but :root".
+//
+//   lit-*  — see "The LIT register" below (pen pass).
+//   neon-* — the hover glow: a hot core line, the tube colour it falls off
+//            into, both from the accent's own hue (relative HSL).
+// ---------------------------------------------------------------------
+@mixin ov-accent-register() {
+  --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 92% 72%);
+  --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 83% 61%);
+  --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 40%, transparent);
+  --ov-neon-core: HSL(from var(--ov-up-accent) h 100% 78%);
+  --ov-neon-tube: HSL(from var(--ov-up-accent) h 95% 62%);
+  @media (prefers-color-scheme: dark) {
+    --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 95% 72%);
+    --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 90% 61%);
+    --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 45%, transparent);
+  }
+}
+
 :root {
   // ---------------------------------------------------------------------
   // Upstream palette aliases — the ONLY reads of libadwaita's custom
@@ -95,9 +125,30 @@
   }
 
   // ---------------------------------------------------------------------
+  // The FACE — a raised button's convex fill (26 Sep 2026, decisions.md
+  // "Button face"). The user, on the calculator after the rest-register
+  // pass: "still very ugly". Edges and a drop around a flat colour slab read
+  // as a sticker with an outline; neither reference pen has a flat surface
+  // anywhere (gOjNdog: button 80%->85%, cap 90%->80%; xxyEYMJ: cap scene->
+  // grey). The face is a top-lit gradient layered OVER the state colour
+  // (upstream moves plain buttons through background-color, so every state
+  // and every app fill — the calculator's digit tint — still shows through),
+  // and it flips concave on press (ov-face-pressed()).
+  // Scheme-split for the same reason as the flat register: a light page
+  // acts through the shade half, a dark one through the hilite half.
+  // ---------------------------------------------------------------------
+  --ov-face-hilite: color-mix(in srgb, var(--ov-up-light-1) 22%, transparent);
+  --ov-face-shade: color-mix(in srgb, var(--ov-up-dark-5) 7%, transparent);
+  @media (prefers-color-scheme: dark) {
+    --ov-face-hilite: color-mix(in srgb, var(--ov-up-light-1) 6%, transparent);
+    --ov-face-shade: color-mix(in srgb, var(--ov-up-dark-5) 14%, transparent);
+  }
+
+  // ---------------------------------------------------------------------
   // Bevel edge pair — one light source: the top. 0.5px sub-pixel
   // hairlines (GSK-antialiased).
-  // Raised 4x on 26 Sep 2026 (decisions.md "Rest register"): the 19 Sep
+  // Raised 4x on 26 Sep 2026, then toned to 3x with the face (user: "tone it
+  // down a little"; decisions.md "Rest register"): the 19 Sep
   // "whisper" tune (16%/8%) moved a button's edges by +3/-2 of 255 — the
   // user's benchmark screenshots (calculator, Settings, a browser, an EQ)
   // all read as flat, and both reference pens carry a rest register
@@ -107,8 +158,17 @@
   // The drop itself is ov-drop() in L1 — the same-surface rule was retired
   // for buttons the same day.
   // ---------------------------------------------------------------------
-  --ov-bevel-highlight: color-mix(in srgb, var(--ov-up-light-1) 64%, transparent);
-  --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 32%, transparent);
+  --ov-bevel-highlight: color-mix(in srgb, var(--ov-up-light-1) 48%, transparent);
+  --ov-bevel-shadow: color-mix(in srgb, var(--ov-up-dark-5) 24%, transparent);
+  // The RIM — a 0.5px outline a hair darker than the button's own fill
+  // (user, 26 Sep 2026: "a 0.5 border with a tint a tiny darker than the
+  // background"). Drawn inside the box by ov-bevel(), so it composites on
+  // whatever fill the state or the app gives the button and always lands a
+  // step darker than it — the calculator's digit tint included.
+  --ov-bevel-rim: color-mix(in srgb, var(--ov-up-dark-5) 11%, transparent);
+  @media (prefers-color-scheme: dark) {
+    --ov-bevel-rim: color-mix(in srgb, var(--ov-up-dark-5) 32%, transparent);
+  }
 
   // ---------------------------------------------------------------------
   // Flat register — the `.flat` VARIATION's rest material (25 Sep 2026,
@@ -166,14 +226,7 @@
   // --ov-lit-edge-{top,bottom} at --ov-bevel-{highlight,shadow} and the
   // thumbs go back to the neutral pair in one edit (D5 pattern).
   // ---------------------------------------------------------------------
-  --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 92% 72%);
-  --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 83% 61%);
-  --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 40%, transparent);
-  @media (prefers-color-scheme: dark) {
-    --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 95% 72%);
-    --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 90% 61%);
-    --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 45%, transparent);
-  }
+  @include ov-accent-register();
 
   // ---------------------------------------------------------------------
   // The DISH — the seat a thumb grows into while it is engaged (26 Sep
@@ -271,4 +324,16 @@
     --ov-motion-switch: 0ms;
     --ov-motion-ring: 0ms;
   }
+}
+
+// ---------------------------------------------------------------------
+// The destructive re-point (see "The ACCENT REGISTER" above). Upstream
+// re-points --accent-color on these nodes; the alias and everything derived
+// from it are re-declared here so the overlay follows. @error_color is GTK's
+// built-in destructive colour — the foreign-app fallback, like the rest of
+// the --ov-up-* block.
+// ---------------------------------------------------------------------
+.destructive-action {
+  --ov-up-accent: var(--accent-color, @error_color);
+  @include ov-accent-register();
 }

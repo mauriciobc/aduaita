@@ -478,6 +478,11 @@ Four moves, landed separately because each one is a visual change.
   cells.
   **Done 26 Sep 2026** — decisions.md, "Review verdict on the pen pass".
 
+- [x] **RR4** (P0) Neon hover (hot core + tube + halo) replaces the gradient
+  glow; the accent register is re-derived on `.destructive-action` so it glows
+  red; the button face (inset convex/concave) and a 0.5px rim, toned down per
+  the user. **Done 26 Sep 2026** — decisions.md, "Button face, neon hover, rim".
+
 - [x] **RR1** (P0) Rest register: bevel x4 + a soft drop on raised buttons
   (user: "these buttons look pretty darn flat"). Candidates rendered first;
   x4 + drop chosen; the 19 Sep no-drop rule retired (user).

@@ -97,11 +97,12 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// Bevel — the tuned 0.5px hairline pair (button rest).
+// Bevel — the tuned 0.5px hairline pair plus the 0.5px rim (button rest).
 // ---------------------------------------------------------------------
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
-          inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
+          inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow),
+          inset 0 0 0 0.5px var(--ov-bevel-rim);
 }
 
 // ---------------------------------------------------------------------
@@ -114,8 +115,8 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // Rides --ov-depth-color, so the depth kill switch removes it too.
 // ---------------------------------------------------------------------
 @function ov-drop() {
-  @return 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 12%, transparent),
-          0 2px 5px color-mix(in srgb, var(--ov-depth-color) 8%, transparent);
+  @return 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 9%, transparent),
+          0 2px 5px color-mix(in srgb, var(--ov-depth-color) 6%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -180,31 +181,50 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// The hover GLOW — layered soft rim (user-locked 19 Sep, v4). Five
-// feathered layers (top/bottom/side washes + center bloom) build a
-// smooth edge-pooling light in the theme accent. Hover-only; suppressed
-// during press/checked/disabled by the surface's :not chain.
+// The hover NEON (26 Sep 2026, decisions.md "Neon hover"; replaces the
+// 19 Sep five-gradient glow, which read as a tint — "a smudge more than a
+// glow" on the light scheme). Neon is edge light, not a wash:
+//   core  — 1px hot line at the edge, the accent's hue at 78% lightness
+//   tube  — 2px ring of the tube colour right inside it
+//   fall  — the tube's light falling off inward over 10px
+//   halo  — the same light spilling 8px outside the edge
+// all box-shadows, which GSK blurs smoothly (gradients banded). No
+// background layer: the fill stays the state colour, clean.
+// Chosen from three rendered candidates (rim only / + halo / + hot core,
+// "the tube") on both schemes. Colours are --ov-neon-*, re-derived on
+// destructive nodes, so a destructive button glows in its own red.
+// Hover-only; press/checked/disabled are excluded by the surface's :not
+// chain. Call FIRST in a box-shadow list — the core has to paint over the
+// bevel's top hairline.
 // ---------------------------------------------------------------------
-@function ov-glow() {
-  @return linear-gradient(to bottom,
-           color-mix(in srgb, var(--ov-up-accent) 16%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 7%, transparent) 14%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
-          linear-gradient(to top,
-           color-mix(in srgb, var(--ov-up-accent) 14%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 6%, transparent) 14%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
-          linear-gradient(to right,
-           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
-          linear-gradient(to left,
-           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
-          radial-gradient(ellipse at center,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 70%);
+@function ov-neon() {
+  @return inset 0 0 0 1px color-mix(in srgb, var(--ov-neon-core) 90%, transparent),
+          inset 0 0 0 2px color-mix(in srgb, var(--ov-neon-tube) 45%, transparent),
+          inset 0 0 10px color-mix(in srgb, var(--ov-neon-tube) 28%, transparent),
+          0 0 8px color-mix(in srgb, var(--ov-neon-tube) 40%, transparent);
+}
+
+// ---------------------------------------------------------------------
+// The FACE — convex at rest, concave on press (26 Sep 2026, decisions.md
+// "Button face"; tokens --ov-face-*). Drawn with INSET SHADOWS, not a
+// background gradient, on purpose: GTK's built-in theme (what plain-GTK apps
+// such as Chromium's dialogs render with) paints a button's entire fill as a
+// background-image, so a face gradient there REPLACED the fill — measured on
+// render-widget (plain GTK): the button centre went to alpha 0. box-shadow is
+// already the material's own property, so the face composes with every
+// theme's fill and every state colour, in libadwaita and outside it.
+// Geometry: a glow feathered down from the top edge and a shade feathered up
+// from the foot, each reaching ~40% of a 34px button; the middle band, where
+// the label sits, is untouched.
+// ---------------------------------------------------------------------
+@function ov-face() {
+  @return inset 0 14px 12px -10px var(--ov-face-hilite),
+          inset 0 -14px 12px -10px var(--ov-face-shade);
+}
+
+@function ov-face-pressed() {
+  @return inset 0 14px 12px -10px var(--ov-face-shade),
+          inset 0 -14px 12px -10px color-mix(in srgb, var(--ov-up-light-1) 0%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -324,7 +344,7 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // the lighting is layered over the colour rather than replacing it — this
 // is garnish on a semantic fill, not a new fill.
 //
-// Physics constants only (white/black), like ov-raised() and ov-glow(), so
+// Physics constants only (white/black), like ov-raised(), so
 // the treatment follows every palette and both schemes for free. No kill
 // switch of its own, matching the glow: the HC revert is the escape hatch.
 //
@@ -347,7 +367,7 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // Used by the moved parts (switch thumb, scale knob), which is also why
 // neither function is folded into ov-bevel(): that pair is the *same
 // surface* language for a button at rest, this one is a state. Buttons do
-// not wear it (they have ov-glow() for the accent moment).
+// not wear it (they have ov-neon() for the accent moment).
 // ---------------------------------------------------------------------
 @function ov-lit-edge() {
   @return inset 0 1px 1px var(--ov-lit-edge-top),
@@ -357,7 +377,7 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // The halo an engaged thumb carries — one stop, 2px blur, the accent at
 // 40%. It is what makes the part read as a light source rather than a
 // tinted disc; deliberately under the size where it would read as a glow
-// around a control (that register is ov-glow(), hover-only, on buttons).
+// around a control (that register is ov-neon(), hover-only, on buttons).
 @function ov-lit-halo() {
   @return 0 0 2px var(--ov-lit-bloom);
 }

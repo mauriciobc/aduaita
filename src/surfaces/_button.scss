@@ -1,10 +1,11 @@
 // L2 — buttons. Raised material: a bevel pair on a soft drop, sinking into
 // a well on press (the drop was added 26 Sep 2026; before it, buttons were
 // same-surface with no external shadow — decisions.md "Rest register").
-//   rest    — ov-bevel() + ov-drop(): 0.5px hairline pair over a 2px drop
-//   hover   — ov-glow(): layered soft rim in the theme accent (bevel stays)
-//   pressed — ov-well(): amplified inset well + 0.96 brightness
-//   held    — ov-well-held(): light inset on :checked
+//   rest    — ov-face() over the state colour, ov-bevel() + ov-drop()
+//   hover   — ov-neon(): hot core, tube ring, inner falloff, outer halo,
+//             over a centre whisper (face and bevel stay)
+//   pressed — ov-well() + ov-face-pressed(): the face turns concave, 0.96
+//   held    — ov-well-held() + ov-face-pressed() on :checked
 // Transitions: house motion via ov-motion() (280ms hover entry / 200ms
 // exit / 120ms press), which also restates upstream's focus-ring motion.
 //
@@ -54,27 +55,29 @@ button:focus:focus-visible {
   }
 }
 
+// The whole material lives in box-shadow — face, bevel, drop, neon, wells.
+// It declares NO background-image in any state: GTK's built-in theme paints
+// a button's fill as a background-image, so declaring one here erased the
+// fill in plain-GTK apps (decisions.md "Button face").
 button:not(.flat):not(.osd):not(:drop(active)) {
-  box-shadow: ov-bevel(), ov-drop();
+  box-shadow: ov-bevel(), ov-face(), ov-drop();
   // The resting declaration carries the LEAVE timing for every state
   // below (a transition is taken from the after-change style).
   @include ov-motion(box-shadow var(--ov-motion-exit),
                      filter var(--ov-motion-exit),
-                     background-image var(--ov-motion-exit),
                      background-color var(--ov-motion-exit));
 }
 
 button:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
-  background-image: ov-glow();
-  // Entering: the glow approaches over the slower house duration.
-  @include ov-motion(background-image var(--ov-motion-enter),
-                     box-shadow var(--ov-motion-exit));
+  box-shadow: ov-neon(), ov-bevel(), ov-face(), ov-drop();
+  // Entering: the neon ignites over the slower house duration.
+  @include ov-motion(box-shadow var(--ov-motion-enter));
 }
 
 button:not(.flat):not(.osd):not(:drop(active)):active,
 button:not(.flat):not(.osd):not(:drop(active)).keyboard-activating,
 menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
-  box-shadow: ov-well();
+  box-shadow: ov-well(), ov-face-pressed();
   filter: brightness(0.96);
   // Press: crisp, mechanical, immediate.
   @include ov-motion(box-shadow var(--ov-motion-press),
@@ -82,12 +85,12 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
 }
 
 button:not(.flat):not(.osd):not(:drop(active)):checked {
-  box-shadow: ov-well-held();
+  box-shadow: ov-well-held(), ov-face-pressed();
 }
 
 button.toggle:checked:not(.flat):not(.osd):not(:drop(active)),
 .toggle:checked button:not(.flat):not(.osd):not(:drop(active)) {
-  box-shadow: ov-well-held();
+  box-shadow: ov-well-held(), ov-face-pressed();
 }
 
 // Disabled: the material goes, nothing else does. `filter` is deliberately
@@ -97,10 +100,9 @@ button.toggle:checked:not(.flat):not(.osd):not(:drop(active)),
 // dim and a disabled bar icon button read as enabled.
 button:not(.flat):not(.osd):not(:drop(active)):disabled {
   box-shadow: none;
-  background-image: none;
 }
 
-// High contrast: bevel, glow, well, held — all revert flat. The selector
+// High contrast: bevel, face, neon, well, held — all revert flat. The selector
 // list mirrors the material rules above CHARACTER FOR CHARACTER: HC is the
 // same provider at the same priority, so anything narrower loses to the
 // rule it is meant to revert. (The 19 Sep list omitted the
@@ -109,14 +111,12 @@ button:not(.flat):not(.osd):not(:drop(active)):disabled {
 // well survived HC — found by the structural audit, 23 Sep.)
 //
 // Each entry reverts only what its material rule DECLARES. That matters:
-// `background-image: none` on the resting selector also erased a fill that
-// the sheet underneath delivers as a gradient — measured with
-// tools/probe-motion against the system GTK theme, the probed button's mean
-// went from rgb(238,239,240)/alpha 252 to rgb(15,16,15)/alpha 40 under HC
-// (23 Sep). libadwaita's own buttons use no background-image, so a
-// libadwaita app was unaffected; a plain-GTK app (the demo apps included)
-// lost the button's face. The plain button only ever gets a background-image
-// from the hover glow, so only the hover entry reverts it.
+// `background-image: none` on the resting selector erased a fill that the
+// sheet underneath delivers as a gradient — measured with tools/probe-motion
+// against the system GTK theme, the probed button's mean went from
+// rgb(238,239,240)/alpha 252 to rgb(15,16,15)/alpha 40 under HC (23 Sep).
+// Since 26 Sep the material declares no background-image in any state (it
+// all lives in box-shadow), so no entry here touches that property.
 //
 // `:not(:disabled)` is the one deliberate divergence from the list above:
 // a disabled bar-family button carries upstream's `filter: opacity()` dim,
@@ -143,7 +143,6 @@ button.toggle:checked:not(.flat):not(.osd):not(:drop(active)),
 
 button:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
   @media (prefers-contrast: more) {
-    background-image: none;
     box-shadow: #{$ov-button-ring};
   }
 }
@@ -257,9 +256,11 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)):checked {
 // (L318-328). Painting one lighting recipe over both is what produced the
 // 2.58:1 label and the emphasis inversion (a saturated red slab louder than
 // the accent CTA it should defer to). Falling through to the generic button
-// material restores upstream's fill AND re-hues the house hover glow for
-// free: upstream remaps `--accent-color` to the destructive hue on this
-// node (L318), which is the variable ov-glow() reads.
+// material restores upstream's fill. The hover neon follows the destructive
+// hue because _tokens.scss re-derives the accent register on
+// `.destructive-action` — it was NOT free, as this note claimed until 26 Sep:
+// an alias computed on :root never sees upstream's per-node re-point, and the
+// ring rendered accent-blue on red (decisions.md "Neon hover").
 
 // ---------------------------------------------------------------------
 // Flat families — upstream paints these buttons flat WITHOUT the .flat

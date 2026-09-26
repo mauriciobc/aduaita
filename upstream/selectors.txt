@@ -151,6 +151,7 @@ radio:not(:checked):not(:indeterminate):hover
 row.activatable.has-open-popup
 row.activatable:active
 row.activatable:hover
+row.button.destructive-action
 scale > trough
 scale > trough > highlight
 scale > trough > slider
@@ -171,6 +172,7 @@ spinbutton
 spinbutton > button.image-button.down:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 spinbutton > button.image-button.up:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 spinbutton:drop(active)
+splitbutton.destructive-action
 splitbutton.flat > button
 splitbutton.flat > menubutton > button
 switch

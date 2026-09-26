@@ -1800,3 +1800,54 @@ every button HC revert in this sheet already behaves.
 cell): light 676 px (max 41), dark 520 (max 55), prelight 676, HC 550 / dark
 HC 560 (the ring above). `tools/check-selectors`: contract OK with five new
 selector atoms and one variable.
+
+## Button face, neon hover, rim — 26 Sep 2026
+
+**Asks, in order.** "Improve the inner glow to feel more elegant and
+neon-like"; on the calculator, "still very ugly"; then "this looks nice, but
+tone it down a little and add a 0.5 border with a tint a tiny darker than the
+background" (user).
+
+**Neon hover.** The 19 Sep hover was five accent gradient washes (5-16%),
+judged on the rendered sheet as "a tint — a smudge more than a glow". Three
+box-shadow candidates rendered in both schemes (rim + inner / + halo /
+"the tube": hot core + ring + halo); the tube won in both. `ov-neon()`: a 1px
+core at the accent's hue, 78% lightness; a 2px tube ring; a 10px inward fall;
+an 8px outer halo. `ov-glow()` deleted (no other consumer).
+
+**The destructive hue was never free.** The candidates showed a *blue* neon
+ring on the red destructive button. GTK computes a custom property holding
+`var()` on the element that declares it, so `--ov-up-accent` on `:root` is the
+root accent everywhere, and upstream's per-node re-point of `--accent-color`
+on `.destructive-action` (gtk.css L488, L1682) never reached anything derived
+from it. The 23 Sep note in `_button.scss` claiming the glow "re-hues for free"
+was an inference, now disproven and rewritten. Fix: `ov-accent-register()` in
+L0 derives every accent token, applied on `:root` and again on
+`.destructive-action` with the alias re-pointed. Measured after: the
+destructive button glows red in both schemes. Re-point atoms registered.
+
+**The face.** "Still very ugly" was the fill: edges and a drop around a flat
+colour slab read as a sticker with an outline; neither reference pen has a
+flat surface. A convex face (top glow, foot shade) flipping concave on press.
+First cut as a `background-image` gradient — **rejected by measurement**: on
+`render-widget` (plain GTK, no libadwaita) the button centre went to
+**alpha 0**, because GTK's built-in theme paints the whole button fill as a
+background-image (`linear-gradient(to top, #f6f5f4 2px, #fbfafa)`), and ours
+replaced it. The face is therefore two feathered **inset shadows**. The
+material now declares no background-image in any button state, which also
+removed two latent erasures of the same kind (the disabled rule's and the HC
+hover revert's `background-image: none`). Plain-GTK button after:
+rgb(248,247,247) alpha 255, identical to stock.
+
+**Tune + rim.** Face 34/10% -> 22/7% (dark 9/20 -> 6/14), bevel 64/32 ->
+48/24, drop 12/8 -> 9/6. The rim is `inset 0 0 0 0.5px` of black at 11%
+(32% dark) inside `ov-bevel()`, so it composites on whatever fill a state or
+an app gives the button: measured on the Normal button's edge, 216 against
+the 229 fill. The toggle-group cap wears it too (same function).
+
+**Measured** (`buttons`, paired, determinism 0): face + neon vs the committed
+sheet — light 40151 px, dark 31764, prelight 87458, active 16356; HC **0 px**
+in rest, prelight and dark HC. The tune vs the first face — light 17295 (max
+21), dark 19922 (max 33), HC 0. Normal label contrast unchanged: 7.87:1 vs
+7.95:1 light, 9.58:1 dark. `check-selectors` OK, `probe-foreign` OK,
+`probe-motion`: hover INSTANT at 80ms, press IN MOTION.
