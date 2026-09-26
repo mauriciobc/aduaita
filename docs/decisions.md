@@ -1514,3 +1514,47 @@ a pair inside one invocation; a lone default render is not a rest render.
 M7); fractional scaling (X5 card); the vertical scale and switches inside
 `.adw` rows are outside the gallery, so the lit pair is measured on the
 horizontal controls only.
+
+## Pen dial pass 2/4: the dish ring — 26 Sep 2026
+
+**What the pen does.** Its bezel *grows into the scene* when the dial opens:
+`box-shadow: 0 0 0 calc(var(--radius)/13) var(--outer-bg)` — a spread-only
+shadow, no offset and no blur, painted in the SURROUND's colour (the scene
+behind the ring is `hsl(307 4% 94%)`, the ring's colour `hsl(223.81 0% 93%)`:
+2/255 apart). What the eye reads is not the band — it is that the object's
+footprint changed while nothing moved.
+
+**What moved.** `ov-grow($width, $color)` in L1, called FIRST in a box-shadow
+list (the earliest shadow paints on top, and the band has to cover the node's
+own drop shadow to read as growth), with one consumer: the checked switch
+thumb, which now sits in a 1.5px dish of its track's colour. L0 carries
+`--ov-thumb-dish-width` (kill lever: `0px`) and `--ov-thumb-dish`, the checked
+track's own appearance at the thumb's row — measured: the track reads
+rgb(48,120,206) against an accent fill of rgb(53,132,228), so the token is
+that fill's 8% black rung, i.e. within 1-4/255 of where it lands.
+
+**Why exactly one consumer.** The trick needs a *uniform* surround painted by
+a colour this sheet owns. The scale knob straddles its own fill boundary —
+accent fill on one side, empty channel on the other — so a dish in either
+colour would draw a seam across the channel. Recorded, not worked around: the
+pen's ring has no seam because the pen's bezel is a disc on a flat scene, and
+GTK's range knob is not that node.
+
+**Measured** (paired renders in one invocation, `controls`, move 1 -> move 2):
+**63 px changed, rows 78-86 and 95-101 only** — the bands above and below the
+thumb, x 38-59 — deltas **+3 to +11/255**, every one of them toward the
+track's unshadowed colour: the seat widens by the dish width and the drop
+shadow starts further out. Under `STATE=prelight` the dish contributes 124 px
+(max 20). `switch > slider` gains the first transition it has ever had
+(`box-shadow` at `--ov-motion-switch`, additive — upstream declares none), so
+the dish lands with the knob's own travel instead of snapping.
+
+**Harness note, extends the one above.** In `SCHEME=dark CONTRAST=more` the
+switch/scale work is **0 px**, but the family reports **316 px** in a vertical
+strip at x 488-495, y 471-510 — the scrollbar thumb. A sheet changed by a
+*comment only* reproduces the same 316 px in the same strip, so it is
+parse/render timing against upstream's `scrollbar … transition: all 200ms
+linear`, not a rule. Masking x >= 480 leaves **0 px** in both HC cells:
+the reverts are structural in dark as well as light. Any future A/B that lands
+on a scrolling family must mask the scrollbar strip or use a comment-only
+control sheet.

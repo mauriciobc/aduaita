@@ -161,6 +161,26 @@
   }
 
   // ---------------------------------------------------------------------
+  // The DISH — the seat a thumb grows into while it is engaged (26 Sep
+  // 2026, "Pen dial pass 2/4"). The pen's growth ring is a spread-only
+  // shadow in the SURROUND's colour (`0 0 0 calc(var(--radius)/13)
+  // var(--outer-bg)` — 9.85px on a 256px disc, and only 2/255 away from the
+  // scene colour behind it), so it reads as the material growing into the
+  // surface rather than as an edge drawn around it. 3.8% of the object's
+  // diameter there -> 1.5px on GTK's 34px switch thumb.
+  //   width — a length component (var() substitutes it); the kill lever for
+  //           the whole effect is 0px.
+  //   colour — the checked track's own appearance where the thumb sits.
+  //           Measured on the gallery's checked switch: the track reads
+  //           rgb(48,120,206) against an accent fill of rgb(53,132,228),
+  //           i.e. its own 12%-to-4% black gradient at the thumb's row, so
+  //           this is the 8% rung — within 1-4/255 of where it lands, the
+  //           same order as the pen's own 2/255.
+  // ---------------------------------------------------------------------
+  --ov-thumb-dish-width: 1.5px;
+  --ov-thumb-dish: color-mix(in srgb, var(--ov-up-dark-5) 8%, var(--ov-up-accent-fill));
+
+  // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay
   // ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5). The old file hardcoded
   // rgba(242, 242, 244, …), which forced light values in dark mode; the

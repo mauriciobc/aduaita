@@ -443,6 +443,15 @@ Study and port of LukyVj's *Futuristic Dial Button* (`xxyEYMJ`). The report is
 decisions.md, "Pen dial pass: the lit edge" and the sections that follow it.
 Four moves, landed separately because each one is a visual change.
 
+- [x] **PN2** (P1) `ov-grow()` — the spread-only push ring, worn by the checked
+  switch thumb (1.5px dish in the track's own colour).
+  *Accept:* the thumb's footprint grows without any layout change; the dish
+  colour is within a few 1/255 of the track it lands on; HC 0 px.
+  **Done 26 Sep 2026** — 63 px at rest, +3 to +11/255, rows above and below
+  the thumb only; HC 0 px outside the scrollbar strip (decisions.md, "Pen dial
+  pass 2/4: the dish ring"). The scale knob deliberately does not wear one:
+  its surround is not uniform (decisions.md, same section).
+
 - [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
   *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
   accent's own light instead of the white/black hairline pair; both schemes;

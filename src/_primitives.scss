@@ -345,6 +345,29 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
+// The PUSH RING — growth without layout (26 Sep 2026, decisions.md "Pen dial
+// pass 2/4"). A box-shadow with no offset and no blur paints a flat band
+// outside the node's box: the node's footprint grows by $width in every
+// direction while its allocation does not move — the only way this sheet is
+// allowed to change a size at all (proposal: the overlay "changes nothing
+// about how they behave, lay out or size").
+//
+// $color is the whole point of the trick: the pen paints its ring in the
+// SURROUND's colour (`var(--outer-bg)`, 2/255 from the scene behind it), so
+// the band reads as the surface receding around the object rather than as an
+// edge drawn on it. It is only worth using where the surround is one flat
+// colour this sheet owns — a thumb inside a uniform track. A thumb straddling
+// two surfaces (the scale knob at its own fill boundary) shows the seam, which
+// is why that knob does not wear one (decisions.md).
+//
+// Call it FIRST in a box-shadow list: the earliest shadow paints on top, and
+// the band has to sit over the node's own drop shadow to read as growth.
+// ---------------------------------------------------------------------
+@function ov-grow($width: var(--ov-thumb-dish-width), $color: var(--ov-thumb-dish)) {
+  @return 0 0 0 $width $color;
+}
+
+// ---------------------------------------------------------------------
 // The lit curve itself — one definition, two consumers: the channel fills
 // (ov-lit-fill) and the accent CTAs (surfaces/_button.scss), where it
 // replaced the translucent glass fill and is layered under upstream's own
