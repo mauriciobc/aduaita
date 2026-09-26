@@ -1851,3 +1851,37 @@ in rest, prelight and dark HC. The tune vs the first face — light 17295 (max
 21), dark 19922 (max 33), HC 0. Normal label contrast unchanged: 7.87:1 vs
 7.95:1 light, 9.58:1 dark. `check-selectors` OK, `probe-foreign` OK,
 `probe-motion`: hover INSTANT at 80ms, press IN MOTION.
+
+## Path bar — 26 Sep 2026
+
+**Ask.** "In the breadcrumbs up top, the raised buttons are not looking good"
+(user, a Nautilus screenshot). Nautilus 50.3 draws its path bar as a 10%
+currentColor well and means the crumbs to be text in it
+(`.nautilus-path-button:not(:hover) { background: none }`, its style.css). The
+crumbs are plain buttons without `.flat`, so the rest register (face, rim,
+drop) landed on each one: a row of raised keys stacked in a sunken field,
+drops clipped by it.
+
+**What landed.** `surfaces/_pathbar.scss`, the toggle-group language: the well
+wears the same scoop pair; crumbs carry no material in any state (hover keeps
+libadwaita's own button hover fill, which Nautilus lets through, but not the
+neon — the scrolled window around the crumbs would clip its halo); the
+`.current-dir` crumb is the raised cap: `--ov-up-cap-bg` (new alias of
+`--active-toggle-bg-color`, contract entry added) with `ov-bevel(), ov-face()`
+and no drop, which the 3px margin would clip. HC restates Nautilus's own ring
+on the well and leaves resting crumbs bare; hovered crumbs get the house HC
+ring.
+
+**Not in the selector contract, deliberately.** These are Nautilus's classes,
+not libadwaita's; the guard reads libadwaita's sheet and would flag them. A
+Nautilus rename degrades the crumbs back to the generic button material and
+cannot break anything else.
+
+**Verified** on a Nautilus-shaped mock added to the gallery's `adw` family (the
+app's classes, three crumbs, last one current), rendered with Nautilus's own
+path-bar CSS prepended to the sheet: light, dark, HC, and prelight — installed
+sheet = three raised keys; new = text in a well with one white cap; HC
+identical to Nautilus stock plus the hovered ring. Method trap recorded: the
+first excerpt of Nautilus's CSS ended mid-block, which swallowed the whole
+overlay (render came back fully stock); check that a prepended excerpt closes
+every block. The live Nautilus window is the final judge.

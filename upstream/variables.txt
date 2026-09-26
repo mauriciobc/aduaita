@@ -20,6 +20,7 @@
 
 --accent-bg-color
 --accent-color
+--active-toggle-bg-color
 --border-opacity
 --dark-5
 --disabled-opacity

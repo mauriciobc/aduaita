@@ -95,6 +95,10 @@
   // restated only where an overlay HC revert must reproduce upstream's own
   // dimmed ring (surfaces/_toggle-group.scss). 50% = upstream's default.
   --ov-up-disabled-opacity: var(--disabled-opacity, 50%);
+  // The raised cap's fill in a segmented well — libadwaita's active toggle
+  // colour (white; 20% white in dark). Read for app path bars, whose current
+  // crumb has no fill of its own (surfaces/_pathbar.scss).
+  --ov-up-cap-bg: var(--active-toggle-bg-color, @theme_base_color);
   // Three dashes upstream, on `scale` only (hence the pre-existing
   // currentColor fallback): libadwaita 1.9.4, gtk.css L2171.
   --ov-up-slider-border: var(---slider-border-color, currentColor);

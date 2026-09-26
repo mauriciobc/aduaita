@@ -1,0 +1,59 @@
+// L2 — app path bars: Nautilus's breadcrumbs (26 Sep 2026, decisions.md
+// "Path bar"). User: "the raised buttons [in the breadcrumbs] are not looking
+// good". Nautilus draws its path bar as a 10% currentColor well and means the
+// crumbs to be text in it (`.nautilus-path-button:not(:hover) { background:
+// none }`, org/gnome/nautilus/style.css, nautilus 50.3). The crumbs are plain
+// buttons without `.flat`, so the button material landed on every one: a row
+// of raised keys stacked in a sunken field, their drops clipped by it.
+//
+// Same language as the toggle group: the well is recessed, the CURRENT
+// folder is the one raised cap (libadwaita's active-toggle fill, bevel and
+// face, no drop — the well's 3px margin would clip it), and every other
+// crumb is flat text. Hover keeps libadwaita's own button hover fill (which
+// Nautilus lets through) but not the neon: a halo would be clipped by the
+// scrolled window around the crumbs.
+//
+// Not in upstream/selectors.txt, deliberately: these are Nautilus's classes,
+// not libadwaita's, so the libadwaita guard cannot watch them (like the
+// GTK-core node names the contract excludes). A Nautilus rename degrades to
+// the generic button material; it cannot break anything else.
+//
+// Specificity: the generic button rules are the competition (same provider,
+// same priority), so each state below out-ranks its generic counterpart.
+
+$ov-crumb: ".nautilus-pathbar button.nautilus-path-button:not(.flat):not(.osd):not(:drop(active))";
+
+.nautilus-pathbar {
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ov-up-dark-5) 10%, transparent),
+              inset 0 -1px 0 color-mix(in srgb, var(--ov-up-light-1) 20%, transparent);
+}
+
+#{$ov-crumb},
+#{$ov-crumb}:hover:not(:active):not(:checked):not(:disabled),
+#{$ov-crumb}:active,
+#{$ov-crumb}.keyboard-activating,
+#{$ov-crumb}:checked {
+  box-shadow: none;
+}
+
+#{$ov-crumb}.current-dir,
+#{$ov-crumb}.current-dir:hover:not(:active):not(:checked):not(:disabled) {
+  background-color: var(--ov-up-cap-bg);
+  box-shadow: ov-bevel(), ov-face();
+}
+
+@media (prefers-contrast: more) {
+  // Nautilus's own HC: a ring on the well, no shadow on resting crumbs.
+  .nautilus-pathbar {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
+  }
+  #{$ov-crumb}.current-dir,
+  #{$ov-crumb}.current-dir:hover:not(:active):not(:checked):not(:disabled) {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  // Hovered crumbs get the ring every HC button wears.
+  #{$ov-crumb}:hover:not(:active):not(:checked):not(:disabled) {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
+  }
+}
