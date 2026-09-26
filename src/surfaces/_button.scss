@@ -168,7 +168,11 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
 //
 // What stays: the lighting (ov-lit-curve() at button scale, mid stop at
 // zero alpha so the label band keeps the base colour) and upstream's own
-// state layers. What goes: the translucency, the bespoke per-state
+// state layers. Since 26 Sep 2026 that curve is the ACCENT register
+// (ov-lit-curve-accent(): same geometry and the same 30/14% rungs, lit by
+// the accent's own hue rather than by white over black) and the hairline
+// pair is the accent's too — the pen pass, decisions.md "Pen dial pass
+// 3/4". What goes: the translucency, the bespoke per-state
 // gradients, and the hover/press OUTER bloom (`0 4px 14px` / `0 12px 28px`
 // drop shadows): external shadows break the same-surface language
 // (_primitives.scss) and the hover one painted into the gap between two
@@ -191,8 +195,16 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
 $ov-cta-mid: color-mix(in srgb, white 0%, transparent) 44%;
 
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)) {
-  // The lit fill: upstream's base colour under one lighting curve.
-  @include ov-lit-fill($curve: ov-lit-curve($ov-cta-mid));
+  // The lit fill: upstream's base colour under one lighting curve — the
+  // ACCENT register of it (26 Sep 2026, decisions.md "Pen dial pass 3/4"),
+  // which lights the fill with its own hue instead of the white/black
+  // physics. Safe here because this fill's colour is decoration and is the
+  // accent by construction; the semantic fills (progressbar variants, levelbar
+  // blocks) keep the physics pair, where mixing toward the accent would move
+  // the meaning.
+  @include ov-lit-fill($curve: ov-lit-curve-accent($ov-cta-mid),
+                       $edge-top: var(--ov-lit-edge-top),
+                       $edge-bottom: var(--ov-lit-edge-bottom));
 }
 
 // Hover: upstream's own lift, restated as the top layer because the curve
@@ -200,7 +212,7 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)) {
 // (gtk.css L308).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
   background-image: image(color-mix(in srgb, currentColor 10%, transparent)),
-                    ov-lit-curve($ov-cta-mid);
+                    ov-lit-curve-accent($ov-cta-mid);
   @include ov-motion(background-image var(--ov-motion-enter),
                      box-shadow var(--ov-motion-exit));
 }
@@ -209,7 +221,7 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)):hover:not(:activ
 // press darkening (image(RGB(0 0 6/20%)), gtk.css L310).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):active,
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)).keyboard-activating {
-  background-image: image(RGB(0 0 6 / 20%)), ov-lit-curve($ov-cta-mid);
+  background-image: image(RGB(0 0 6 / 20%)), ov-lit-curve-accent($ov-cta-mid);
   box-shadow: ov-well();
   @include ov-motion(background-image var(--ov-motion-press),
                      box-shadow var(--ov-motion-press));
@@ -225,7 +237,7 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)).keyboard-activat
 // CTA differs from rest only by the well (measured: fill unchanged and the
 // label pair slipping 4.99 -> 3.95 in the light scheme).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):checked {
-  background-image: image(RGB(0 0 6 / 15%)), ov-lit-curve($ov-cta-mid);
+  background-image: image(RGB(0 0 6 / 15%)), ov-lit-curve-accent($ov-cta-mid);
   box-shadow: ov-well-held();
   @media (prefers-contrast: more) {
     background-image: none;

@@ -375,17 +375,34 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // through (the default), a button passes a zero-alpha stop so the band its
 // label sits in stays exactly the base colour — a lit middle cost the
 // suggested CTA 0.6 of label contrast (3.77 -> 3.14, measured).
-@function ov-lit-curve($mid: color-mix(in srgb, white 8%, transparent) 45%) {
+@function ov-lit-curve($mid: color-mix(in srgb, white 8%, transparent) 45%,
+                       $light: white,
+                       $shade: black) {
   @return linear-gradient(to bottom,
-    color-mix(in srgb, white 30%, transparent),
+    color-mix(in srgb, #{$light} 30%, transparent),
     $mid,
-    color-mix(in srgb, black 14%, transparent));
+    color-mix(in srgb, #{$shade} 14%, transparent));
 }
 
-@mixin ov-lit-fill($curve: ov-lit-curve()) {
+// The same curve lit by the fill's OWN colour (26 Sep 2026, decisions.md
+// "Pen dial pass 3/4"): the pen's two stops are `hsl(h 100% 72%)` over
+// `hsl(h 98% 61%)` — the accent's hue at a light and a dark rung — so the
+// gradient keeps the colour's saturation instead of graying it toward white.
+//
+// Valid ONLY where the fill colour is decoration and is the accent itself:
+// `.suggested-action`. A semantic fill (progressbar warning/error, a levelbar
+// block) must stay on the physics constants — mixing a warning's colour toward
+// the accent's hue moves the one thing that fill is carrying (decisions.md).
+@function ov-lit-curve-accent($mid: color-mix(in srgb, var(--ov-lit-edge-top) 8%, transparent) 45%) {
+  @return ov-lit-curve($mid, var(--ov-lit-edge-top), var(--ov-lit-edge-bottom));
+}
+
+@mixin ov-lit-fill($curve: ov-lit-curve(),
+                   $edge-top: color-mix(in srgb, white 55%, transparent),
+                   $edge-bottom: color-mix(in srgb, black 22%, transparent)) {
   background-image: $curve;
-  box-shadow: inset 0 1px 1px color-mix(in srgb, white 55%, transparent),
-              inset 0 -1px 1px color-mix(in srgb, black 22%, transparent);
+  box-shadow: inset 0 1px 1px $edge-top,
+              inset 0 -1px 1px $edge-bottom;
   // Upstream animates `background` and `box-shadow` on exactly these nodes;
   // restated (plus background-image, which is ours) so the fill colour still
   // fades at the house exit timing instead of snapping.

@@ -452,6 +452,15 @@ Four moves, landed separately because each one is a visual change.
   pass 2/4: the dish ring"). The scale knob deliberately does not wear one:
   its surround is not uniform (decisions.md, same section).
 
+- [x] **PN3** (P1) The lit fill's curve and hairline pair from the accent's own
+  hue, on the one fill whose colour is decoration (`.suggested-action`).
+  *Accept:* the CTA's light and shade rungs carry the fill's hue; the label's
+  band is bit-identical; the semantic fills (progressbar variants, levelbar,
+  scale highlight) do not move; HC 0 px.
+  **Done 26 Sep 2026** — 10244 px light / 11384 dark, confined to rows 167-177
+  and 189-200, 0 px in the label band (178-188); `controls` 0 px; HC 0 px
+  (decisions.md, "Pen dial pass 3/4").
+
 - [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
   *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
   accent's own light instead of the white/black hairline pair; both schemes;

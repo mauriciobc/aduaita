@@ -1558,3 +1558,39 @@ linear`, not a rule. Masking x >= 480 leaves **0 px** in both HC cells:
 the reverts are structural in dark as well as light. Any future A/B that lands
 on a scrolling family must mask the scrollbar strip or use a comment-only
 control sheet.
+
+## Pen dial pass 3/4: the accent's own light on the CTA — 26 Sep 2026
+
+**What the pen does.** Every lit surface in it is painted from ONE hue: the lit
+top `hsl(h 100% 72%)`, the foot `hsl(h 98% 61%)`, the fill gradient between
+them. White appears nowhere in its material. This sheet's channels have always
+lit with the physics constants — `ov-lit-curve()` white 30% → mid → black 14%,
+`ov-lit-fill()` white 55% top hairline over black 22% foot — which, over an
+accent fill, reads as a blue surface wearing a grey light.
+
+**What moved.** `ov-lit-curve()` takes its two rungs as parameters
+(`$light`/`$shade`, defaulting to white/black, so every existing caller is
+unchanged) and `ov-lit-curve-accent()` builds the same curve out of
+`--ov-lit-edge-*`. `ov-lit-fill()` takes the hairline pair the same way. One
+consumer: `.suggested-action`, whose fill is the accent by construction.
+
+**Why only `.suggested-action`.** Lighting a fill with the accent's hue is only
+honest where the fill's colour is *decoration*. The progressbar's warning/error
+variants, the levelbar's blocks and the scale's own highlight carry meaning in
+that colour; mixing them toward the accent moves the thing the pixel is for.
+They keep the physics pair — measured, not asserted: `controls` is **0 px**
+changed by this commit. Same line the 23 Sep note drew, "garnish on a semantic
+fill, not a new fill".
+
+**Measured** (paired renders in one invocation, `buttons` family): light
+**10244 px, max 72**; dark **11384, max 82**; `STATE=prelight` **10242, max
+78**; `CONTRAST=more` **0 px**. The change is confined to the curve's two
+rungs — per-row census of the CTA band: **rows 167-177 (the light stop) and
+189-200 (the shade stop) changed, rows 178-188 at 0 px**, that being the band
+the label sits in, because the mid stop is zero-alpha by design. The label pair
+is therefore untouched, measured rather than assumed.
+
+Top hairline rgb(189,214,245) → rgb(117,168,219); foot rgb(36,89,154) →
+rgb(3,71,140): the same two rungs, now in the fill's own hue instead of white
+over black. The direction is the point — the CTA reads as a lit accent surface
+rather than as a blue one with a grey light on it.
