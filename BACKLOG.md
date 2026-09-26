@@ -478,6 +478,16 @@ Four moves, landed separately because each one is a visual change.
   cells.
   **Done 26 Sep 2026** — decisions.md, "Review verdict on the pen pass".
 
+- [x] **RR1** (P0) Rest register: bevel x4 + a soft drop on raised buttons
+  (user: "these buttons look pretty darn flat"). Candidates rendered first;
+  x4 + drop chosen; the 19 Sep no-drop rule retired (user).
+  **Done 26 Sep 2026** — decisions.md, "Rest register".
+- [ ] **RR2** (P2) Explain the 11/255 lighter fill on the Normal button under
+  `STATE=checked` after RR1 (bisected to the bevel tokens alone; no `:checked`
+  rule reads them).
+- [x] **RR3** (P0) Toggle groups styled (well + raised cap); gallery `adw` gains
+  a toggle group. **Done 26 Sep 2026** — decisions.md, "Toggle groups".
+
 - [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
   *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
   accent's own light instead of the white/black hairline pair; both schemes;

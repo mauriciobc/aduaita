@@ -921,6 +921,25 @@ build_adw (Gallery *g)
   adw_banner_set_revealed (ADW_BANNER (banner), TRUE);
   add (content, banner);
 
+  /* AdwToggleGroup is `toggle-group > toggle`, not `button`: none of the
+   * button material reaches it, which is how it went unstyled until the
+   * 26 Sep rest-register pass. One group, second toggle active. */
+  {
+    GtkWidget *group = adw_toggle_group_new ();
+    const char *names[] = { "Left", "Right", "Both" };
+
+    for (int i = 0; i < 3; i++)
+      {
+        AdwToggle *toggle = adw_toggle_new ();
+
+        adw_toggle_set_label (toggle, names[i]);
+        adw_toggle_set_name (toggle, names[i]);
+        adw_toggle_group_add (ADW_TOGGLE_GROUP (group), toggle);
+      }
+    adw_toggle_group_set_active_name (ADW_TOGGLE_GROUP (group), "Right");
+    add (content, aligned (group, GTK_ALIGN_START));
+  }
+
   for (int i = 1; i <= 3; i++)
     {
       char *text = g_strdup_printf ("Tab %d", i);

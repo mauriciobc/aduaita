@@ -184,6 +184,11 @@ switch:checked:hover
 switch:hover
 tabthumbnail button
 toast
+toggle-group
+toggle-group > toggle:checked
+toggle-group > toggle:checked:disabled
+toggle-group.flat
+toggle-group:disabled
 toolbarview > .top-bar headerbar
 toolbarview > .top-bar.raised
 toolbarview > .top-bar.raised:backdrop

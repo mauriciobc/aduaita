@@ -1719,3 +1719,84 @@ the `adw` family's own switches (outside the gallery's `controls`).
 re-measured in this commit. The remaining distance to the pen is the platform
 (no animated custom properties, no descendant-state re-huing, no
 pseudo-elements, no rotation), not the palette.
+
+## Rest register: bevel x4 + a drop on buttons — 26 Sep 2026
+
+**Ask.** "These buttons look pretty darn flat to me. Not even close to the
+reference" (user, a gnome-calculator screenshot), followed by three more
+benchmarks — Settings, a browser, an EQ app — and a second reference pen
+(jkantner, "Glowing On/Off Buttons", `gOjNdog`). The pen pass had only moved
+*engaged* states; at rest a plain button carried the 19 Sep whisper bevel.
+
+**Measured gap.** On a calculator-grey button the rest bevel moved the edges
+by **+3 / -2 of 255**. Both reference pens carry a rest register roughly 10x
+louder: xxyEYMJ's disc (13% insets, a 5-stop drop ladder), gOjNdog's cap
+(gradient fill, `0 0.75em 0.75em 0.25em` drop that collapses on press).
+
+**Two decisions, both the user's.** (1) Render candidates first. (2) Retire the
+19 Sep "no external drops on buttons" rule.
+
+**Candidates** (`buttons`, `controls`, `headerbar`, `lists`, rest): bevel x2,
+x4 and pen-proportion, each with and without a two-stop drop. Judged on the
+rendered sheet: **x4 + drop** won — pen-proportion drew the foot as a hard
+line rather than a falloff, and x2 was still below what the eye reads as
+raised. Mean delta vs stock on `buttons`: current 2.71, x4+drop 3.29,
+pen+drop 3.59 (max 109, the harsh line).
+
+**What landed.** `--ov-bevel-highlight` 16% -> 64%, `--ov-bevel-shadow`
+8% -> 32%; L1 `ov-drop()` (`0 1px 2px` @12% + `0 2px 5px` @8% on
+`--ov-depth-color`, so the depth kill switch removes it); the button rest
+rule wears `ov-bevel(), ov-drop()`; the CTA wears the drop too, through a new
+`$outer` parameter on `ov-lit-fill()` (channel fills pass nothing and are
+byte-identical to before). Press and held replace the whole list with the
+wells, so the button *sinks* — gOjNdog's press, and `probe-motion` now reports
+`button:active` IN MOTION rather than INSTANT.
+
+**Measured** (paired renders against the committed sheet): light — buttons
+15036 px (max 48), headerbar 4252, entries 3612, notebook 2757, popover 2504,
+dnd 1165; dark — buttons 5148 (max 53); `STATE=active` **0 px** (the well
+owns press entirely); HC **0 px** (the fresh pair; a first `lists`/`spinbutton`
+reading of 17967/272 px was the documented text-AA floor — a same-sheet rerun
+reproduced it and a fresh pair of both sheets measured 0). Gap check: each
+drop occupies ~5 rows under its button and the gap to the next button is
+unchanged — no bleed into a neighbour, the failure that got the retired CTA
+bloom banned.
+
+**Open.** Under `STATE=checked` the gallery's Normal button reads 11/255
+lighter across its whole fill (15081 px, reproducible, determinism 0). A
+bisect puts it on the bevel tokens alone, which no `:checked` rule uses — the
+checked rule replaces the list with `ov-well-held()`. Not explained yet; the
+cell is a stress shot (every widget checked at once), so it is recorded rather
+than chased at the cost of the user's live ask. -> BACKLOG RR2.
+
+## Toggle groups — 26 Sep 2026
+
+**Ask.** "The buttongroup element still seems unstyled, or less styled than
+others" (user). It was literally unstyled: `AdwToggleGroup` (and the inline
+view switcher built on it — Settings' Mouse/Touchpad) is
+`toggle-group > toggle`, not `button`, so no button rule ever matched it, and
+the gallery had no toggle group, which is how every sweep missed it.
+
+**What landed.** `surfaces/_toggle-group.scss`: the group is a recessed well
+(upstream's 10% fill plus the entries' scoop pair), the checked toggle is a
+raised cap wearing the button rest material (`ov-bevel(), ov-drop()`, replacing
+upstream's own two-stop lift) — gOjNdog's raised cap in a well. Unchecked
+hover/press keep upstream's washes; `.flat` groups are left alone.
+`:checked:disabled` is flattened (upstream does it; at priority 800 our rule
+would otherwise keep a disabled cap raised — BACKLOG U7's trap). The gallery's
+`adw` family gains a three-toggle group.
+
+**HC — restated, and one deliberate difference.** The HC block restates
+upstream's rings verbatim, including the disabled pair, which needed
+`--disabled-opacity` through a new `--ov-up-disabled-opacity` alias (contract
+entry added). In the harness, stock HC paints *no* ring on the group although
+upstream declares one at `--border-opacity: 50%` — the bare-`var()`-in-
+`color-mix()`-percentage behaviour recorded under "Flat register". The
+overlay's alias carries a fallback, so its restatement actually paints the ring
+upstream intended: 550 px (max 30), the group's boundary. That matches how
+every button HC revert in this sheet already behaves.
+
+**Measured** (`adw`, paired vs the committed sheet, determinism 0 in every
+cell): light 676 px (max 41), dark 520 (max 55), prelight 676, HC 550 / dark
+HC 560 (the ring above). `tools/check-selectors`: contract OK with five new
+selector atoms and one variable.
