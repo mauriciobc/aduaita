@@ -1665,3 +1665,57 @@ control here with a meaningful angle.
 **Still on the table, unused.** `conic-gradient` renders and `filter: blur`
 applies. `filter` stays banned in v1 for iGPU cost (proposal, risk table);
 conic gradients have no GTK control whose angle means anything.
+
+## Review verdict on the pen pass — 26 Sep 2026
+
+A domain review of the pass (`better-colors` principles: measure the rendered
+pair, hold the hue; `better-interface` evidence bar) over every rule the branch
+added. Scope: `git diff 7814145..HEAD`, src/ + tools/ + README, re-measured on
+fresh renders.
+
+**Two findings, both fixed in this commit.**
+
+1. **The lit rungs were srgb approximations where exact ones were reachable.**
+   The first cut of `--ov-lit-edge-*` used `color-mix()` toward white/black
+   ("the closest srgb rungs", because mixing cannot hold a hue's saturation).
+   But GTK 4.22 supports **relative HSL**, and upstream's own sheet uses it
+   (`HSL(from var(--accent-color) h …)` for `button.link:hover`, gtk.css
+   L1429) — so the pen's actual stops (`hsl(h 100% 72%)` / `hsl(h 98% 61%)`)
+   are one derivation each. Retuned at 92%/83% light (95%/90% dark) rather
+   than 100%/98%: at full saturation the top rung reads neon next to
+   upstream's own accent (s 79%), and the pair must sit inside the palette it
+   lights. Measured after: thumb hairline hsl(213,63,49) against track fill
+   hsl(213,63,51) — the hue held exactly, the lightness step is the bevel.
+   CTA hairlines rgb(68,141,227)/rgb(55,133,226), s 74-75% against the fill's
+   s 75%.
+2. **Stale header.** `surfaces/_switch.scss` still opened with "state —
+   position only: checked changes NOTHING else (no accent)" while its own
+   engaged-thumb rule says the opposite. The track's invariant (upstream
+   colours only) is kept; the thumb's reversal is now stated where it
+   happened.
+
+**Fidelity check against the pen's own numbers.** The pen: lever bevel
+`inset 0 1px 2px` light-rung over `inset 0 -1px 2px` dark-rung, bloom
+`0 0 4px`/`0 0 16px`, growth ring `9.85px` = 3.8% of a 256px disc in the
+surround's colour. The port: the same bevel geometry at 1px/1px, halo
+`0 0 2px`, dish `1.5px` = 4.4% of the 34px thumb in the track's colour —
+proportionally within 0.6 percentage points. Register-by-register: accent-lit
+edge ✓, bloom ✓, growth ✓, hue-as-seed ✓ (via relative HSL, the closest GTK
+gets to `--angle`), mechanism ✗ (`@property`/`:has()` absent — no GTK control
+could animate it), motion ✗ (the house spec bans movement; the dish lands
+with the native knob slide instead).
+
+**Pairs, measured on the rendered sheets.** CTA label: **3.81:1** worst row,
+both schemes, before and after — the mid stop is zero-alpha, so the accent
+register never touched the band the label sits in. Thumb boundary:
+white-disc-vs-track **1.20:1 → 1.28:1** (the dish darkens the seat, which is
+the point). HC: **0 px** in every cell, rest and prelight, light and dark.
+Determinism: 0 px across all eight verification cells.
+
+**Not verified.** The live eye in daily apps; fractional scaling (X5 card);
+the `adw` family's own switches (outside the gallery's `controls`).
+
+**Verdict: Approve.** No HIGH findings; both review findings fixed and
+re-measured in this commit. The remaining distance to the pen is the platform
+(no animated custom properties, no descendant-state re-huing, no
+pseudo-elements, no rotation), not the palette.

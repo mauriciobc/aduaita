@@ -135,12 +135,16 @@
   //               hsl(h 100% 72%) and its foot with hsl(h 98% 61%): the two
   //               rungs of the *accent's own hue*, so the part reads as
   //               emitting light instead of as painted with a highlight.
-  //               Mixing toward --ov-up-light-1 cannot hold a hue's
-  //               saturation the way the pen's hsl() stops do, so these are
-  //               the closest srgb rungs; both are scheme-split because the
-  //               physics constants do not carry the effect symmetrically
-  //               (light acts through the shade half, dark through the lit
-  //               half — the same finding as the flat register).
+  //               Those exact rungs are now reachable: GTK 4.22 supports
+  //               relative HSL (`HSL(from <c> h s l)`, upstream's own
+  //               gtk.css:1429 uses it), so both edges are the accent's
+  //               hue at the pen's own saturation/lightness, one derivation
+  //               each — no mixing toward white/black, which is what was
+  //               graying the hue in the first cut of this register.
+  //               Saturation 92%/83% rather than the pen's 100%/98%: at the
+  //               full 100% the top rung over the light scheme reads
+  //               neon against upstream's own accent (s 79%), and the pair
+  //               must sit inside the palette it lights, not outside it.
   //   lit-bloom — the soft halo those parts carry while engaged (pen:
   //               `0 0 4px` / `0 0 16px` on a 256px disc; 2px on GTK's
   //               ~34px thumb, same ratio).
@@ -151,12 +155,12 @@
   // --ov-lit-edge-{top,bottom} at --ov-bevel-{highlight,shadow} and the
   // thumbs go back to the neutral pair in one edit (D5 pattern).
   // ---------------------------------------------------------------------
-  --ov-lit-edge-top: color-mix(in srgb, var(--ov-up-accent) 55%, var(--ov-up-light-1));
-  --ov-lit-edge-bottom: color-mix(in srgb, var(--ov-up-accent) 74%, var(--ov-up-dark-5));
+  --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 92% 72%);
+  --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 83% 61%);
   --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 40%, transparent);
   @media (prefers-color-scheme: dark) {
-    --ov-lit-edge-top: color-mix(in srgb, var(--ov-up-accent) 72%, var(--ov-up-light-1));
-    --ov-lit-edge-bottom: color-mix(in srgb, var(--ov-up-accent) 58%, var(--ov-up-dark-5));
+    --ov-lit-edge-top: HSL(from var(--ov-up-accent) h 95% 72%);
+    --ov-lit-edge-bottom: HSL(from var(--ov-up-accent) h 90% 61%);
     --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 45%, transparent);
   }
 

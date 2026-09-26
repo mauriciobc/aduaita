@@ -6,7 +6,9 @@
 //            outside the bottom edge. Shallow dish, not a deep groove.
 //   knob   — BRIGHTER than the track: light gradient disc, strong white
 //            top-glow inset, drop shadow below (it floats on the track).
-//   state  — position only: checked changes NOTHING else (no accent).
+//   state  — track: position only (checked changes nothing but upstream's
+//            own colours). Thumb: since 26 Sep it also ignites — the lit
+//            edge + halo + dish, see "The ENGAGED thumb" below.
 //
 // Pen values (1em ~ 9px at GTK switch scale):
 //   track  bg: linear-gradient(black 7%, transparent) over base

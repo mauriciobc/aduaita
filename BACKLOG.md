@@ -470,6 +470,14 @@ Four moves, landed separately because each one is a visual change.
   10541 px vs the shipped sheet; shipped sheet has no `* {` rule
   (decisions.md, "Debug build").
 
+- [x] **PN5** (P1) Review pass over PN1-PN4 (26 Sep 2026): the lit rungs moved
+  from srgb approximations to relative HSL — the pen's exact stops were
+  reachable all along (upstream's own gtk.css:1429 uses the syntax).
+  *Accept:* hue held (thumb hairline hsl(213,63,49) vs track 213,63,51), CTA
+  label pair unchanged at 3.81:1, HC 0 px, determinism 0 px across all eight
+  cells.
+  **Done 26 Sep 2026** — decisions.md, "Review verdict on the pen pass".
+
 - [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
   *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
   accent's own light instead of the white/black hairline pair; both schemes;
