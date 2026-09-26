@@ -1,0 +1,66 @@
+// L2 — AdwTabBar (Console, Epiphany, Text Editor, Nautilus tabs). Added 26 Sep
+// 2026 (user: "improve tabs visual to match the overall system look and
+// feel"; decisions.md "Tabs"). Three things were off against the rest of the
+// sheet:
+//   strip    — a standalone tab bar paints upstream's flat headerbar colour
+//              right under a headerbar that wears the bar material (gradient
+//              + grain), so the chrome broke in two. It now wears
+//              ov-bar-surface() itself, with the same backdrop re-point. Where
+//              upstream makes the strip transparent (inside a toolbarview bar,
+//              or `.inline`) it stays transparent: the bar behind it already
+//              carries the material.
+//   selected — upstream's 10% wash, a flat patch. It is now the raised cap the
+//              toggle group and stack switcher use: bevel + rim + face, with a
+//              small drop (the tab box has 6px of padding above and below, so
+//              the 2px drop is not clipped). Unselected tabs keep upstream's
+//              washes — states of the strip, not caps.
+//   close    — the round close button is a plain button, so it took the full
+//              raised material (a floating 3D disc inside the tab). It carries
+//              none now; upstream's hover/press washes remain.
+// widgets/_tab-view.scss
+
+tabbar .box {
+  @include ov-bar-surface();
+}
+
+tabbar .box:backdrop {
+  --ov-bar-base: var(--ov-bar-backdrop-base);
+}
+
+// Upstream's transparent contexts, restated: our rule above outranks theirs.
+toolbarview > .top-bar tabbar .box,
+toolbarview > .bottom-bar tabbar .box,
+tabbar.inline .box {
+  background: none;
+}
+
+tabbar tab:selected {
+  box-shadow: ov-bevel(), ov-face(), ov-drop();
+  @include ov-motion(background var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
+}
+
+// One tab: upstream removes every fill, so there is no cap to raise.
+tabbar tabbox.single-tab tab {
+  box-shadow: none;
+}
+
+$ov-tab-close: "tabbar tab button.image-button:not(.flat):not(.osd):not(:drop(active))";
+
+#{$ov-tab-close},
+#{$ov-tab-close}:hover:not(:active):not(:checked):not(:disabled),
+#{$ov-tab-close}:active,
+#{$ov-tab-close}.keyboard-activating {
+  box-shadow: none;
+  filter: none;
+}
+
+@media (prefers-contrast: more) {
+  // Upstream's HC ring on the selected tab (gtk.css L2588), restated.
+  tabbar tab:selected {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
+  }
+  tabbar tabbox.single-tab tab {
+    box-shadow: none;
+  }
+}

@@ -921,6 +921,49 @@ build_adw (Gallery *g)
   adw_banner_set_revealed (ADW_BANNER (banner), TRUE);
   add (content, banner);
 
+  /* AdwToggleGroup is `toggle-group > toggle`, not `button`: none of the
+   * button material reaches it, which is how it went unstyled until the
+   * 26 Sep rest-register pass. One group, second toggle active. */
+  {
+    GtkWidget *group = adw_toggle_group_new ();
+    const char *names[] = { "Left", "Right", "Both" };
+
+    for (int i = 0; i < 3; i++)
+      {
+        AdwToggle *toggle = adw_toggle_new ();
+
+        adw_toggle_set_label (toggle, names[i]);
+        adw_toggle_set_name (toggle, names[i]);
+        adw_toggle_group_add (ADW_TOGGLE_GROUP (group), toggle);
+      }
+    adw_toggle_group_set_active_name (ADW_TOGGLE_GROUP (group), "Right");
+    add (content, aligned (group, GTK_ALIGN_START));
+  }
+
+  /* A Nautilus-style path bar: the app's own classes, one well, three crumbs,
+   * the last one the current folder, which Nautilus stretches to fill the
+   * bar (surfaces/_pathbar.scss). Nautilus's own
+   * pathbar CSS is not loaded here; the harness sheet must append it. */
+  {
+    GtkWidget *bar = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    const char *crumbs[] = { "EndeavourOS", "tmp", "renders" };
+
+    gtk_widget_add_css_class (bar, "nautilus-pathbar");
+    for (int i = 0; i < 3; i++)
+      {
+        GtkWidget *crumb = gtk_button_new_with_label (crumbs[i]);
+
+        gtk_widget_add_css_class (crumb, "nautilus-path-button");
+        if (i == 2)
+          {
+            gtk_widget_add_css_class (crumb, "current-dir");
+            gtk_widget_set_hexpand (crumb, TRUE);
+          }
+        gtk_box_append (GTK_BOX (bar), crumb);
+      }
+    add (content, bar);
+  }
+
   for (int i = 1; i <= 3; i++)
     {
       char *text = g_strdup_printf ("Tab %d", i);

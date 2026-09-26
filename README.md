@@ -37,7 +37,29 @@ tools/fetch-upstream 1:1.6.5-1   # any archived version (handles the pre-1.9 fou
 tools/check-selectors            # contract vs the *installed* sheet — what the pacman hook runs
 tools/check-selectors 1:1.9.4-1  # contract vs an archived version (network)
 tools/build                      # sassc + symlink ~/.config/gtk-4.0/gtk.css + restart daemons
+tools/build --debug              # the same, plus a 1px outline on every node
+                                 # (build/gtk-debug.css) — see "Aiming a rule"
 ```
+
+## Aiming a rule
+
+An L2 rule that is "not winning" is nearly always a rule aimed at the wrong
+node — which is why the Inspector exists. Two ways to see the boxes: GTK
+Inspector (`GTK_DEBUG=interactive <app>`), and the debug build, which outlines
+every node at once. That second one is the pen pass's only inspection aid
+(codepen `xxyEYMJ`, its `--debug` token):
+
+```
+tools/build --debug --no-restart                              # installs the outlined sheet
+build/render-gallery build/gtk-debug.css /tmp/boxes controls  # ...or offscreen
+tools/build --no-restart                                      # back to the shipped sheet
+```
+
+It is a build and not a runtime token on purpose: `outline` on `*` at priority
+800 outranks every upstream focus ring, so at a hypothetical `--debug: 0` the
+declaration would still be there and would replace the focus ring with a 0px
+one. `src/_debug.scss` emits nothing unless `$ov-debug` is set, so the shipped
+sheet cannot grow the rule by accident.
 
 Offscreen render of one widget with one CSS file (pixel-level verdicts,
 X5 test card):

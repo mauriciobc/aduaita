@@ -1,19 +1,43 @@
-// L2 — notebook tabs. GtkNotebook's tabs already speak the wash language
-// (upstream: `currentColor 7%` hover/active, accent underline when
-// checked) — the recorded U6 decision (19 Sep) defers restyling them, and
-// nothing here adds material. What they lack is the house timing: their
-// rest rule animates only the outline trio, so the hover wash snaps.
-// Timing only, per the system-wide micro-interaction rollout; AdwTabBar
-// and AdwViewSwitcher stay deferred with them (U6).
+// L2 — notebook tabs (GtkNotebook). Upstream's language: a `currentColor 7%`
+// hover wash plus a 4px underline (border colour on hover, accent when
+// checked). The 19 Sep U6 decision deferred restyling them; reopened 26 Sep
+// 2026 (user: "improve tabs visual to match the overall system look and
+// feel"; decisions.md "Tabs").
+//
+// The checked tab is now the house raised cap — ov-bevel() (hairline pair +
+// 0.5px rim) and ov-face() — and its accent underline becomes a LIT one: a
+// 3px accent bar with the accent's own light rising 4px off it into the tab
+// (--ov-lit-bloom), the pen's lever-glow in the tab's idiom. No drop: the
+// header's border sits right under the tab and would cut it.
+// Unchecked hover keeps upstream's border-colour underline untouched.
+
+@mixin ov-tab-cap($x, $y) {
+  // $x/$y: the underline's direction, one of them ±1 (upstream's own
+  // `inset 0 -4px` for a top header, `inset 4px 0` for a right one...).
+  box-shadow: inset (3px * $x) (3px * $y) 0 var(--ov-up-accent-fill),
+              inset (8px * $x) (8px * $y) 6px -5px var(--ov-lit-bloom),
+              ov-bevel(), ov-face();
+  @media (prefers-contrast: more) {
+    box-shadow: inset (4px * $x) (4px * $y) 0 var(--ov-up-accent-fill);
+  }
+}
 
 notebook > header > tabs > tab {
-  @include ov-motion(background-color var(--ov-motion-exit));
+  @include ov-motion(background-color var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit));
 }
 
 notebook > header > tabs > tab:hover {
-  @include ov-motion(background-color var(--ov-motion-enter));
+  @include ov-motion(background-color var(--ov-motion-enter),
+                     box-shadow var(--ov-motion-enter));
 }
 
 notebook > header > tabs > tab:active {
-  @include ov-motion(background-color var(--ov-motion-press));
+  @include ov-motion(background-color var(--ov-motion-press),
+                     box-shadow var(--ov-motion-press));
 }
+
+notebook > header.top > tabs > tab:checked    { @include ov-tab-cap(0, -1); }
+notebook > header.bottom > tabs > tab:checked { @include ov-tab-cap(0, 1); }
+notebook > header.left > tabs > tab:checked   { @include ov-tab-cap(-1, 0); }
+notebook > header.right > tabs > tab:checked  { @include ov-tab-cap(1, 0); }

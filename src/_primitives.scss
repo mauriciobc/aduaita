@@ -4,13 +4,15 @@
 // accessibility rule is enforced structurally instead of by discipline.
 //
 // Mechanism (decided Evening 0 + M2, docs/decisions.md):
-//   bevel   — 0.5px hairline pair, values user-tuned; THE same-surface
-//             rest language for regular buttons (inset-only — no drops).
+//   bevel   — 0.5px hairline pair, values user-tuned; the rest language
+//             for regular buttons, together with ov-drop().
+//   drop    — the soft two-stop drop a raised button sits on (26 Sep 2026,
+//             decisions.md "Rest register"); collapses on press, which is
+//             what makes the press read as the button sinking.
 //   flat    — the same pair at reduced amplitude over a whisper sheen: the
 //             `.flat` VARIATION's rest material (ov-flat-register()).
 //   depth   — container ladders (popover/menu/window). Floating knobs
-//             (switch/scale) may use ov-raised*; buttons never do —
-//             external shadows break the same-surface language.
+//             (switch/scale) may use ov-raised*.
 //   inset   — permanent recessed material for container-ish surfaces
 //             (entries): scoop gradient + hairline, DEEPER on focus.
 //   fill    — the lit colour of a filled channel (progress / scale /
@@ -23,9 +25,10 @@
 //
 // Governing principle (user, M2 session): "everything that has depth
 // keeps it in all states; interaction only MODULATES depth." Regular
-// buttons wear ov-bevel() at rest (same-surface hairlines); press
-// replaces it with ov-well(). External drop shadows are banned on
-// buttons. Flat/osd stay flat.
+// buttons wear ov-bevel() + ov-drop() at rest; press replaces both with
+// ov-well(). The 19 Sep ban on external drops for buttons was retired on
+// 26 Sep (user) — the drop is small enough to stay inside the gap between
+// two buttons. Flat/osd stay flat.
 //
 // Overriding box-shadow or background-image REPLACES upstream's value —
 // surface rules must restate upstream's stops/images alongside the
@@ -94,11 +97,26 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// Bevel — the tuned 0.5px hairline pair (same-surface button rest).
+// Bevel — the tuned 0.5px hairline pair plus the 0.5px rim (button rest).
 // ---------------------------------------------------------------------
 @function ov-bevel() {
   @return inset 0 var(--ov-bevel-width) 0 var(--ov-bevel-highlight),
-          inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow);
+          inset 0 calc(0px - var(--ov-bevel-width)) 0 var(--ov-bevel-shadow),
+          inset 0 0 0 0.5px var(--ov-bevel-rim);
+}
+
+// ---------------------------------------------------------------------
+// Drop — the surface a raised button sits on (26 Sep 2026, decisions.md
+// "Rest register"). Two stops, contact + ambient, the pattern both
+// reference pens use (xxyEYMJ's --shadow ladder, gOjNdog's lifted cap).
+// Deliberately tiny: 5px of blur, 2px of offset, so a drop never reaches
+// across the 4-6px gap to the neighbouring button (the retired CTA bloom
+// did — 0 12px 28px — which is why buttons were banned from drops before).
+// Rides --ov-depth-color, so the depth kill switch removes it too.
+// ---------------------------------------------------------------------
+@function ov-drop() {
+  @return 0 1px 2px color-mix(in srgb, var(--ov-depth-color) 9%, transparent),
+          0 2px 5px color-mix(in srgb, var(--ov-depth-color) 6%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -142,7 +160,8 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 
 // ---------------------------------------------------------------------
 // Depth ladders — container surfaces only (popover/menu/wall if ever).
-// Buttons never wear these (external drops break same-surface language).
+// Buttons wear the much smaller ov-drop() instead (26 Sep 2026): a ladder
+// this size would paint into the gap between two buttons.
 // ---------------------------------------------------------------------
 @function ov-depth-raised() {
   @return 0 1px 1px color-mix(in srgb, var(--ov-depth-color) 18%, transparent),
@@ -162,31 +181,50 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// The hover GLOW — layered soft rim (user-locked 19 Sep, v4). Five
-// feathered layers (top/bottom/side washes + center bloom) build a
-// smooth edge-pooling light in the theme accent. Hover-only; suppressed
-// during press/checked/disabled by the surface's :not chain.
+// The hover NEON (26 Sep 2026, decisions.md "Neon hover"; replaces the
+// 19 Sep five-gradient glow, which read as a tint — "a smudge more than a
+// glow" on the light scheme). Neon is edge light, not a wash:
+//   core  — 1px hot line at the edge, the accent's hue at 78% lightness
+//   tube  — 2px ring of the tube colour right inside it
+//   fall  — the tube's light falling off inward over 10px
+//   halo  — the same light spilling 8px outside the edge
+// all box-shadows, which GSK blurs smoothly (gradients banded). No
+// background layer: the fill stays the state colour, clean.
+// Chosen from three rendered candidates (rim only / + halo / + hot core,
+// "the tube") on both schemes. Colours are --ov-neon-*, re-derived on
+// destructive nodes, so a destructive button glows in its own red.
+// Hover-only; press/checked/disabled are excluded by the surface's :not
+// chain. Call FIRST in a box-shadow list — the core has to paint over the
+// bevel's top hairline.
 // ---------------------------------------------------------------------
-@function ov-glow() {
-  @return linear-gradient(to bottom,
-           color-mix(in srgb, var(--ov-up-accent) 16%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 7%, transparent) 14%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
-          linear-gradient(to top,
-           color-mix(in srgb, var(--ov-up-accent) 14%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 6%, transparent) 14%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 38%),
-          linear-gradient(to right,
-           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
-          linear-gradient(to left,
-           color-mix(in srgb, var(--ov-up-accent) 11%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 16%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 40%),
-          radial-gradient(ellipse at center,
-           color-mix(in srgb, var(--ov-up-accent) 5%, transparent) 0%,
-           color-mix(in srgb, var(--ov-up-accent) 0%, transparent) 70%);
+@function ov-neon() {
+  @return inset 0 0 0 1px color-mix(in srgb, var(--ov-neon-core) 90%, transparent),
+          inset 0 0 0 2px color-mix(in srgb, var(--ov-neon-tube) 45%, transparent),
+          inset 0 0 10px color-mix(in srgb, var(--ov-neon-tube) 28%, transparent),
+          0 0 8px color-mix(in srgb, var(--ov-neon-tube) 40%, transparent);
+}
+
+// ---------------------------------------------------------------------
+// The FACE — convex at rest, concave on press (26 Sep 2026, decisions.md
+// "Button face"; tokens --ov-face-*). Drawn with INSET SHADOWS, not a
+// background gradient, on purpose: GTK's built-in theme (what plain-GTK apps
+// such as Chromium's dialogs render with) paints a button's entire fill as a
+// background-image, so a face gradient there REPLACED the fill — measured on
+// render-widget (plain GTK): the button centre went to alpha 0. box-shadow is
+// already the material's own property, so the face composes with every
+// theme's fill and every state colour, in libadwaita and outside it.
+// Geometry: a glow feathered down from the top edge and a shade feathered up
+// from the foot, each reaching ~40% of a 34px button; the middle band, where
+// the label sits, is untouched.
+// ---------------------------------------------------------------------
+@function ov-face() {
+  @return inset 0 14px 12px -10px var(--ov-face-hilite),
+          inset 0 -14px 12px -10px var(--ov-face-shade);
+}
+
+@function ov-face-pressed() {
+  @return inset 0 14px 12px -10px var(--ov-face-shade),
+          inset 0 -14px 12px -10px color-mix(in srgb, var(--ov-up-light-1) 0%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -204,9 +242,9 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// Raised chip — FLOATING knobs only (switch/scale). Drop shadow is
-// intentional here: knobs sit ON a track. Buttons must NOT use these —
-// they are same-surface and external shadows break that language.
+// Raised chip — FLOATING knobs only (switch/scale). Knobs sit ON a track,
+// so their drop is deeper than a button's ov-drop(); buttons do not use
+// these.
 // ---------------------------------------------------------------------
 @function ov-raised() {
   @return 0 2px 4px RGB(0 0 6 / 20%),
@@ -306,7 +344,7 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // the lighting is layered over the colour rather than replacing it — this
 // is garnish on a semantic fill, not a new fill.
 //
-// Physics constants only (white/black), like ov-raised() and ov-glow(), so
+// Physics constants only (white/black), like ov-raised(), so
 // the treatment follows every palette and both schemes for free. No kill
 // switch of its own, matching the glow: the HC revert is the escape hatch.
 //
@@ -318,6 +356,56 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // an 8px fill reads rgb(189,214,246) → rgb(95,158,234) → rgb(57,126,211) →
 // rgb(39,92,158): a lit top, a shadowed foot, a visible dome.
 // ---------------------------------------------------------------------
+// The LIT EDGE — the bevel pair of a part that is switched ON (26 Sep 2026,
+// decisions.md "Pen dial pass"). Same geometry as every other hairline pair
+// in this file (1px offset, 1px blur, top light over foot shadow); the
+// difference is only where the two colours come from: --ov-lit-edge-* is
+// the accent's own hue at a light and a dark rung, so the edge reads as the
+// part emitting rather than as a white highlight on it. The pen's lever is
+// drawn exactly this way (codepen xxyEYMJ, `.knob:after`).
+//
+// Used by the moved parts (switch thumb, scale knob), which is also why
+// neither function is folded into ov-bevel(): that pair is the *same
+// surface* language for a button at rest, this one is a state. Buttons do
+// not wear it (they have ov-neon() for the accent moment).
+// ---------------------------------------------------------------------
+@function ov-lit-edge() {
+  @return inset 0 1px 1px var(--ov-lit-edge-top),
+          inset 0 -1px 1px var(--ov-lit-edge-bottom);
+}
+
+// The halo an engaged thumb carries — one stop, 2px blur, the accent at
+// 40%. It is what makes the part read as a light source rather than a
+// tinted disc; deliberately under the size where it would read as a glow
+// around a control (that register is ov-neon(), hover-only, on buttons).
+@function ov-lit-halo() {
+  @return 0 0 2px var(--ov-lit-bloom);
+}
+
+// ---------------------------------------------------------------------
+// The PUSH RING — growth without layout (26 Sep 2026, decisions.md "Pen dial
+// pass 2/4"). A box-shadow with no offset and no blur paints a flat band
+// outside the node's box: the node's footprint grows by $width in every
+// direction while its allocation does not move — the only way this sheet is
+// allowed to change a size at all (proposal: the overlay "changes nothing
+// about how they behave, lay out or size").
+//
+// $color is the whole point of the trick: the pen paints its ring in the
+// SURROUND's colour (`var(--outer-bg)`, 2/255 from the scene behind it), so
+// the band reads as the surface receding around the object rather than as an
+// edge drawn on it. It is only worth using where the surround is one flat
+// colour this sheet owns — a thumb inside a uniform track. A thumb straddling
+// two surfaces (the scale knob at its own fill boundary) shows the seam, which
+// is why that knob does not wear one (decisions.md).
+//
+// Call it FIRST in a box-shadow list: the earliest shadow paints on top, and
+// the band has to sit over the node's own drop shadow to read as growth.
+// ---------------------------------------------------------------------
+@function ov-grow($width: var(--ov-thumb-dish-width), $color: var(--ov-thumb-dish)) {
+  @return 0 0 0 $width $color;
+}
+
+// ---------------------------------------------------------------------
 // The lit curve itself — one definition, two consumers: the channel fills
 // (ov-lit-fill) and the accent CTAs (surfaces/_button.scss), where it
 // replaced the translucent glass fill and is layered under upstream's own
@@ -325,17 +413,40 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // through (the default), a button passes a zero-alpha stop so the band its
 // label sits in stays exactly the base colour — a lit middle cost the
 // suggested CTA 0.6 of label contrast (3.77 -> 3.14, measured).
-@function ov-lit-curve($mid: color-mix(in srgb, white 8%, transparent) 45%) {
+@function ov-lit-curve($mid: color-mix(in srgb, white 8%, transparent) 45%,
+                       $light: white,
+                       $shade: black) {
   @return linear-gradient(to bottom,
-    color-mix(in srgb, white 30%, transparent),
+    color-mix(in srgb, #{$light} 30%, transparent),
     $mid,
-    color-mix(in srgb, black 14%, transparent));
+    color-mix(in srgb, #{$shade} 14%, transparent));
 }
 
-@mixin ov-lit-fill($curve: ov-lit-curve()) {
+// The same curve lit by the fill's OWN colour (26 Sep 2026, decisions.md
+// "Pen dial pass 3/4"): the pen's two stops are `hsl(h 100% 72%)` over
+// `hsl(h 98% 61%)` — the accent's hue at a light and a dark rung — so the
+// gradient keeps the colour's saturation instead of graying it toward white.
+//
+// Valid ONLY where the fill colour is decoration and is the accent itself:
+// `.suggested-action`. A semantic fill (progressbar warning/error, a levelbar
+// block) must stay on the physics constants — mixing a warning's colour toward
+// the accent's hue moves the one thing that fill is carrying (decisions.md).
+@function ov-lit-curve-accent($mid: color-mix(in srgb, var(--ov-lit-edge-top) 8%, transparent) 45%) {
+  @return ov-lit-curve($mid, var(--ov-lit-edge-top), var(--ov-lit-edge-bottom));
+}
+
+// $outer: extra outset layers after the hairlines — the CTA passes
+// ov-drop() so it sits raised like every button; channel fills pass nothing.
+@mixin ov-lit-fill($curve: ov-lit-curve(),
+                   $edge-top: color-mix(in srgb, white 55%, transparent),
+                   $edge-bottom: color-mix(in srgb, black 22%, transparent),
+                   $outer: ()) {
   background-image: $curve;
-  box-shadow: inset 0 1px 1px color-mix(in srgb, white 55%, transparent),
-              inset 0 -1px 1px color-mix(in srgb, black 22%, transparent);
+  $shadow: (inset 0 1px 1px $edge-top, inset 0 -1px 1px $edge-bottom);
+  @if length($outer) > 0 {
+    $shadow: join($shadow, $outer, comma);
+  }
+  box-shadow: $shadow;
   // Upstream animates `background` and `box-shadow` on exactly these nodes;
   // restated (plus background-image, which is ours) so the fill colour still
   // fades at the house exit timing instead of snapping.

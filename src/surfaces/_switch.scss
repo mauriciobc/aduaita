@@ -6,7 +6,9 @@
 //            outside the bottom edge. Shallow dish, not a deep groove.
 //   knob   — BRIGHTER than the track: light gradient disc, strong white
 //            top-glow inset, drop shadow below (it floats on the track).
-//   state  — position only: checked changes NOTHING else (no accent).
+//   state  — track: position only (checked changes nothing but upstream's
+//            own colours). Thumb: since 26 Sep it also ignites — the lit
+//            edge + halo + dish, see "The ENGAGED thumb" below.
 //
 // Pen values (1em ~ 9px at GTK switch scale):
 //   track  bg: linear-gradient(black 7%, transparent) over base
@@ -70,6 +72,29 @@ switch > slider {
   box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
               inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
+  // The thumb declares no transition of its own upstream (the knob's travel
+  // is native, and the resting rule owners it), so this is additive rather
+  // than a replacement: the dish and the lit pair land with the knob's slide
+  // at --ov-motion-switch, the house duration matched to that travel.
+  @include ov-motion(box-shadow var(--ov-motion-switch));
+}
+
+// The ENGAGED thumb — the pen's lever (26 Sep 2026, decisions.md "Pen dial
+// pass"). A checked switch's thumb takes the accent into its bevel pair,
+// carries a 2px halo and grows a 1.5px dish into the track it just filled —
+// the three strokes the pen's lever wears while the dial is engaged, at the
+// same proportions (4px/16px/9.85px on a 256px disc -> 2px/1.5px on a 34px
+// thumb). It reverses the 19 Sep calibration for the THUMB only
+// ("state — position only: checked changes NOTHING else (no accent)"),
+// user-authorized 26 Sep for the pen pass; the TRACK keeps upstream's own
+// state colours, so the switch still reads as one object.
+// Kill levers: --ov-lit-edge-{top,bottom} back to --ov-bevel-{highlight,shadow},
+// --ov-thumb-dish-width: 0px.
+switch:checked > slider {
+  box-shadow: ov-grow(),
+              ov-lit-halo(),
+              0 2px 4px RGB(0 0 6 / 20%),
+              ov-lit-edge();
 }
 
 // Disabled knob (BACKLOG U7). Upstream's
@@ -105,5 +130,10 @@ switch > slider:disabled {
   }
   switch > slider:disabled {
     box-shadow: none;
+  }
+  // ...and the engaged thumb likewise: `switch:checked > slider` is one
+  // class more specific than the revert above, so it needs its own.
+  switch:checked > slider {
+    box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
   }
 }

@@ -1450,3 +1450,477 @@ sweep is the gate, as always); fractional scale (X5 card); a disabled `.flat`
 button — the guard is `:not(:disabled)` and upstream's `filter: opacity(30%)`
 dim is never declared by us, but the gallery carries no disabled `.flat`
 button, so that one is structural rather than measured.
+
+## Pen dial pass: the lit edge — 26 Sep 2026
+
+**Ask.** "The goal is to get closer to this pen's looks as possible within GTK4
+constraints" (user, 26 Sep), after a study of LukyVj's *Futuristic Dial Button*
+(codepen `xxyEYMJ`). The pen's register, extracted from its 484-line SCSS and
+measured live: one object, one light model, one seed number. Its **lever** is
+the part worth porting — a 4%×14% bar whose bevel pair is built from the
+accent's own hue (`inset 0 1px 2px hsl(h 100% 72%)` over `inset 0 -1px 2px
+hsl(h 98% 61%)`) plus a two-stop bloom (`0 0 4px` / `0 0 16px`), so the part
+reads as *emitting* light rather than as painted with a white highlight. The
+seed idea behind it — re-hue the whole part from one number on engage/hover —
+is not portable: GTK has no `@property` (`Theme parser error: Unknown @ rule`,
+measured) and no `:has()` (`Unknown pseudoclass`), so no custom property
+animates and no descendant state can re-hue an ancestor.
+
+**What moved.** The two parts in this sheet that *are* moved by the user —
+`switch > slider` and `scale > trough > slider` — take the accent into their
+bevel pair when they are engaged:
+
+- `switch:checked > slider` — the lit pair plus the 2px halo, over the
+  unchanged drop shadow.
+- `scale:hover > trough > slider` — the lit pair plus the halo: the pen's
+  lever-hover, which turns the knob accent-coloured the moment the pointer is
+  on it.
+- `scale:active > trough > slider` keeps the house press scoop and gains only
+  the halo. An accent-lit *top* edge fights the scoop's dark top, and press is
+  a receding read, not a lit one.
+
+L0 gains `--ov-lit-edge-top` / `--ov-lit-edge-bottom` / `--ov-lit-bloom`
+(scheme-split), L1 gains `ov-lit-edge()` and `ov-lit-halo()`. `color-mix()` in
+srgb cannot hold a hue's saturation the way the pen's `hsl()` stops do, so
+these are the closest srgb rungs to the pen's two — the price of the platform,
+recorded rather than hidden.
+
+**A 19 Sep decision reversed, narrowly.** `surfaces/_switch.scss` carried
+"state — position only: checked changes NOTHING else (no accent)" from the
+switch's own reference pen. The thumb now carries the accent when checked; the
+TRACK keeps upstream's own state colours, so the switch still reads as one
+object, and the reversal is thumb-only. The user authorised it as part of this
+pass. Kill lever: point `--ov-lit-edge-{top,bottom}` at
+`--ov-bevel-{highlight,shadow}` and both thumbs go back to the neutral pair in
+one edit.
+
+**Verification.** Paired renders in one invocation, `controls` family: rest
+**92/312000 px, max 214**; `STATE=prelight` **292/312000, max 216**; dark
+**192, max 120**; `CONTRAST=more` **0/312000** — the HC reverts are structural,
+not stylistic. Determinism check in the same run: **0 px** between two renders
+of one sheet, so no noise floor applies to this family. Visually: at rest the
+checked thumb sits in a deep-blue seat; under hover the scale knob wears the
+accent rim, light at the top-left and deep at the foot — the pen's lever read.
+`tools/check-selectors`: contract OK, `switch:checked > slider` added.
+
+**Method note (new, keep).** `render-gallery` reads hover from the real
+pointer, so a *default* render can come back hover-poisoned: in this pass
+`out/after` differed from a re-render of the same sheet by **1262 px** confined
+to `scale > trough` (the hovered 20% `currentColor` channel), and the
+`STATE=prelight` pair matched it exactly. Every A/B from here on is rendered as
+a pair inside one invocation; a lone default render is not a rest render.
+
+**Not verified.** The live eye in daily apps (the user's sweep is the gate at
+M7); fractional scaling (X5 card); the vertical scale and switches inside
+`.adw` rows are outside the gallery, so the lit pair is measured on the
+horizontal controls only.
+
+## Pen dial pass 2/4: the dish ring — 26 Sep 2026
+
+**What the pen does.** Its bezel *grows into the scene* when the dial opens:
+`box-shadow: 0 0 0 calc(var(--radius)/13) var(--outer-bg)` — a spread-only
+shadow, no offset and no blur, painted in the SURROUND's colour (the scene
+behind the ring is `hsl(307 4% 94%)`, the ring's colour `hsl(223.81 0% 93%)`:
+2/255 apart). What the eye reads is not the band — it is that the object's
+footprint changed while nothing moved.
+
+**What moved.** `ov-grow($width, $color)` in L1, called FIRST in a box-shadow
+list (the earliest shadow paints on top, and the band has to cover the node's
+own drop shadow to read as growth), with one consumer: the checked switch
+thumb, which now sits in a 1.5px dish of its track's colour. L0 carries
+`--ov-thumb-dish-width` (kill lever: `0px`) and `--ov-thumb-dish`, the checked
+track's own appearance at the thumb's row — measured: the track reads
+rgb(48,120,206) against an accent fill of rgb(53,132,228), so the token is
+that fill's 8% black rung, i.e. within 1-4/255 of where it lands.
+
+**Why exactly one consumer.** The trick needs a *uniform* surround painted by
+a colour this sheet owns. The scale knob straddles its own fill boundary —
+accent fill on one side, empty channel on the other — so a dish in either
+colour would draw a seam across the channel. Recorded, not worked around: the
+pen's ring has no seam because the pen's bezel is a disc on a flat scene, and
+GTK's range knob is not that node.
+
+**Measured** (paired renders in one invocation, `controls`, move 1 -> move 2):
+**63 px changed, rows 78-86 and 95-101 only** — the bands above and below the
+thumb, x 38-59 — deltas **+3 to +11/255**, every one of them toward the
+track's unshadowed colour: the seat widens by the dish width and the drop
+shadow starts further out. Under `STATE=prelight` the dish contributes 124 px
+(max 20). `switch > slider` gains the first transition it has ever had
+(`box-shadow` at `--ov-motion-switch`, additive — upstream declares none), so
+the dish lands with the knob's own travel instead of snapping.
+
+**Harness note, extends the one above.** In `SCHEME=dark CONTRAST=more` the
+switch/scale work is **0 px**, but the family reports **316 px** in a vertical
+strip at x 488-495, y 471-510 — the scrollbar thumb. A sheet changed by a
+*comment only* reproduces the same 316 px in the same strip, so it is
+parse/render timing against upstream's `scrollbar … transition: all 200ms
+linear`, not a rule. Masking x >= 480 leaves **0 px** in both HC cells:
+the reverts are structural in dark as well as light. The same artifact shows up
+in `adw` (x 620-624, y 346-598) when that family is rendered *after* fourteen
+others in an all-family run, and vanishes (0 px) when `adw` is rendered alone in
+the same conditions — so it tracks when the family is rendered, not what the
+sheet says. Any future A/B that lands on a scrolling family must mask the
+scrollbar strip or use a comment-only control sheet.
+
+## Pen dial pass 3/4: the accent's own light on the CTA — 26 Sep 2026
+
+**What the pen does.** Every lit surface in it is painted from ONE hue: the lit
+top `hsl(h 100% 72%)`, the foot `hsl(h 98% 61%)`, the fill gradient between
+them. White appears nowhere in its material. This sheet's channels have always
+lit with the physics constants — `ov-lit-curve()` white 30% → mid → black 14%,
+`ov-lit-fill()` white 55% top hairline over black 22% foot — which, over an
+accent fill, reads as a blue surface wearing a grey light.
+
+**What moved.** `ov-lit-curve()` takes its two rungs as parameters
+(`$light`/`$shade`, defaulting to white/black, so every existing caller is
+unchanged) and `ov-lit-curve-accent()` builds the same curve out of
+`--ov-lit-edge-*`. `ov-lit-fill()` takes the hairline pair the same way. One
+consumer: `.suggested-action`, whose fill is the accent by construction.
+
+**Why only `.suggested-action`.** Lighting a fill with the accent's hue is only
+honest where the fill's colour is *decoration*. The progressbar's warning/error
+variants, the levelbar's blocks and the scale's own highlight carry meaning in
+that colour; mixing them toward the accent moves the thing the pixel is for.
+They keep the physics pair — measured, not asserted: `controls` is **0 px**
+changed by this commit. Same line the 23 Sep note drew, "garnish on a semantic
+fill, not a new fill".
+
+**Measured** (paired renders in one invocation, `buttons` family): light
+**10244 px, max 72**; dark **11384, max 82**; `STATE=prelight` **10242, max
+78**; `CONTRAST=more` **0 px**. The change is confined to the curve's two
+rungs — per-row census of the CTA band: **rows 167-177 (the light stop) and
+189-200 (the shade stop) changed, rows 178-188 at 0 px**, that being the band
+the label sits in, because the mid stop is zero-alpha by design. The label pair
+is therefore untouched, measured rather than assumed.
+
+Top hairline rgb(189,214,245) → rgb(117,168,219); foot rgb(36,89,154) →
+rgb(3,71,140): the same two rungs, now in the fill's own hue instead of white
+over black. The direction is the point — the CTA reads as a lit accent surface
+rather than as a blue one with a grey light on it.
+
+## Debug build — 26 Sep 2026
+
+**From the pen.** `xxyEYMJ` keeps a `--debug: 0` token and one declaration on
+`*` (`outline: calc(var(--debug) * 1px) dotted hsl(… 60% 60%)`) that outlines
+every box in the document when it is flipped on. The idea is worth keeping: an
+L2 rule that is "not winning" is nearly always a rule aimed at the wrong node,
+and the box answers that in one look.
+
+**Why it is a build here, and not a token.** `outline` on `*` at priority 800
+outranks every upstream focus ring. At a hypothetical `--debug: 0` the
+declaration is still *there* — `0px dotted` — and it still replaces the ring
+upstream draws for the keyboard. Nothing this sheet paints may cost the
+keyboard its focus cue, not even while invisible. So the rule exists only in a
+debug build: `src/_debug.scss` gated on `$ov-debug` (default false, so an
+accidental import emits nothing), `src/overlay-debug.scss` as the entry point
+(the same `@import`s in the same order, so anything the debug sheet renders
+differently is the debug rule and nothing else), and `tools/build --debug` to
+compile it into `build/gtk-debug.css` and install that.
+
+**Verified.** `tools/build --debug --no-restart` writes build/gtk-debug.css
+(864 lines against the shipped 858), repoints
+`~/.config/gtk-4.0/gtk.css` at it and says DEBUG in the install line; a plain
+`tools/build` repoints it back at build/gtk.css. The shipped sheet contains no
+`* {` rule at all (grep). Rendering `controls` from build/gtk-debug.css against
+the same family from the shipped sheet: **10541 px changed, max 182** — the
+switch and its thumb, the scale's trough and slider, the captions, the
+scrollbar and the bar's grain band, every one of them outlined.
+
+The hue is `RGB(203 66 203)` — deliberately outside the palette, so an outline
+can never be read as material — spelled in GTK's own `RGB()` form because
+libsass claims `hsl()` for its own comma-separated signature. The first attempt
+failed the build with "Function hsl is missing argument $saturation"; the trap
+is recorded because it will recur in any future inline colour.
+
+## GTK CSS capability probe — 26 Sep 2026
+
+**Why.** The pen pass needed to know which of the pen's tools GTK 4.22.5
+actually has, before spending a change on any of them. Measured on this
+machine, not recalled: one declaration per selector in a sheet handed to
+`build/render-widget` (parse errors land on stderr, and a render still
+happens), then pixel checks on the TIFFs for the two that parse but might not
+paint. Method worth keeping — it costs one throwaway sheet.
+
+| Feature | GTK 4.22.5 | Evidence |
+| --- | --- | --- |
+| `@property` | **no** | `Theme parser error: Unknown @ rule` |
+| `:has()` | **no** | `Unknown pseudoclass` (both `:has(label)` and `:has(:nth-child(2))`) |
+| `::before` / `::after` | **no** | already in proposal §What not to reach for |
+| `aspect-ratio`, grid | no property | irrelevant — layout is out of scope |
+| `transition: <custom-prop> 1s` | parses | no interpolation type exists without `@property`, so it cannot animate |
+| `conic-gradient()` | **yes, renders** | a 166px button's mid-row reads rgb(64,0,191) → rgb(191,0,64) |
+| `radial-gradient()` | yes, renders | centre 255 red, falls to the rim |
+| `filter: blur(8px)` | **yes, applies** | red spreads past the node box to the window edge; 200/200 px of the mid-row fully red |
+| `filter: saturate(0) brightness(0.5)` | yes | `max(R-G)` goes 255 → 0 |
+| `box-shadow` ladders, inset, spread | yes | the sheet's own idiom |
+| `color-mix()`, relative colour syntax | yes | 416 uses in upstream's pinned sheet |
+
+**What this settles.** Two of the pen's three load-bearing mechanisms are
+unavailable — `@property` (`--angle`, `--selector-width`, `--is-selected` are
+all *animated* custom properties there) and `:has()` (a checked descendant
+re-hues its ancestor). That is why the port is a lighting language and not a
+mechanism, and why the report's remaining lever, a conic gradient, has no
+control here with a meaningful angle.
+
+**Still on the table, unused.** `conic-gradient` renders and `filter: blur`
+applies. `filter` stays banned in v1 for iGPU cost (proposal, risk table);
+conic gradients have no GTK control whose angle means anything.
+
+## Review verdict on the pen pass — 26 Sep 2026
+
+A domain review of the pass (`better-colors` principles: measure the rendered
+pair, hold the hue; `better-interface` evidence bar) over every rule the branch
+added. Scope: `git diff 7814145..HEAD`, src/ + tools/ + README, re-measured on
+fresh renders.
+
+**Two findings, both fixed in this commit.**
+
+1. **The lit rungs were srgb approximations where exact ones were reachable.**
+   The first cut of `--ov-lit-edge-*` used `color-mix()` toward white/black
+   ("the closest srgb rungs", because mixing cannot hold a hue's saturation).
+   But GTK 4.22 supports **relative HSL**, and upstream's own sheet uses it
+   (`HSL(from var(--accent-color) h …)` for `button.link:hover`, gtk.css
+   L1429) — so the pen's actual stops (`hsl(h 100% 72%)` / `hsl(h 98% 61%)`)
+   are one derivation each. Retuned at 92%/83% light (95%/90% dark) rather
+   than 100%/98%: at full saturation the top rung reads neon next to
+   upstream's own accent (s 79%), and the pair must sit inside the palette it
+   lights. Measured after: thumb hairline hsl(213,63,49) against track fill
+   hsl(213,63,51) — the hue held exactly, the lightness step is the bevel.
+   CTA hairlines rgb(68,141,227)/rgb(55,133,226), s 74-75% against the fill's
+   s 75%.
+2. **Stale header.** `surfaces/_switch.scss` still opened with "state —
+   position only: checked changes NOTHING else (no accent)" while its own
+   engaged-thumb rule says the opposite. The track's invariant (upstream
+   colours only) is kept; the thumb's reversal is now stated where it
+   happened.
+
+**Fidelity check against the pen's own numbers.** The pen: lever bevel
+`inset 0 1px 2px` light-rung over `inset 0 -1px 2px` dark-rung, bloom
+`0 0 4px`/`0 0 16px`, growth ring `9.85px` = 3.8% of a 256px disc in the
+surround's colour. The port: the same bevel geometry at 1px/1px, halo
+`0 0 2px`, dish `1.5px` = 4.4% of the 34px thumb in the track's colour —
+proportionally within 0.6 percentage points. Register-by-register: accent-lit
+edge ✓, bloom ✓, growth ✓, hue-as-seed ✓ (via relative HSL, the closest GTK
+gets to `--angle`), mechanism ✗ (`@property`/`:has()` absent — no GTK control
+could animate it), motion ✗ (the house spec bans movement; the dish lands
+with the native knob slide instead).
+
+**Pairs, measured on the rendered sheets.** CTA label: **3.81:1** worst row,
+both schemes, before and after — the mid stop is zero-alpha, so the accent
+register never touched the band the label sits in. Thumb boundary:
+white-disc-vs-track **1.20:1 → 1.28:1** (the dish darkens the seat, which is
+the point). HC: **0 px** in every cell, rest and prelight, light and dark.
+Determinism: 0 px across all eight verification cells.
+
+**Not verified.** The live eye in daily apps; fractional scaling (X5 card);
+the `adw` family's own switches (outside the gallery's `controls`).
+
+**Verdict: Approve.** No HIGH findings; both review findings fixed and
+re-measured in this commit. The remaining distance to the pen is the platform
+(no animated custom properties, no descendant-state re-huing, no
+pseudo-elements, no rotation), not the palette.
+
+## Rest register: bevel x4 + a drop on buttons — 26 Sep 2026
+
+**Ask.** "These buttons look pretty darn flat to me. Not even close to the
+reference" (user, a gnome-calculator screenshot), followed by three more
+benchmarks — Settings, a browser, an EQ app — and a second reference pen
+(jkantner, "Glowing On/Off Buttons", `gOjNdog`). The pen pass had only moved
+*engaged* states; at rest a plain button carried the 19 Sep whisper bevel.
+
+**Measured gap.** On a calculator-grey button the rest bevel moved the edges
+by **+3 / -2 of 255**. Both reference pens carry a rest register roughly 10x
+louder: xxyEYMJ's disc (13% insets, a 5-stop drop ladder), gOjNdog's cap
+(gradient fill, `0 0.75em 0.75em 0.25em` drop that collapses on press).
+
+**Two decisions, both the user's.** (1) Render candidates first. (2) Retire the
+19 Sep "no external drops on buttons" rule.
+
+**Candidates** (`buttons`, `controls`, `headerbar`, `lists`, rest): bevel x2,
+x4 and pen-proportion, each with and without a two-stop drop. Judged on the
+rendered sheet: **x4 + drop** won — pen-proportion drew the foot as a hard
+line rather than a falloff, and x2 was still below what the eye reads as
+raised. Mean delta vs stock on `buttons`: current 2.71, x4+drop 3.29,
+pen+drop 3.59 (max 109, the harsh line).
+
+**What landed.** `--ov-bevel-highlight` 16% -> 64%, `--ov-bevel-shadow`
+8% -> 32%; L1 `ov-drop()` (`0 1px 2px` @12% + `0 2px 5px` @8% on
+`--ov-depth-color`, so the depth kill switch removes it); the button rest
+rule wears `ov-bevel(), ov-drop()`; the CTA wears the drop too, through a new
+`$outer` parameter on `ov-lit-fill()` (channel fills pass nothing and are
+byte-identical to before). Press and held replace the whole list with the
+wells, so the button *sinks* — gOjNdog's press, and `probe-motion` now reports
+`button:active` IN MOTION rather than INSTANT.
+
+**Measured** (paired renders against the committed sheet): light — buttons
+15036 px (max 48), headerbar 4252, entries 3612, notebook 2757, popover 2504,
+dnd 1165; dark — buttons 5148 (max 53); `STATE=active` **0 px** (the well
+owns press entirely); HC **0 px** (the fresh pair; a first `lists`/`spinbutton`
+reading of 17967/272 px was the documented text-AA floor — a same-sheet rerun
+reproduced it and a fresh pair of both sheets measured 0). Gap check: each
+drop occupies ~5 rows under its button and the gap to the next button is
+unchanged — no bleed into a neighbour, the failure that got the retired CTA
+bloom banned.
+
+**Open.** Under `STATE=checked` the gallery's Normal button reads 11/255
+lighter across its whole fill (15081 px, reproducible, determinism 0). A
+bisect puts it on the bevel tokens alone, which no `:checked` rule uses — the
+checked rule replaces the list with `ov-well-held()`. Not explained yet; the
+cell is a stress shot (every widget checked at once), so it is recorded rather
+than chased at the cost of the user's live ask. -> BACKLOG RR2.
+
+## Toggle groups — 26 Sep 2026
+
+**Ask.** "The buttongroup element still seems unstyled, or less styled than
+others" (user). It was literally unstyled: `AdwToggleGroup` (and the inline
+view switcher built on it — Settings' Mouse/Touchpad) is
+`toggle-group > toggle`, not `button`, so no button rule ever matched it, and
+the gallery had no toggle group, which is how every sweep missed it.
+
+**What landed.** `surfaces/_toggle-group.scss`: the group is a recessed well
+(upstream's 10% fill plus the entries' scoop pair), the checked toggle is a
+raised cap wearing the button rest material (`ov-bevel(), ov-drop()`, replacing
+upstream's own two-stop lift) — gOjNdog's raised cap in a well. Unchecked
+hover/press keep upstream's washes; `.flat` groups are left alone.
+`:checked:disabled` is flattened (upstream does it; at priority 800 our rule
+would otherwise keep a disabled cap raised — BACKLOG U7's trap). The gallery's
+`adw` family gains a three-toggle group.
+
+**HC — restated, and one deliberate difference.** The HC block restates
+upstream's rings verbatim, including the disabled pair, which needed
+`--disabled-opacity` through a new `--ov-up-disabled-opacity` alias (contract
+entry added). In the harness, stock HC paints *no* ring on the group although
+upstream declares one at `--border-opacity: 50%` — the bare-`var()`-in-
+`color-mix()`-percentage behaviour recorded under "Flat register". The
+overlay's alias carries a fallback, so its restatement actually paints the ring
+upstream intended: 550 px (max 30), the group's boundary. That matches how
+every button HC revert in this sheet already behaves.
+
+**Measured** (`adw`, paired vs the committed sheet, determinism 0 in every
+cell): light 676 px (max 41), dark 520 (max 55), prelight 676, HC 550 / dark
+HC 560 (the ring above). `tools/check-selectors`: contract OK with five new
+selector atoms and one variable.
+
+## Button face, neon hover, rim — 26 Sep 2026
+
+**Asks, in order.** "Improve the inner glow to feel more elegant and
+neon-like"; on the calculator, "still very ugly"; then "this looks nice, but
+tone it down a little and add a 0.5 border with a tint a tiny darker than the
+background" (user).
+
+**Neon hover.** The 19 Sep hover was five accent gradient washes (5-16%),
+judged on the rendered sheet as "a tint — a smudge more than a glow". Three
+box-shadow candidates rendered in both schemes (rim + inner / + halo /
+"the tube": hot core + ring + halo); the tube won in both. `ov-neon()`: a 1px
+core at the accent's hue, 78% lightness; a 2px tube ring; a 10px inward fall;
+an 8px outer halo. `ov-glow()` deleted (no other consumer).
+
+**The destructive hue was never free.** The candidates showed a *blue* neon
+ring on the red destructive button. GTK computes a custom property holding
+`var()` on the element that declares it, so `--ov-up-accent` on `:root` is the
+root accent everywhere, and upstream's per-node re-point of `--accent-color`
+on `.destructive-action` (gtk.css L488, L1682) never reached anything derived
+from it. The 23 Sep note in `_button.scss` claiming the glow "re-hues for free"
+was an inference, now disproven and rewritten. Fix: `ov-accent-register()` in
+L0 derives every accent token, applied on `:root` and again on
+`.destructive-action` with the alias re-pointed. Measured after: the
+destructive button glows red in both schemes. Re-point atoms registered.
+
+**The face.** "Still very ugly" was the fill: edges and a drop around a flat
+colour slab read as a sticker with an outline; neither reference pen has a
+flat surface. A convex face (top glow, foot shade) flipping concave on press.
+First cut as a `background-image` gradient — **rejected by measurement**: on
+`render-widget` (plain GTK, no libadwaita) the button centre went to
+**alpha 0**, because GTK's built-in theme paints the whole button fill as a
+background-image (`linear-gradient(to top, #f6f5f4 2px, #fbfafa)`), and ours
+replaced it. The face is therefore two feathered **inset shadows**. The
+material now declares no background-image in any button state, which also
+removed two latent erasures of the same kind (the disabled rule's and the HC
+hover revert's `background-image: none`). Plain-GTK button after:
+rgb(248,247,247) alpha 255, identical to stock.
+
+**Tune + rim.** Face 34/10% -> 22/7% (dark 9/20 -> 6/14), bevel 64/32 ->
+48/24, drop 12/8 -> 9/6. The rim is `inset 0 0 0 0.5px` of black at 11%
+(32% dark) inside `ov-bevel()`, so it composites on whatever fill a state or
+an app gives the button: measured on the Normal button's edge, 216 against
+the 229 fill. The toggle-group cap wears it too (same function).
+
+**Measured** (`buttons`, paired, determinism 0): face + neon vs the committed
+sheet — light 40151 px, dark 31764, prelight 87458, active 16356; HC **0 px**
+in rest, prelight and dark HC. The tune vs the first face — light 17295 (max
+21), dark 19922 (max 33), HC 0. Normal label contrast unchanged: 7.87:1 vs
+7.95:1 light, 9.58:1 dark. `check-selectors` OK, `probe-foreign` OK,
+`probe-motion`: hover INSTANT at 80ms, press IN MOTION.
+
+## Path bar — 26 Sep 2026
+
+**Ask.** "In the breadcrumbs up top, the raised buttons are not looking good"
+(user, a Nautilus screenshot). Nautilus 50.3 draws its path bar as a 10%
+currentColor well and means the crumbs to be text in it
+(`.nautilus-path-button:not(:hover) { background: none }`, its style.css). The
+crumbs are plain buttons without `.flat`, so the rest register (face, rim,
+drop) landed on each one: a row of raised keys stacked in a sunken field,
+drops clipped by it.
+
+**What landed.** `surfaces/_pathbar.scss`, the toggle-group language: the well
+wears the same scoop pair; crumbs carry no material in any state (hover keeps
+libadwaita's own button hover fill, which Nautilus lets through, but not the
+neon — the scrolled window around the crumbs would clip its halo); the
+`.current-dir` crumb is the raised cap: `--ov-up-cap-bg` (new alias of
+`--active-toggle-bg-color`, contract entry added) with `ov-bevel(), ov-face()`
+and no drop, which the 3px margin would clip. HC restates Nautilus's own ring
+on the well and leaves resting crumbs bare; hovered crumbs get the house HC
+ring.
+
+**Not in the selector contract, deliberately.** These are Nautilus's classes,
+not libadwaita's; the guard reads libadwaita's sheet and would flag them. A
+Nautilus rename degrades the crumbs back to the generic button material and
+cannot break anything else.
+
+**Verified** on a Nautilus-shaped mock added to the gallery's `adw` family (the
+app's classes, three crumbs, last one current), rendered with Nautilus's own
+path-bar CSS prepended to the sheet: light, dark, HC, and prelight — installed
+sheet = three raised keys; new = text in a well with one white cap; HC
+identical to Nautilus stock plus the hovered ring. Method trap recorded: the
+first excerpt of Nautilus's CSS ended mid-block, which swallowed the whole
+overlay (render came back fully stock); check that a prepended excerpt closes
+every block. The live Nautilus window is the final judge.
+
+**Cap dropped (same day).** In a live window Nautilus stretches the
+`.current-dir` crumb to fill the rest of the bar, so the white cap became a
+bar-wide slab that read as a text field (the mock had label-sized crumbs and
+did not show it). User: "drop the cap and keep the recessed well". Every
+crumb is now flat text; the well keeps its scoop. `--ov-up-cap-bg` and its
+contract entry are removed (no consumer left). The gallery mock now stretches
+the current crumb like Nautilus does; rendered light/dark/HC against
+Nautilus's stock CSS: text in the well in all three, HC matching stock.
+
+## Tabs — 26 Sep 2026
+
+**Ask.** "Improve tabs visual to match the overall system look and feel"
+(user). Reopens the 19 Sep U6 deferral for GtkNotebook and AdwTabBar.
+
+**AdwTabBar** (`surfaces/_tabbar.scss`). (1) A standalone strip painted
+upstream's flat headerbar colour under a headerbar wearing the bar material,
+so the chrome broke in two; the strip now wears `ov-bar-surface()` with the
+same backdrop re-point, and stays transparent where upstream makes it so
+(inside a toolbarview bar, `.inline`) — restated, since our rule outranks
+theirs. (2) The selected tab was a flat 10% patch; it is now the house raised
+cap (bevel + rim + face + drop; the tab box's 6px padding leaves room for the
+drop). Unselected tabs keep upstream's washes; a single tab stays bare, as
+upstream has it. (3) The round close button is a plain button and was wearing
+the full raised material, a 3D disc inside the tab; it now carries none.
+
+**GtkNotebook** (`surfaces/_notebook.scss`). The checked tab is the raised cap
+(bevel + face, no drop — the header border sits right under it) and its 4px
+accent underline becomes a lit one: a 3px accent bar with the accent's own
+light (`--ov-lit-bloom`) rising 4px into the tab. All four header positions.
+Hover and switch now animate the box-shadow at house timing (it snapped).
+
+**Measured** (paired, determinism 0 in every cell): `adw` light 28409 px /
+dark 24782 / prelight 28319; `notebook` light 679 / dark 1149 / prelight 789;
+HC `notebook` 0 px (the underline is restated exactly). HC `adw` 488 px, all
+on the selected tab: upstream declares an HC ring there that stock does not
+paint (bare `var()` in a `color-mix()` percentage, the same finding as
+"Toggle groups"); the alias's fallback paints it. Contract: nine new atoms,
+OK.

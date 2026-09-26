@@ -437,6 +437,81 @@ states × light/dark/HC, label pairs measured, plus a 2× crop pass.*
 
 ---
 
+## Pen pass — 26 Sep 2026
+
+Study and port of LukyVj's *Futuristic Dial Button* (`xxyEYMJ`). The report is
+decisions.md, "Pen dial pass: the lit edge" and the sections that follow it.
+Four moves, landed separately because each one is a visual change.
+
+- [x] **PN2** (P1) `ov-grow()` — the spread-only push ring, worn by the checked
+  switch thumb (1.5px dish in the track's own colour).
+  *Accept:* the thumb's footprint grows without any layout change; the dish
+  colour is within a few 1/255 of the track it lands on; HC 0 px.
+  **Done 26 Sep 2026** — 63 px at rest, +3 to +11/255, rows above and below
+  the thumb only; HC 0 px outside the scrollbar strip (decisions.md, "Pen dial
+  pass 2/4: the dish ring"). The scale knob deliberately does not wear one:
+  its surround is not uniform (decisions.md, same section).
+
+- [x] **PN3** (P1) The lit fill's curve and hairline pair from the accent's own
+  hue, on the one fill whose colour is decoration (`.suggested-action`).
+  *Accept:* the CTA's light and shade rungs carry the fill's hue; the label's
+  band is bit-identical; the semantic fills (progressbar variants, levelbar,
+  scale highlight) do not move; HC 0 px.
+  **Done 26 Sep 2026** — 10244 px light / 11384 dark, confined to rows 167-177
+  and 189-200, 0 px in the label band (178-188); `controls` 0 px; HC 0 px
+  (decisions.md, "Pen dial pass 3/4").
+
+- [x] **PN4** (P1) `--ov-debug`, as a build rather than a token: an outline on
+  every node for hunting a rule that is aimed at the wrong node.
+  *Accept:* `tools/build --debug` installs an outlined sheet and a plain
+  `tools/build` restores the previous one; the shipped sheet carries no
+  `outline` on `*`; defaults emit nothing.
+  **Done 26 Sep 2026** — debug sheet 864 lines to the shipped 858, `controls`
+  10541 px vs the shipped sheet; shipped sheet has no `* {` rule
+  (decisions.md, "Debug build").
+
+- [x] **PN5** (P1) Review pass over PN1-PN4 (26 Sep 2026): the lit rungs moved
+  from srgb approximations to relative HSL — the pen's exact stops were
+  reachable all along (upstream's own gtk.css:1429 uses the syntax).
+  *Accept:* hue held (thumb hairline hsl(213,63,49) vs track 213,63,51), CTA
+  label pair unchanged at 3.81:1, HC 0 px, determinism 0 px across all eight
+  cells.
+  **Done 26 Sep 2026** — decisions.md, "Review verdict on the pen pass".
+
+- [x] **RR4** (P0) Neon hover (hot core + tube + halo) replaces the gradient
+  glow; the accent register is re-derived on `.destructive-action` so it glows
+  red; the button face (inset convex/concave) and a 0.5px rim, toned down per
+  the user. **Done 26 Sep 2026** — decisions.md, "Button face, neon hover, rim".
+
+- [x] **RR5** (P1) Nautilus path bar: every crumb is flat text in a recessed
+  well (a current-folder cap was tried and dropped — Nautilus stretches that
+  crumb across the bar). **Done 26 Sep 2026** — decisions.md, "Path bar".
+
+- [x] **RR6** (P1) Tabs (reopens U6): AdwTabBar strip wears the bar material,
+  the selected tab is the raised cap, its close button is flat; notebook's
+  checked tab is a cap with a lit accent underline. **Done 26 Sep 2026** —
+  decisions.md, "Tabs".
+
+- [x] **RR1** (P0) Rest register: bevel x4 + a soft drop on raised buttons
+  (user: "these buttons look pretty darn flat"). Candidates rendered first;
+  x4 + drop chosen; the 19 Sep no-drop rule retired (user).
+  **Done 26 Sep 2026** — decisions.md, "Rest register".
+- [ ] **RR2** (P2) Explain the 11/255 lighter fill on the Normal button under
+  `STATE=checked` after RR1 (bisected to the bevel tokens alone; no `:checked`
+  rule reads them).
+- [x] **RR3** (P0) Toggle groups styled (well + raised cap); gallery `adw` gains
+  a toggle group. **Done 26 Sep 2026** — decisions.md, "Toggle groups".
+
+- [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
+  *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
+  accent's own light instead of the white/black hairline pair; both schemes;
+  HC 0 px; an unchecked switch at rest is untouched.
+  **Done 26 Sep 2026** — rest 92 px, prelight 292 px, dark 192 px, HC 0 px
+  (decisions.md, "Pen dial pass: the lit edge"). Reverses the 19 Sep thumb
+  calibration for `switch:checked` — thumb only, track untouched.
+
+---
+
 ## Out of scope — explicit, do not creep
 
 - The GNOME Shell stylesheet (a separate project, only if the desktop

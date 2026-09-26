@@ -126,6 +126,10 @@ notebook > header > tabs > arrow
 notebook > header > tabs > tab
 notebook > header > tabs > tab:active
 notebook > header > tabs > tab:hover
+notebook > header.bottom > tabs > tab:checked
+notebook > header.left > tabs > tab:checked
+notebook > header.right > tabs > tab:checked
+notebook > header.top > tabs > tab:checked
 placessidebar .navigation-sidebar > row
 popover > contents
 popover.menu box.circular-buttons button.circular.image-button.model
@@ -151,6 +155,7 @@ radio:not(:checked):not(:indeterminate):hover
 row.activatable.has-open-popup
 row.activatable:active
 row.activatable:hover
+row.button.destructive-action
 scale > trough
 scale > trough > highlight
 scale > trough > slider
@@ -171,6 +176,7 @@ spinbutton
 spinbutton > button.image-button.down:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 spinbutton > button.image-button.up:not(.flat):not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 spinbutton:drop(active)
+splitbutton.destructive-action
 splitbutton.flat > button
 splitbutton.flat > menubutton > button
 switch
@@ -178,11 +184,22 @@ switch > slider
 switch > slider:disabled
 switch:active
 switch:checked
+switch:checked > slider
 switch:checked:active
 switch:checked:hover
 switch:hover
+tabbar .box
+tabbar .box:backdrop
+tabbar tab button.image-button
+tabbar tab:selected
+tabbar tabbox.single-tab tab
 tabthumbnail button
 toast
+toggle-group
+toggle-group > toggle:checked
+toggle-group > toggle:checked:disabled
+toggle-group.flat
+toggle-group:disabled
 toolbarview > .top-bar headerbar
 toolbarview > .top-bar.raised
 toolbarview > .top-bar.raised:backdrop
