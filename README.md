@@ -14,7 +14,8 @@ record).
 
 ```
 src/            L0 tokens, L1 primitives, L2 surfaces (SCSS, built by sassc)
-assets/         SVG texture tiles (data: URIs preferred); 9-slice descoped —
+assets/         empty: the grain is an inline SVG data: URI in src/_tokens.scss
+                (ov-grain()); 9-slice descoped —
                 border-image does not follow border-radius (decisions.md E1)
 upstream/       pinned-version, selector + variable contracts, cache/ (gitignored)
 tools/          fetch-upstream, check-selectors, build, render-widget.c,

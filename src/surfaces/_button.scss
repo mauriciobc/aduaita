@@ -8,6 +8,8 @@
 //   held    — ov-well-held() + ov-face-pressed() on :checked
 // Transitions: house motion via ov-motion() (280ms hover entry / 200ms
 // exit / 120ms press), which also restates upstream's focus-ring motion.
+// The neon rides --ov-motion-glow both ways, and every hover-reachable
+// list opens with its four slots (unlit at rest) so it fades, not snaps.
 //
 // SCOPE — the material is for OPAQUE buttons only (recorded decision,
 // 19 Sep 2026). Two guards carry that:
@@ -60,18 +62,21 @@ button:focus:focus-visible {
 // a button's fill as a background-image, so declaring one here erased the
 // fill in plain-GTK apps (decisions.md "Button face").
 button:not(.flat):not(.osd):not(:drop(active)) {
-  box-shadow: ov-bevel(), ov-face(), ov-drop();
+  box-shadow: ov-neon($lit: false), ov-bevel(), ov-face(), ov-drop();
   // The resting declaration carries the LEAVE timing for every state
   // below (a transition is taken from the after-change style).
-  @include ov-motion(box-shadow var(--ov-motion-exit),
+  @include ov-motion(box-shadow var(--ov-motion-exit) var(--ov-motion-glow),
                      filter var(--ov-motion-exit),
                      background-color var(--ov-motion-exit));
 }
 
 button:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
   box-shadow: ov-neon(), ov-bevel(), ov-face(), ov-drop();
-  // Entering: the neon ignites over the slower house duration.
-  @include ov-motion(box-shadow var(--ov-motion-enter));
+  // Entering: the neon ignites over the slower house duration. Upstream's
+  // hover wash (background-color) rides along — listed here, or the
+  // after-change list omits it and the tint snaps under a fading glow.
+  @include ov-motion(box-shadow var(--ov-motion-enter) var(--ov-motion-glow),
+                     background-color var(--ov-motion-enter));
 }
 
 button:not(.flat):not(.osd):not(:drop(active)):active,
@@ -156,75 +161,84 @@ menubutton:active > button:not(.flat):not(.osd):not(:drop(active)) {
   }
 }
 
-// ---------------------------------------------------------------------
-// The suggested CTA — upstream's fill, the house lighting, the house
-// states. The 19 Sep "accent luminous glass" is retired (user verdict,
-// 23 Sep 2026: "the glass effect is not really very polished"). Measured
-// cost of the translucent fill in the light scheme, where the window
-// behind it is near white: the label fell to 2.00:1 against upstream's own
-// 3.77, and a translucent fill makes the pair a function of whatever sits
-// behind the button — the same 55% reads rich in the dark scheme (5.44:1)
-// and ghosted in the light one.
+// The suggested CTA — the gel (26 Sep 2026, decisions.md "Gel"), the house
+// lighting states. Upstream's fill becomes ov-gel-fill(): the accent,
+// vivid and translucent, under the button face, with the lit edge and the
+// inner glow in the accent's own light rung.
 //
-// What stays: the lighting (ov-lit-curve() at button scale, mid stop at
-// zero alpha so the label band keeps the base colour) and upstream's own
-// state layers. Since 26 Sep 2026 that curve is the ACCENT register
-// (ov-lit-curve-accent(): same geometry and the same 30/14% rungs, lit by
-// the accent's own hue rather than by white over black) and the hairline
-// pair is the accent's too — the pen pass, decisions.md "Pen dial pass
-// 3/4". What goes: the translucency, the bespoke per-state
-// gradients, and the hover/press OUTER bloom (`0 4px 14px` / `0 12px 28px`
-// drop shadows): the hover one painted into the gap between two CTAs
-// (measured, both prelight: 249,249,250 -> 200,211,236). The CTA does wear
-// the small ov-drop() at rest since 26 Sep, like every raised button —
-// that one stays inside the gap by construction (_primitives.scss).
+// Translucency came back after the 23 Sep retirement of the "accent
+// luminous glass" (user ask, 26 Sep: the highlight colour with
+// transparency; first cut after the old Aqua controls, recast in the
+// house's own light the same day). What retired the glass was
+// its label pair, 2.00:1 on the light scheme, and that pair is what this
+// gel is tuned on: the body is deepened before it goes translucent
+// (--ov-gel-deepen), and the face's light and shade are held to the top
+// and bottom 36% of the button, so the band the label sits in is the
+// body alone. The pair is now traded for brightness (user, 26 Sep):
+// rendered on blue after the recast, 3.28:1 light / 4.54:1 dark, against
+// stock's 3.77 — see --ov-gel-deepen in _tokens.scss.
+//
+// Also kept from 23 Sep: no hover/press OUTER bloom (it painted into the gap
+// between two CTAs); the CTA wears the small ov-drop() at rest like every
+// raised button — that one stays inside the gap by construction
+// (_primitives.scss).
 //
 // Deliberately NOT declared here:
-//   color            — upstream pairs it (--accent-fg-color on
-//                      --accent-bg-color); we do not second-guess it.
-//   background-color — upstream's base, left untouched.
+//   color — upstream pairs it (--accent-fg-color on --accent-bg-color); we
+//           do not second-guess it.
 // Press and held are the house states every other button already wears
 // (ov-well / ov-well-held, with upstream's own press darkening as the top
-// layer) instead of a bespoke scoop. HC: ov-lit-fill emits its own revert,
-// which hands the button back to upstream's flat accent fill; the press
-// rule restates it because an `@media` block only covers the selector it
-// sits on.
+// layer) instead of a bespoke scoop. HC: ov-gel-fill emits its own revert,
+// which hands the button back to upstream's flat, opaque accent fill; the
+// press rule restates it because an `@media` block only covers the selector
+// it sits on.
 //
 // `.destructive-action` is deliberately NOT styled here — see the note
 // below the press rule.
 // ---------------------------------------------------------------------
-$ov-cta-mid: color-mix(in srgb, white 0%, transparent) 44%;
+$ov-cta-light-reach: 36%;
+$ov-cta-shade-reach: 36%;
+
+// The CTA hovers into the GENERIC list (neon, bevel ×3, face ×2, drop ×2),
+// while it rests on its own (gel edge + glow, drop ×2). GTK interpolates
+// box-shadow slot by slot and snaps when a slot's `inset` flag differs, so
+// the rest list is padded to line up: the unlit neon in front, the edge
+// and glow opposite the bevel pair, three empty inset slots opposite the
+// bevel's rim and the face, the drop opposite the drop.
+$ov-cta-empty: inset 0 0 0 transparent;
 
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)) {
-  // The lit fill: upstream's base colour under one lighting curve — the
-  // ACCENT register of it (26 Sep 2026, decisions.md "Pen dial pass 3/4"),
-  // which lights the fill with its own hue instead of the white/black
-  // physics. Safe here because this fill's colour is decoration and is the
-  // accent by construction; the semantic fills (progressbar variants, levelbar
-  // blocks) keep the physics pair, where mixing toward the accent would move
-  // the meaning.
-  // Raised like every other button: the lit hairlines over the house drop.
-  @include ov-lit-fill($curve: ov-lit-curve-accent($ov-cta-mid),
-                       $edge-top: var(--ov-lit-edge-top),
-                       $edge-bottom: var(--ov-lit-edge-bottom),
-                       $outer: ov-drop());
+  // Raised like every other button: the gel's edge and glow over the house
+  // drop. The
+  // clear state slot keeps rest, hover, press and held on one layer list
+  // (ov-gel-images(), "one layer list in every state").
+  @include ov-gel-fill($light-reach: $ov-cta-light-reach,
+                       $shade-reach: $ov-cta-shade-reach,
+                       $state: $ov-gel-state-rest,
+                       $outer: ($ov-cta-empty, $ov-cta-empty, $ov-cta-empty, ov-drop()),
+                       $lead: ov-neon($lit: false));
+  // ov-gel-fill's list, with the neon's curve on the way out.
+  @include ov-motion(background var(--ov-motion-exit),
+                     background-image var(--ov-motion-exit),
+                     box-shadow var(--ov-motion-exit) var(--ov-motion-glow));
 }
 
-// Hover: upstream's own lift, restated as the top layer because the curve
+// Hover: upstream's own lift, restated in the state slot because the gel
 // above replaced the `background-image: image(currentColor 10%)` it uses
 // (gtk.css L308).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):hover:not(:active):not(:checked):not(:disabled) {
-  background-image: image(color-mix(in srgb, currentColor 10%, transparent)),
-                    ov-lit-curve-accent($ov-cta-mid);
+  background-image: ov-gel-images($ov-cta-light-reach, $ov-cta-shade-reach,
+                                  $state: color-mix(in srgb, currentColor 10%, transparent));
   @include ov-motion(background-image var(--ov-motion-enter),
-                     box-shadow var(--ov-motion-exit));
+                     box-shadow var(--ov-motion-enter) var(--ov-motion-glow));
 }
 
 // Press: the same well every other button sinks into, under upstream's own
 // press darkening (image(RGB(0 0 6/20%)), gtk.css L310).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):active,
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)).keyboard-activating {
-  background-image: image(RGB(0 0 6 / 20%)), ov-lit-curve-accent($ov-cta-mid);
+  background-image: ov-gel-images($ov-cta-light-reach, $ov-cta-shade-reach,
+                                  $state: RGB(0 0 6 / 20%));
   box-shadow: ov-well();
   @include ov-motion(background-image var(--ov-motion-press),
                      box-shadow var(--ov-motion-press));
@@ -236,11 +250,12 @@ button.suggested-action:not(.flat):not(.osd):not(:drop(active)).keyboard-activat
 
 // Held (a checked toggle CTA) — the light well, as everywhere else, under
 // upstream's own held darkening (image(RGB(0 0 6/15%)), gtk.css L312),
-// which the rest curve would otherwise have replaced: without it a checked
-// CTA differs from rest only by the well (measured: fill unchanged and the
-// label pair slipping 4.99 -> 3.95 in the light scheme).
+// which the rest gel would otherwise have replaced: without it a checked
+// CTA differs from rest only by the well (measured 23 Sep: fill unchanged
+// and the label pair slipping 4.99 -> 3.95 in the light scheme).
 button.suggested-action:not(.flat):not(.osd):not(:drop(active)):checked {
-  background-image: image(RGB(0 0 6 / 15%)), ov-lit-curve-accent($ov-cta-mid);
+  background-image: ov-gel-images($ov-cta-light-reach, $ov-cta-shade-reach,
+                                  $state: RGB(0 0 6 / 15%));
   box-shadow: ov-well-held();
   @media (prefers-contrast: more) {
     background-image: none;

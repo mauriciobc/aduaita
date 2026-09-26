@@ -1924,3 +1924,206 @@ on the selected tab: upstream declares an HC ring there that stock does not
 paint (bare `var()` in a `color-mix()` percentage, the same finding as
 "Toggle groups"); the alias's fallback paints it. Contract: nine new atoms,
 OK.
+
+## Neon hover motion — 26 Sep 2026
+
+**Ask.** "Tweak the button glow (hover state) animation to feel more organic"
+— the accent-coloured neon (user).
+
+**It never animated.** `probe-motion` had recorded hover INSTANT since the
+neon landed; the cause is GTK's `shadow_value_transition()` (gtk 4.22.5,
+gtkcssshadowvalue.c): it interpolates box-shadow slot by slot and fails the
+whole list when one slot's `inset` flag differs. Rest was bevel/face/drop;
+hover prepended the neon, so its outset halo sat opposite the face's inset
+shade. A two-rule sheet reproduces it (misaligned: INSTANT; aligned: IN
+MOTION). Second snap: the hover rule's `transition` listed only box-shadow,
+so upstream's `background-color` wash jumped under the glow.
+
+**What landed.** `ov-neon($lit: false)`: the four neon slots at zero alpha
+with the geometry collapsed onto the edge (rings spread 0, fall blur 0, halo
+`-2px` under the border). Every rest list the hover reaches opens with it;
+the suggested CTA's own list is padded with three empty inset slots so it
+lines up with the generic hover list it hovers into. Lighting from collapsed
+geometry makes the light spread as it brightens, and the halo only clears the
+border partway through: the tube strikes, then the glow blooms. New token
+`--ov-motion-glow: cubic-bezier(0.23, 1, 0.32, 1)` on the neon's box-shadow in
+and out; `ov-motion()` takes an optional curve per entry (entries without one
+emit what they did before). Durations unchanged (280/200ms, BACKLOG B4).
+
+**Measured.** `probe-motion` (40ms samples, upstream loaded): hover IN MOTION
+light/dark/HC (HEAD: INSTANT), INSTANT under REDUCE=1 and NOANIM=1. Gallery
+`buttons` vs HEAD: rest, prelight, dark and HC all 0 px — the lit and unlit
+frames are unchanged, only the path between them. `check-selectors` OK.
+Not the glow, left alone: prelight still moves the probe's mean instantly
+with every shadow, background and transition neutralised; the press well
+still snaps from a hovered button (its list does not align with the neon).
+
+## Aqua gel — 26 Sep 2026
+
+**Ask.** "Change the fill of the suggested button, switch, scale, progress bar
+and level bar [to] use the highlight color with transparency, inspired in the
+old Aqua macOS components" — then "match the overall look and feel" (user).
+Reopens the 23 Sep retirement of the CTA's translucent glass by user decision;
+the defect that retired it (the label pair, 2.00:1) is the constraint the gel
+is tuned on.
+
+**What landed.** One L1 material, `ov-gel-fill()` (`_primitives.scss`),
+replacing the opaque lit fill and `ov-lit-curve()` / `ov-lit-curve-accent()`
+(no consumers left). Over the colour upstream paints on the node:
+- body — the fill with its HSL lightness lowered by `--ov-gel-deepen`
+  (relative `HSL(from … h s calc(l - n))`, probed on GTK 4.22.5: works, and
+  keeps saturation — the first cut mixed toward dark-5 in sRGB and rendered
+  grey), then made translucent at `--ov-gel-opacity: 80%`;
+- gloss — light-1 from the top to a hard edge (50% on channels, 34% on the
+  CTA so the label band is body only);
+- caustic — light-1 rising from the foot (55% / 32%);
+- rims — a dark rung on top and a light rung at the foot, on the house 0.5px
+  bevel geometry (`--ov-bevel-width`), so the gel's edges weigh what every
+  other raised edge does and fall with the bevel kill switch.
+
+Toned after the second ask: gloss 78% → 55% (light) / 60% → 40% (dark),
+1px blurred rims → 0.5px hairlines; the drop, neon hover, wells and thumb
+treatments are unchanged, so the gel parts share the rest of the house
+register.
+
+Consumers: `button.suggested-action` (rest/hover/press/held; the box-shadow
+slot layout the neon transition relies on is unchanged), `switch:checked`
+(the track keeps three shadow slots in every state so the flip still
+interpolates), `scale > trough > highlight`, `progressbar > trough >
+progress`, `levelbar` blocks. Vertical channels run the gloss down the leading
+side (`.vertical`). The thumb dish is re-derived from the gel body: 1/255 from
+the track at the thumb's row.
+
+**Semantic colour kept.** "Highlight colour" is read as the accent where
+upstream paints the accent. Levelbar `block.low` / `block.full` keep
+warning / success (new aliases `--ov-up-warning-fill`, `--ov-up-success-fill`),
+and `.error` / `.warning` / `.success` re-declare `--ov-up-accent-fill` in L0
+— the destructive re-point trap again: the gel owns `background-color`, and
+an alias computed on `:root` never sees upstream's per-node re-point.
+Contract: +5 selector atoms, +2 variables; `check-selectors` OK.
+
+**Measured** (gallery, white label on the CTA body): light 4.17:1, dark
+4.95:1; stock 3.77, the retired glass 2.00. HC: every gel node reverts to
+upstream's opaque fill, flat (CTA and checked switch sample 53,132,228 in both
+schemes). No `prefers-reduced-transparency` in GTK 4.22.5 (its media features
+are color-scheme, contrast, reduced-motion), so the translucency has no
+separate opt-out; HC is the escape hatch.
+
+**Tool fix.** `render-gallery` never told the overlay's provider the scheme:
+GtkCssProvider's `prefers-color-scheme` does not follow GtkSettings, so every
+`SCHEME=dark` render so far applied the LIGHT values of the overlay's
+scheme-split tokens (libadwaita's own palette was dark, which hid it). Found by
+the gel's dark-only deepen; fixed in the same place `prefers-contrast` is set.
+`probe-motion` sets the scheme the same way and has the same gap (not fixed
+here).
+
+### Follow-up: the switch flip went janky — 26 Sep 2026
+
+**Report.** "Switch animation got very JANKY" (user), after the gel landed.
+
+**Two causes, both layer alignment.** Read in GTK 4.22.5's source and
+confirmed on frame dumps of a real `GtkSwitch` under libadwaita (a throwaway
+probe, 15ms samples, with and without :hover):
+- *background-image.* GTK transitions image lists layer by layer from the top
+  (`gtkcssarrayvalue.c`, `transition_extend`), cross-fading any pair whose
+  gradients differ in stop count or side. The track went [dish] → [gloss,
+  caustic] on the flip and [gloss, caustic] ↔ [lift, gloss, caustic] on
+  hover and press, so the hard-edged gloss was cross-faded into the wrong
+  layer: the band arrived late on the flip and pumped on every hover and
+  click. The old dish gradient was faint enough to hide the same mismatch.
+- *thumb box-shadow* (pre-existing since the pen pass, made visible by the
+  gel's darker dish). Rest [drop, inset, inset] against engaged [dish, halo,
+  drop, inset, inset]: slot 2 differs in its inset flag, so GTK drops the
+  transition and the ring and halo popped on at the flip and off three frames
+  late (`gtkcssshadowvalue.c`).
+
+**Fix.** `ov-gel-images()` takes `$state` (a leading state slot, a flat
+two-stop gradient so it interpolates natively rather than cross-fading
+upstream's `image()`) and `$lit` (the same stops at zero alpha, the
+`ov-neon($lit)` pattern). The switch track carries [state, gloss, caustic,
+dish] in every state; the CTA carries [state, gloss, caustic] in rest, hover,
+press and held. The resting thumb carries the engaged thumb's five slots with
+dish and halo unlit and collapsed, so the ring grows with the slide.
+
+**Measured.** Settled frames unchanged: gallery `controls` and `buttons`,
+light and dark, and `buttons` prelight, 0 px against the janky sheet. Frame
+dumps: the thumb ring now grows over the slide in both directions (was: full
+at frame 0 on, gone at frame 3 off); hover on a checked switch moves the
+track mean monotonically (max step 5, was 7 with a reversal). Not measured: a
+live compositor (the probe renders offscreen, and the native knob travel does
+not advance there).
+
+### Follow-up: subtler, more transparent — 26 Sep 2026
+
+**Ask.** "Make the gel effect a little more subtle, and add tiny bit more
+transparency to the highlight color" (user).
+
+**Change.** Body opacity 80% → 72% (the page now shows through 28%); light
+deepen 14 → 19 HSL points to hold the CTA label above stock. Gloss top/fade
+55/14% → 42/10% light, 40/8% → 30/6% dark; caustic 30% → 22% light, 20% →
+14% dark; rims 70% → 50% alpha. Layer structure untouched, so the motion fix
+above still holds.
+
+**Measured** (gallery, white label on the CTA body): light 4.00:1 (was
+4.17), dark 5.55:1 (was 4.95); stock 3.77.
+
+### Follow-up: brighter, more vibrant — 26 Sep 2026
+
+**Ask.** "Gel has too much of dark tone… add more bright to it? Make it more
+vibrant?" (user).
+
+**Change.** New token `--ov-gel-vivid: 20` (HSL saturation points added to the
+body); `--ov-gel-deepen` 19 → 10 in light, 0 → -8 in dark (the body is now
+lifted there); caustic 22% → 28% light.
+
+**Trade, accepted by the ask.** The dark tone was what held the CTA label
+above stock. Now: computed on blue #3584e4, 3.23:1 light / 4.57:1 dark;
+rendered on the system's current green accent #3a944a, 3.17:1 / 3.51:1
+(stock 3.77 / 3.81). Above the 3:1 large-text floor, below upstream's pair
+and below 4.5:1 for 13px bold. HC still restores the opaque stock fill;
+`--ov-gel-deepen` is the one lever to buy contrast back.
+
+## Gel: original, lean — 26 Sep 2026
+
+**Ask.** "It's looking like a ripoff of macOS. Can you make it original?" and
+"make it more lean too; maybe use SVG instead of PNG?" (user).
+
+**What was Aqua, and what replaced it.** The three Aqua signatures — the
+hard-edged gloss band, light pooling at the foot (the caustic), the dark top
+rim — are gone. The gel is now this sheet's own lighting cast in tinted glass;
+every part already existed somewhere else in the theme:
+- *face* — the button face (`ov-face()`): light feathered from the top, shade
+  feathered from the foot, no edge anywhere (`--ov-gel-light`,
+  `--ov-gel-shade`);
+- *edge* — the pen's lit edge: a 0.5px top hairline in the fill's own light
+  rung (`HSL(from fill h s calc(l + 24))`, `--ov-gel-edge`);
+- *glow* — the neon's inner fall, dimmed and at rest: the same rung feathered
+  4px in from every edge (`--ov-gel-glow`), so the part reads charged, lit
+  from within, instead of glossed from outside. The one idea no other
+  material here carries at rest, and what makes the gel read as this theme's.
+The translucent vivid body (opacity, deepen, vivid) is unchanged. Vertical
+channels light from the leading side as before.
+
+**Leaner.** The face is one gradient (light → clear → clear → shade) instead
+of two layers: the switch track carries three image layers per state (was
+four), the CTA two (was three), channels one (was two); the congruent-list
+rule from the jank fix holds by construction (`ov-gel-images()` builds every
+state's list). The Aqua tokens (`gloss-top`, `gloss-fade`, `caustic`) and the
+two rim functions are gone.
+
+**SVG instead of PNG.** The headerbar grain was two 64px PNGs (2.6 KB and
+3.1 KB) behind an absolute `file:///home/...` path — against the README's own
+"SVG texture tiles (data: URIs preferred)". It is now `ov-grain()`: an inline
+289-byte feTurbulence tile, one per scheme, no files to install. The 19 Sep
+finding "feTurbulence data: URIs render empty in app processes" did not
+reproduce on GTK 4.22.5 (render-widget and render-gallery both paint it; the
+19 Sep note already suspected the delivery failure masked it). The noise's
+red channel is stretched into alpha, fitted to the PNG statistics: rendered
+alpha light 5.99 mean / 3.46 stddev (PNG 5.94 / 3.67), dark 3.35 / 2.07 (PNG
+3.32 / 2.22); on the gallery's headerbar, a text-free patch reads 250.3 / 1.89
+(PNG 250.2 / 2.04) light and 155.3 / 0.93 (155.3 / 0.95) dark. Both PNGs
+deleted.
+
+**Measured** (gallery, white label on the CTA body, blue accent): light
+3.28:1, dark 4.54:1 (stock 3.77) — the brightness trade from the previous
+entry, unchanged in kind.

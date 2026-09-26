@@ -15,8 +15,8 @@
 //             (switch/scale) may use ov-raised*.
 //   inset   — permanent recessed material for container-ish surfaces
 //             (entries): scoop gradient + hairline, DEEPER on focus.
-//   fill    — the lit colour of a filled channel (progress / scale /
-//             levelbar): top light over an opaque semantic colour.
+//   gel     — the coloured part of an ON control (CTA, switch track,
+//             progress / scale / levelbar): tinted glass, lit from within.
 //   texture — grain tiles (scheme-split); headerbar garnish.
 //
 // GTK constraint (measured, decisions.md M2): var() substitutes single
@@ -47,15 +47,20 @@
 // call restates that trio: the ring keeps fading in at stock speed instead
 // of snapping — and still follows the reduced-motion override.
 //
-// $specs pairs are "<property> <duration token>"; the curve and the
-// restatement are the mixin's business.
+// $specs are "<property> <duration token> [<curve>]"; without a curve the
+// entry falls to CSS's default `ease` (as every call did before 26 Sep).
+// The ring restatement is the mixin's business.
 // ---------------------------------------------------------------------
 $ov-upstream-ring: outline-color, outline-width, outline-offset;
 
 @mixin ov-motion($specs...) {
   $list: ();
   @each $spec in $specs {
-    $list: append($list, nth($spec, 1) nth($spec, 2), comma);
+    $entry: nth($spec, 1) nth($spec, 2);
+    @if length($spec) > 2 {
+      $entry: append($entry, nth($spec, 3));
+    }
+    $list: append($list, $entry, comma);
   }
   @each $prop in $ov-upstream-ring {
     $list: append($list, $prop var(--ov-motion-ring) var(--ov-motion-ease), comma);
@@ -196,12 +201,29 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // Hover-only; press/checked/disabled are excluded by the surface's :not
 // chain. Call FIRST in a box-shadow list — the core has to paint over the
 // bevel's top hairline.
+//
+// $lit: false is the same four slots UNLIT — zero alpha, geometry collapsed
+// onto the edge. The resting list MUST carry it in the same position: GTK
+// interpolates box-shadow slot by slot and gives up (snaps) when a slot's
+// `inset` flag differs, which is what the hover did until 26 Sep — the
+// neon's outset halo sat opposite the face's inset shade, and the probe
+// read INSTANT even at 20ms. Lit from the collapsed geometry the light
+// SPREADS as it brightens: the ring draws in from the edge, the fall reaches
+// inward, and the halo starts 2px under the edge, so it only clears the
+// border partway through — the tube strikes, then the glow blooms. Leaving
+// runs the same path backwards: the halo sinks first, the core fades last.
 // ---------------------------------------------------------------------
-@function ov-neon() {
+@function ov-neon($lit: true) {
+  @if not $lit {
+    @return inset 0 0 0 0 color-mix(in srgb, var(--ov-neon-core) 0%, transparent),
+            inset 0 0 0 0 color-mix(in srgb, var(--ov-neon-tube) 0%, transparent),
+            inset 0 0 0 color-mix(in srgb, var(--ov-neon-tube) 0%, transparent),
+            0 0 0 -2px color-mix(in srgb, var(--ov-neon-tube) 0%, transparent);
+  }
   @return inset 0 0 0 1px color-mix(in srgb, var(--ov-neon-core) 90%, transparent),
           inset 0 0 0 2px color-mix(in srgb, var(--ov-neon-tube) 45%, transparent),
           inset 0 0 10px color-mix(in srgb, var(--ov-neon-tube) 28%, transparent),
-          0 0 8px color-mix(in srgb, var(--ov-neon-tube) 40%, transparent);
+          0 0 8px 0 color-mix(in srgb, var(--ov-neon-tube) 40%, transparent);
 }
 
 // ---------------------------------------------------------------------
@@ -330,32 +352,6 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
   }
 }
 
-// ---------------------------------------------------------------------
-// The LIT FILL — the coloured part of a channel: a progress bar, the
-// filled side of a scale, a levelbar block. Upstream paints all three with
-// a flat `background-color` (accent / warning / success) and nothing else,
-// which reads as a sticker on the surface; the house register for a
-// coloured surface is a top-lit one (the same lighting curve the accent
-// glass uses on CTAs: light at the top, shade at the bottom, one light
-// source, everywhere).
-//
-// The colour underneath stays OPAQUE and untouched. A progress bar's
-// colour is data and a levelbar's low/high/full distinction is meaning, so
-// the lighting is layered over the colour rather than replacing it — this
-// is garnish on a semantic fill, not a new fill.
-//
-// Physics constants only (white/black), like ov-raised(), so
-// the treatment follows every palette and both schemes for free. No kill
-// switch of its own, matching the glow: the HC revert is the escape hatch.
-//
-// The values are the CTA glass's lighting curve, compressed: a channel fill
-// is 4-12px tall, so first pass — white 22% top, black 10% bottom — moved a
-// fill's top pixel row from rgb(53,132,228) to rgb(146,189,241) against a
-// flat rgb(53,132,228) before: one lit pixel out of four, which still reads
-// as flat at 1×. Raised to the glass's own 30% register with a deeper pair,
-// an 8px fill reads rgb(189,214,246) → rgb(95,158,234) → rgb(57,126,211) →
-// rgb(39,92,158): a lit top, a shadowed foot, a visible dome.
-// ---------------------------------------------------------------------
 // The LIT EDGE — the bevel pair of a part that is switched ON (26 Sep 2026,
 // decisions.md "Pen dial pass"). Same geometry as every other hairline pair
 // in this file (1px offset, 1px blur, top light over foot shadow); the
@@ -406,54 +402,127 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 }
 
 // ---------------------------------------------------------------------
-// The lit curve itself — one definition, two consumers: the channel fills
-// (ov-lit-fill) and the accent CTAs (surfaces/_button.scss), where it
-// replaced the translucent glass fill and is layered under upstream's own
-// hover lift. `$mid` is what the middle band gets: a channel fill lights
-// through (the default), a button passes a zero-alpha stop so the band its
-// label sits in stays exactly the base colour — a lit middle cost the
-// suggested CTA 0.6 of label contrast (3.77 -> 3.14, measured).
-@function ov-lit-curve($mid: color-mix(in srgb, white 8%, transparent) 45%,
-                       $light: white,
-                       $shade: black) {
-  @return linear-gradient(to bottom,
-    color-mix(in srgb, #{$light} 30%, transparent),
-    $mid,
-    color-mix(in srgb, #{$shade} 14%, transparent));
-}
-
-// The same curve lit by the fill's OWN colour (26 Sep 2026, decisions.md
-// "Pen dial pass 3/4"): the pen's two stops are `hsl(h 100% 72%)` over
-// `hsl(h 98% 61%)` — the accent's hue at a light and a dark rung — so the
-// gradient keeps the colour's saturation instead of graying it toward white.
+// The GEL — the coloured part of an ON control (26 Sep 2026, decisions.md
+// "Gel"; replaces the opaque lit fill of 23 Sep): the suggested CTA, the
+// checked switch track, the scale highlight, progress, levelbar blocks.
+// Upstream paints each as a flat `background-color`; the gel is this
+// sheet's own lighting language cast in tinted glass — not a borrowed one.
+// The first cut quoted Aqua (a hard-edged gloss band, light pooling at the
+// foot, dark top rim); retired the same day (user: "looking like a ripoff
+// of macOS"). What replaced each Aqua signature comes from elsewhere in
+// this sheet:
+//   body  — the fill, saturated (--ov-gel-vivid) and lightness-shifted
+//           (--ov-gel-deepen), then translucent (--ov-gel-opacity): the
+//           page tints it. Unchanged from the first cut.
+//   face  — the button face (ov-face()): a feathered light from the top and
+//           a feathered shade from the foot, no edge anywhere — the same
+//           convex read every raised button in the sheet has. Physics
+//           light/shade (light-1 / dark-5), no hue.
+//   edge  — the pen's lit edge (ov-lit-edge()): a top hairline in the fill's
+//           OWN light rung, on the bevel geometry (--ov-bevel-width).
+//   glow  — the neon's fall (ov-neon()), dimmed and at rest: the fill's
+//           light rung feathered inward from every edge, so the part reads
+//           as lit from within — charged — rather than as glossed from
+//           outside. The one idea no other material here carries at rest.
+// Edge and glow derive from $fill, never from the accent register, so a
+// semantic fill (warning / success levelbar blocks, a progress bar inside
+// `.error`) keeps its own hue — the material changes, not the meaning.
 //
-// Valid ONLY where the fill colour is decoration and is the accent itself:
-// `.suggested-action`. A semantic fill (progressbar warning/error, a levelbar
-// block) must stay on the physics constants — mixing a warning's colour toward
-// the accent's hue moves the one thing that fill is carrying (decisions.md).
-@function ov-lit-curve-accent($mid: color-mix(in srgb, var(--ov-lit-edge-top) 8%, transparent) 45%) {
-  @return ov-lit-curve($mid, var(--ov-lit-edge-top), var(--ov-lit-edge-bottom));
+// The body is a background-COLOUR declaration, which replaces upstream's;
+// that is why $fill must be the colour upstream paints on the node (the
+// --ov-up-* alias, re-declared on re-pointed nodes in L0), and why the HC
+// revert restates it opaque.
+// ---------------------------------------------------------------------
+@function ov-gel-body($fill: var(--ov-up-accent-fill)) {
+  @return color-mix(in srgb,
+    HSL(from #{$fill} h calc(s + var(--ov-gel-vivid)) calc(l - var(--ov-gel-deepen)))
+    var(--ov-gel-opacity), transparent);
 }
 
-// $outer: extra outset layers after the hairlines — the CTA passes
-// ov-drop() so it sits raised like every button; channel fills pass nothing.
-@mixin ov-lit-fill($curve: ov-lit-curve(),
-                   $edge-top: color-mix(in srgb, white 55%, transparent),
-                   $edge-bottom: color-mix(in srgb, black 22%, transparent),
-                   $outer: ()) {
-  background-image: $curve;
-  $shadow: (inset 0 1px 1px $edge-top, inset 0 -1px 1px $edge-bottom);
+// The face — ONE gradient, light feathered down from the top and shade
+// feathered up from the foot, clear between, along the part's short axis
+// (top-down for a horizontal part, leading-edge-across for a vertical one).
+// One layer rather than a light layer over a shade layer: same pixels, half
+// the images GTK builds and interpolates per frame.
+//
+// Parts that change state keep ONE layer list in every state, or their
+// motion breaks (the switch flip, 26 Sep: "very janky"). GTK transitions
+// background-image layer by layer from the top (gtkcssarrayvalue.c,
+// `transition_extend`), so a rest list of [face] under a hover list of
+// [lift, face] cross-faded the face into the lift and the fill pumped on
+// every hover and click. Two arguments keep the lists congruent:
+//   $state — upstream's state layer (hover lift, press darkening) as a
+//            leading slot; pass a transparent colour at rest so the slot
+//            is always there. A flat two-stop gradient, not upstream's
+//            image(): gradients with equal stops interpolate natively
+//            (gtkcssimagelinear.c) instead of cross-fading.
+//   $lit   — false gives the same stops at zero alpha, for the state the
+//            gel fades out of (the unchecked switch), the ov-neon($lit)
+//            pattern.
+@function ov-gel-images($light-reach: 50%, $shade-reach: 45%, $vertical: false,
+                        $state: null, $lit: true) {
+  $clear: color-mix(in srgb, var(--ov-up-light-1) 0%, transparent);
+  $layers: (
+    linear-gradient(if($vertical, to right, to bottom),
+      if($lit, var(--ov-gel-light), $clear),
+      $clear $light-reach,
+      $clear (100% - $shade-reach),
+      if($lit, var(--ov-gel-shade), $clear)),
+  );
+  @if $state != null {
+    $layers: join((linear-gradient($state, $state),), $layers, comma);
+  }
+  @return $layers;
+}
+
+// The transparent state slot a resting list carries (see $state above).
+$ov-gel-state-rest: color-mix(in srgb, currentColor 0%, transparent);
+
+// The fill's own light rung, the one colour edge and glow are drawn in.
+@function ov-gel-lit($fill, $alpha) {
+  @return color-mix(in srgb, HSL(from #{$fill} h s calc(l + 24)) #{$alpha}, transparent);
+}
+
+// Edge: the lit top hairline, on the house bevel geometry, so it weighs what
+// every other raised edge does and falls with the bevel kill switch.
+@function ov-gel-edge($fill: var(--ov-up-accent-fill)) {
+  @return inset 0 var(--ov-bevel-width) 0 ov-gel-lit($fill, var(--ov-gel-edge));
+}
+
+// Glow: the same rung feathered inward from every edge. 4px: the neon's fall
+// is 10px on a hovered button; at rest, and on channels only 4-8px tall, it
+// has to stay an edge light and never fill the part.
+@function ov-gel-glow($fill: var(--ov-up-accent-fill)) {
+  @return inset 0 0 4px ov-gel-lit($fill, var(--ov-gel-glow));
+}
+
+// The whole material on one node. $outer: layers after edge and glow — the
+// CTA passes ov-drop() so it sits raised like every button (plus empty
+// slots, see _button.scss); channel fills pass nothing. $lead: layers
+// painted OVER them — the CTA passes the unlit neon so its hover can fade
+// it in.
+@mixin ov-gel-fill($fill: var(--ov-up-accent-fill),
+                   $light-reach: 50%,
+                   $shade-reach: 45%,
+                   $state: null,
+                   $outer: (),
+                   $lead: ()) {
+  background-color: ov-gel-body($fill);
+  background-image: ov-gel-images($light-reach, $shade-reach, $state: $state);
+  $shadow: join($lead, (ov-gel-edge($fill), ov-gel-glow($fill)), comma);
   @if length($outer) > 0 {
     $shadow: join($shadow, $outer, comma);
   }
   box-shadow: $shadow;
   // Upstream animates `background` and `box-shadow` on exactly these nodes;
-  // restated (plus background-image, which is ours) so the fill colour still
-  // fades at the house exit timing instead of snapping.
+  // restated (plus background-image, which is ours) so the fill still fades
+  // at the house exit timing instead of snapping.
   @include ov-motion(background var(--ov-motion-exit),
                      background-image var(--ov-motion-exit),
                      box-shadow var(--ov-motion-exit));
+  // HC: upstream's own flat, opaque fill.
   @media (prefers-contrast: more) {
+    background-color: #{$fill};
     background-image: none;
     box-shadow: none;
   }

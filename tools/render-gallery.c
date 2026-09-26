@@ -1255,6 +1255,13 @@ main (int argc, char **argv)
         }
 
       provider = gtk_css_provider_new ();
+      /* The provider's own media queries do not follow GtkSettings here
+       * (same as prefers-contrast below): without this the overlay's
+       * `prefers-color-scheme: dark` token blocks never applied under
+       * SCHEME=dark — found 26 Sep 2026 by the gel's dark-only deepen. */
+      if (g_strcmp0 (g_getenv ("SCHEME"), "dark") == 0)
+        g_object_set (provider, "prefers-color-scheme",
+                      GTK_INTERFACE_COLOR_SCHEME_DARK, NULL);
       if (g_strcmp0 (g_getenv ("CONTRAST"), "more") == 0)
         g_object_set (provider, "prefers-contrast",
                       GTK_INTERFACE_CONTRAST_MORE, NULL);

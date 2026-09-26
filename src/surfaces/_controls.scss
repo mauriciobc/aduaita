@@ -29,13 +29,15 @@ scrollbar > range > trough {
 // Sliders & Progress (scale, progressbar, levelbar)
 //   trough — recessed mechanical channel (top shade + bottom reflection),
 //            matching the switch track.
-//   fill   — the COLOURED part wears ov-lit-fill(): top light, inner
-//            hairlines, opaque semantic colour underneath. progressbar,
-//            levelbar and the scale's own highlight are the same idiom
-//            upstream — it gives `scale > trough > highlight` and
-//            `progressbar > trough > progress` one shared rule — so they
+//   fill   — the COLOURED part wears the gel (ov-gel-fill(): translucent
+//            vivid body, face, lit edge, inner glow; 26 Sep 2026,
+//            "Gel"). progressbar, levelbar and the scale's own highlight are
+//            the same idiom upstream — it gives `scale > trough > highlight`
+//            and `progressbar > trough > progress` one shared rule — so they
 //            get one shared material here. `progressbar.osd` and an empty
-//            trough are excluded: upstream unsets the fill there.
+//            trough are excluded: upstream unsets the fill there. Levelbar's
+//            low / full blocks keep their semantic hue (warning / success):
+//            the gel is restated with that colour, not the accent.
 // ---------------------------------------------------------------------
 scale > trough,
 progressbar:not(.osd) > trough,
@@ -47,7 +49,31 @@ levelbar > trough > block.empty {
 scale > trough > highlight,
 progressbar:not(.osd) > trough:not(.empty) > progress,
 levelbar > trough > block:not(.empty) {
-  @include ov-lit-fill();
+  @include ov-gel-fill();
+}
+
+// Upstream paints these two with their own colour (gtk.css L1335/L1339);
+// same specificity as the accent rule above, so source order puts them last.
+levelbar > trough > block.low {
+  @include ov-gel-fill($fill: var(--ov-up-warning-fill));
+}
+
+levelbar > trough > block.full {
+  @include ov-gel-fill($fill: var(--ov-up-success-fill));
+}
+
+// A vertical channel's face light runs down its leading side, not across
+// its top: the gel's short axis is horizontal there. `.vertical` is GTK's own
+// GtkOrientable class. Images only — they carry no hue, so one rule covers
+// the accent and the semantic blocks alike. More specific than the rules
+// above, so it restates their HC revert.
+scale.vertical > trough > highlight,
+progressbar.vertical:not(.osd) > trough:not(.empty) > progress,
+levelbar.vertical > trough > block:not(.empty) {
+  background-image: ov-gel-images($vertical: true);
+  @media (prefers-contrast: more) {
+    background-image: none;
+  }
 }
 
 scale > trough > slider {

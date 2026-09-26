@@ -6,9 +6,10 @@
 //            outside the bottom edge. Shallow dish, not a deep groove.
 //   knob   — BRIGHTER than the track: light gradient disc, strong white
 //            top-glow inset, drop shadow below (it floats on the track).
-//   state  — track: position only (checked changes nothing but upstream's
-//            own colours). Thumb: since 26 Sep it also ignites — the lit
-//            edge + halo + dish, see "The ENGAGED thumb" below.
+//   state  — track: checked turns the track into the gel (26 Sep 2026,
+//            decisions.md "Gel") — translucent vivid accent body, face,
+//            lit edge, inner glow. Thumb: since 26 Sep it also
+//            ignites — the lit edge + halo + dish, see "The ENGAGED thumb".
 //
 // Pen values (1em ~ 9px at GTK switch scale):
 //   track  bg: linear-gradient(black 7%, transparent) over base
@@ -26,42 +27,60 @@
 //   * the disabled knob (BACKLOG U7),
 //   * the checked track's hover/active modulation.
 
+// The track's box-shadow keeps three slots in every state so the checked
+// flip interpolates instead of snapping (GTK drops the whole transition when
+// a slot's inset flag differs, decisions.md "Neon hover motion"):
+//   1 inset top line  — the dish hairline / the gel's lit edge
+//   2 outset lip      — the white lip, in every state
+//   3 inset           — empty / the gel's inner glow
+$ov-switch-lip: 0 1px 1px -1px color-mix(in srgb, white 70%, transparent);
+
+// ...and background-image keeps THREE layers in every state, in one order,
+// for the same reason (ov-gel-images(), "one layer list in every state"):
+//   1 state   — clear / upstream's hover lift / its press darkening
+//   2 face    — the gel's light and shade, unlit when off
+//   3 dish    — the off track's top-darkening; clear when on
+// Every pair has the same stops, so the flip, the hover and the press all
+// interpolate natively instead of cross-fading one layer into another.
+@function ov-switch-dish($top: 7%) {
+  @return linear-gradient(color-mix(in srgb, black $top, transparent),
+                          color-mix(in srgb, black 0%, transparent));
+}
+
 switch {
   background-color: var(--ov-up-window-bg);
-  background-image: linear-gradient(color-mix(in srgb, black 7%, transparent),
-                                    color-mix(in srgb, black 0%, transparent));
+  background-image: ov-gel-images($state: $ov-gel-state-rest, $lit: false),
+                    ov-switch-dish();
   box-shadow: inset 0 1px 1px -1px color-mix(in srgb, black 40%, transparent),
-              0 1px 1px -1px color-mix(in srgb, white 70%, transparent);
+              $ov-switch-lip,
+              inset 0 0 0 transparent;
 
   &:checked {
-    background-color: var(--ov-up-accent-fill);
-    background-image: linear-gradient(color-mix(in srgb, black 12%, transparent),
-                                      color-mix(in srgb, black 4%, transparent));
+    background-color: ov-gel-body();
+    background-image: ov-gel-images($state: $ov-gel-state-rest), ov-switch-dish(0%);
+    box-shadow: ov-gel-edge(), $ov-switch-lip, ov-gel-glow();
   }
 
-  // Upstream animates background and box-shadow here; our dish gradient
-  // rides background-image. All three follow the switch duration, which
-  // matches the native knob slide.
+  // Upstream animates background and box-shadow here; the gel rides
+  // background-image. All three follow the switch duration, which matches
+  // the native knob slide.
   @include ov-motion(background-color var(--ov-motion-switch),
                      background-image var(--ov-motion-switch),
                      box-shadow var(--ov-motion-switch));
 }
 
-// Upstream modulates a checked track with a second image layer on hover
-// and press (`switch:checked:hover`, `switch:checked:active`). The dish is
-// declared for every state, so without this restatement a checked switch
-// lost its hover and press feedback completely. Upstream's own layer is
-// kept verbatim, underneath the dish.
+// Upstream modulates a checked track with a state layer on hover and press
+// (`switch:checked:hover`, `switch:checked:active`: image(currentColor 10%)
+// and image(RGB(0 0 6/20%))). The gel is declared for every checked state,
+// so without this restatement a checked switch lost its hover and press
+// feedback completely. Upstream's colours, in the list's state slot.
 switch:checked:hover {
-  background-image: image(color-mix(in srgb, currentColor 10%, transparent)),
-                    linear-gradient(color-mix(in srgb, black 12%, transparent),
-                                    color-mix(in srgb, black 4%, transparent));
+  background-image: ov-gel-images($state: color-mix(in srgb, currentColor 10%, transparent)),
+                    ov-switch-dish(0%);
 }
 
 switch:checked:active {
-  background-image: image(RGB(0 0 6 / 20%)),
-                    linear-gradient(color-mix(in srgb, black 18%, transparent),
-                                    color-mix(in srgb, black 8%, transparent));
+  background-image: ov-gel-images($state: RGB(0 0 6 / 20%)), ov-switch-dish(0%);
 }
 
 switch > slider {
@@ -69,7 +88,14 @@ switch > slider {
   background-image: linear-gradient(to bottom,
     color-mix(in srgb, var(--ov-up-light-1) 96%, transparent),
     color-mix(in srgb, var(--ov-up-light-1) 80%, transparent));
-  box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
+  // Five slots, the engaged thumb's layout below with the dish and halo
+  // unlit (zero alpha, collapsed onto the edge): GTK gives up on a box-shadow
+  // transition when a slot's inset flag differs, so the old three-slot list
+  // ([drop, inset, inset] against [dish, halo, drop, inset, inset]) made the
+  // ring and halo POP at the flip instead of growing with the slide.
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ov-thumb-dish) 0%, transparent),
+              0 0 0 color-mix(in srgb, var(--ov-lit-bloom) 0%, transparent),
+              0 2px 4px RGB(0 0 6 / 20%),
               inset 0 1px 1px color-mix(in srgb, white 60%, transparent),
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
   // The thumb declares no transition of its own upstream (the knob's travel
@@ -121,9 +147,14 @@ switch > slider:disabled {
     background-image: none;
     box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
   }
-  // The checked track's restatement (above) outranks the HC rule on
-  // `switch` alone — same priority, more classes — so it is reverted with
-  // its own selectors rather than by a broader one.
+  // The checked track's gel and its restatements (above) outrank the HC
+  // rule on `switch` alone — same priority, more classes — so they are
+  // reverted with their own selectors: upstream's opaque accent, flat.
+  switch:checked {
+    background-color: var(--ov-up-accent-fill);
+    background-image: none;
+    box-shadow: none;
+  }
   switch:checked:hover,
   switch:checked:active {
     background-image: none;

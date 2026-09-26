@@ -27,5 +27,7 @@
 --headerbar-bg-color
 --light-1
 --slider-border-color
+--success-bg-color
 --view-bg-color
+--warning-bg-color
 --window-bg-color

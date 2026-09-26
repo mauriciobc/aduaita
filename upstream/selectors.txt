@@ -21,6 +21,7 @@
 .card.activatable
 .card.activatable:active
 .card.activatable:hover
+.error
 .linked:not(.vertical) > menubutton:dir(ltr):not(:first-child) > button
 .navigation-sidebar > child
 .navigation-sidebar > flowboxchild
@@ -48,6 +49,7 @@
 .navigation-sidebar row.activatable:selected:hover
 .navigation-sidebar row:selected
 .sidebar-pane
+.success
 .toolbar
 .toolbar button.arrow-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
 .toolbar button.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque)
@@ -55,6 +57,7 @@
 .toolbar menubutton.image-button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
 .toolbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > button
 .toolbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque) > menubutton > button
+.warning
 :not(.isolated) > .sidebar-pane :not(.isolated) > .content-pane
 :not(window):drop(active)
 actionbar > revealer > box
@@ -117,6 +120,8 @@ headerbar splitbutton:not(.raised):not(.suggested-action):not(.destructive-actio
 headerbar:backdrop
 infobar .close
 levelbar > trough > block.empty
+levelbar > trough > block.full
+levelbar > trough > block.low
 levelbar > trough > block:not(.empty)
 list.boxed-list > row:not(:selected).activatable:active
 list.boxed-list > row:not(:selected).activatable:hover
