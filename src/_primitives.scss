@@ -318,6 +318,33 @@ $ov-upstream-ring: outline-color, outline-width, outline-offset;
 // an 8px fill reads rgb(189,214,246) → rgb(95,158,234) → rgb(57,126,211) →
 // rgb(39,92,158): a lit top, a shadowed foot, a visible dome.
 // ---------------------------------------------------------------------
+// The LIT EDGE — the bevel pair of a part that is switched ON (26 Sep 2026,
+// decisions.md "Pen dial pass"). Same geometry as every other hairline pair
+// in this file (1px offset, 1px blur, top light over foot shadow); the
+// difference is only where the two colours come from: --ov-lit-edge-* is
+// the accent's own hue at a light and a dark rung, so the edge reads as the
+// part emitting rather than as a white highlight on it. The pen's lever is
+// drawn exactly this way (codepen xxyEYMJ, `.knob:after`).
+//
+// Used by the moved parts (switch thumb, scale knob), which is also why
+// neither function is folded into ov-bevel(): that pair is the *same
+// surface* language for a button at rest, this one is a state. Buttons do
+// not wear it (they have ov-glow() for the accent moment).
+// ---------------------------------------------------------------------
+@function ov-lit-edge() {
+  @return inset 0 1px 1px var(--ov-lit-edge-top),
+          inset 0 -1px 1px var(--ov-lit-edge-bottom);
+}
+
+// The halo an engaged thumb carries — one stop, 2px blur, the accent at
+// 40%. It is what makes the part read as a light source rather than a
+// tinted disc; deliberately under the size where it would read as a glow
+// around a control (that register is ov-glow(), hover-only, on buttons).
+@function ov-lit-halo() {
+  @return 0 0 2px var(--ov-lit-bloom);
+}
+
+// ---------------------------------------------------------------------
 // The lit curve itself — one definition, two consumers: the channel fills
 // (ov-lit-fill) and the accent CTAs (surfaces/_button.scss), where it
 // replaced the translucent glass fill and is layered under upstream's own

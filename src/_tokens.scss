@@ -126,6 +126,41 @@
   }
 
   // ---------------------------------------------------------------------
+  // The LIT register — the moved parts (26 Sep 2026, decisions.md "Pen dial
+  // pass"). Two derivations that come from the ACCENT rather than from the
+  // white/black physics every other bevel in this sheet uses:
+  //
+  //   lit-edge  — the bevel pair of a part that is switched ON. The pen's
+  //               lever (codepen xxyEYMJ) lights its top edge with
+  //               hsl(h 100% 72%) and its foot with hsl(h 98% 61%): the two
+  //               rungs of the *accent's own hue*, so the part reads as
+  //               emitting light instead of as painted with a highlight.
+  //               Mixing toward --ov-up-light-1 cannot hold a hue's
+  //               saturation the way the pen's hsl() stops do, so these are
+  //               the closest srgb rungs; both are scheme-split because the
+  //               physics constants do not carry the effect symmetrically
+  //               (light acts through the shade half, dark through the lit
+  //               half — the same finding as the flat register).
+  //   lit-bloom — the soft halo those parts carry while engaged (pen:
+  //               `0 0 4px` / `0 0 16px` on a 256px disc; 2px on GTK's
+  //               ~34px thumb, same ratio).
+  //
+  // Consumers: surfaces/_switch.scss and surfaces/_controls.scss (thumb
+  // bevels, this pass) and surfaces/_button.scss (the suggested CTA's lit
+  // curve and hairlines, 26 Sep). Kill lever for the whole register: point
+  // --ov-lit-edge-{top,bottom} at --ov-bevel-{highlight,shadow} and the
+  // thumbs go back to the neutral pair in one edit (D5 pattern).
+  // ---------------------------------------------------------------------
+  --ov-lit-edge-top: color-mix(in srgb, var(--ov-up-accent) 55%, var(--ov-up-light-1));
+  --ov-lit-edge-bottom: color-mix(in srgb, var(--ov-up-accent) 74%, var(--ov-up-dark-5));
+  --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 40%, transparent);
+  @media (prefers-color-scheme: dark) {
+    --ov-lit-edge-top: color-mix(in srgb, var(--ov-up-accent) 72%, var(--ov-up-light-1));
+    --ov-lit-edge-bottom: color-mix(in srgb, var(--ov-up-accent) 58%, var(--ov-up-dark-5));
+    --ov-lit-bloom: color-mix(in srgb, var(--ov-up-accent) 45%, transparent);
+  }
+
+  // ---------------------------------------------------------------------
   // Window and pane translucency — migrated from the pre-overlay
   // ~/.config/gtk-4.0/gtk.css (BACKLOG.md P1.5). The old file hardcoded
   // rgba(242, 242, 244, …), which forced light values in dark mode; the

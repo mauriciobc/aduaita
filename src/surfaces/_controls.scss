@@ -62,13 +62,25 @@ scale > trough > slider {
                      background-image var(--ov-motion-exit));
 }
 
+// Hover: the knob picks up the colour of the fill it rides — the pen's
+// lever, which turns accent-coloured the moment the pointer is on it
+// (decisions.md "Pen dial pass"). Geometry unchanged; only the two rungs
+// the bevel pair is built from come from --ov-lit-edge-* instead of the
+// white/black physics.
 scale:hover > trough > slider {
+  box-shadow: 0 2px 4px RGB(0 0 6 / 20%),
+              ov-lit-halo(),
+              ov-lit-edge();
   @include ov-motion(background-image var(--ov-motion-enter),
                      box-shadow var(--ov-motion-exit));
 }
 
+// Drag: the knob keeps the house press scoop (dark top, lit foot — the
+// receding read every other pressed control has) and gains only the halo:
+// an accent-lit top edge would fight the scoop it is layered over.
 scale:active > trough > slider {
-  box-shadow: 0 1px 2px RGB(0 0 6 / 25%),
+  box-shadow: ov-lit-halo(),
+              0 1px 2px RGB(0 0 6 / 25%),
               inset 0 1px 2px color-mix(in srgb, black 12%, transparent),
               inset 0 -1px 1px color-mix(in srgb, white 40%, transparent);
   @include ov-motion(box-shadow var(--ov-motion-press));
@@ -154,6 +166,12 @@ toast {
   // The dragged knob's well outranks the resting revert (same priority,
   // more classes) — reverted with its own selector.
   scale:active > trough > slider {
+    box-shadow: 0 0 0 1px var(--ov-up-slider-border), 0 2px 4px RGB(0 0 6 / 20%);
+  }
+
+  // The lit hover pair likewise (it replaced the resting list, so it is
+  // one property ahead of the revert above).
+  scale:hover > trough > slider {
     box-shadow: 0 0 0 1px var(--ov-up-slider-border), 0 2px 4px RGB(0 0 6 / 20%);
   }
 

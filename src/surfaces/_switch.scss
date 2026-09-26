@@ -72,6 +72,21 @@ switch > slider {
               inset 0 -1px 1px color-mix(in srgb, black 10%, transparent);
 }
 
+// The ENGAGED thumb — the pen's lever (26 Sep 2026, decisions.md "Pen dial
+// pass"). A checked switch's thumb takes the accent into its bevel pair and
+// carries a 2px halo — the two strokes the pen's lever wears while the dial
+// is engaged, at the same proportion (4px/16px on a 256px disc -> 2px on a
+// 34px thumb). It reverses the 19 Sep calibration for the THUMB only
+// ("state — position only: checked changes NOTHING else (no accent)"),
+// user-authorized 26 Sep for the pen pass; the TRACK keeps upstream's own
+// state colours, so the switch still reads as one object.
+// Kill lever: point --ov-lit-edge-{top,bottom} at --ov-bevel-{highlight,shadow}.
+switch:checked > slider {
+  box-shadow: ov-lit-halo(),
+              0 2px 4px RGB(0 0 6 / 20%),
+              ov-lit-edge();
+}
+
 // Disabled knob (BACKLOG U7). Upstream's
 // `switch > slider:disabled { box-shadow: 0 2px 4px transparent }` sits at
 // priority 200 and loses to the resting rule above, so a disabled switch
@@ -105,5 +120,10 @@ switch > slider:disabled {
   }
   switch > slider:disabled {
     box-shadow: none;
+  }
+  // ...and the engaged thumb likewise: `switch:checked > slider` is one
+  // class more specific than the revert above, so it needs its own.
+  switch:checked > slider {
+    box-shadow: 0 2px 4px RGB(0 0 6 / 20%);
   }
 }

@@ -437,6 +437,22 @@ states × light/dark/HC, label pairs measured, plus a 2× crop pass.*
 
 ---
 
+## Pen pass — 26 Sep 2026
+
+Study and port of LukyVj's *Futuristic Dial Button* (`xxyEYMJ`). The report is
+decisions.md, "Pen dial pass: the lit edge" and the sections that follow it.
+Four moves, landed separately because each one is a visual change.
+
+- [x] **PN1** (P1) Accent-lit bevel on the engaged thumbs.
+  *Accept:* a checked switch thumb and a hovered/dragged scale knob carry the
+  accent's own light instead of the white/black hairline pair; both schemes;
+  HC 0 px; an unchecked switch at rest is untouched.
+  **Done 26 Sep 2026** — rest 92 px, prelight 292 px, dark 192 px, HC 0 px
+  (decisions.md, "Pen dial pass: the lit edge"). Reverses the 19 Sep thumb
+  calibration for `switch:checked` — thumb only, track untouched.
+
+---
+
 ## Out of scope — explicit, do not creep
 
 - The GNOME Shell stylesheet (a separate project, only if the desktop

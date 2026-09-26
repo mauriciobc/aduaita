@@ -1450,3 +1450,67 @@ sweep is the gate, as always); fractional scale (X5 card); a disabled `.flat`
 button — the guard is `:not(:disabled)` and upstream's `filter: opacity(30%)`
 dim is never declared by us, but the gallery carries no disabled `.flat`
 button, so that one is structural rather than measured.
+
+## Pen dial pass: the lit edge — 26 Sep 2026
+
+**Ask.** "The goal is to get closer to this pen's looks as possible within GTK4
+constraints" (user, 26 Sep), after a study of LukyVj's *Futuristic Dial Button*
+(codepen `xxyEYMJ`). The pen's register, extracted from its 484-line SCSS and
+measured live: one object, one light model, one seed number. Its **lever** is
+the part worth porting — a 4%×14% bar whose bevel pair is built from the
+accent's own hue (`inset 0 1px 2px hsl(h 100% 72%)` over `inset 0 -1px 2px
+hsl(h 98% 61%)`) plus a two-stop bloom (`0 0 4px` / `0 0 16px`), so the part
+reads as *emitting* light rather than as painted with a white highlight. The
+seed idea behind it — re-hue the whole part from one number on engage/hover —
+is not portable: GTK has no `@property` (`Theme parser error: Unknown @ rule`,
+measured) and no `:has()` (`Unknown pseudoclass`), so no custom property
+animates and no descendant state can re-hue an ancestor.
+
+**What moved.** The two parts in this sheet that *are* moved by the user —
+`switch > slider` and `scale > trough > slider` — take the accent into their
+bevel pair when they are engaged:
+
+- `switch:checked > slider` — the lit pair plus the 2px halo, over the
+  unchanged drop shadow.
+- `scale:hover > trough > slider` — the lit pair plus the halo: the pen's
+  lever-hover, which turns the knob accent-coloured the moment the pointer is
+  on it.
+- `scale:active > trough > slider` keeps the house press scoop and gains only
+  the halo. An accent-lit *top* edge fights the scoop's dark top, and press is
+  a receding read, not a lit one.
+
+L0 gains `--ov-lit-edge-top` / `--ov-lit-edge-bottom` / `--ov-lit-bloom`
+(scheme-split), L1 gains `ov-lit-edge()` and `ov-lit-halo()`. `color-mix()` in
+srgb cannot hold a hue's saturation the way the pen's `hsl()` stops do, so
+these are the closest srgb rungs to the pen's two — the price of the platform,
+recorded rather than hidden.
+
+**A 19 Sep decision reversed, narrowly.** `surfaces/_switch.scss` carried
+"state — position only: checked changes NOTHING else (no accent)" from the
+switch's own reference pen. The thumb now carries the accent when checked; the
+TRACK keeps upstream's own state colours, so the switch still reads as one
+object, and the reversal is thumb-only. The user authorised it as part of this
+pass. Kill lever: point `--ov-lit-edge-{top,bottom}` at
+`--ov-bevel-{highlight,shadow}` and both thumbs go back to the neutral pair in
+one edit.
+
+**Verification.** Paired renders in one invocation, `controls` family: rest
+**92/312000 px, max 214**; `STATE=prelight` **292/312000, max 216**; dark
+**192, max 120**; `CONTRAST=more` **0/312000** — the HC reverts are structural,
+not stylistic. Determinism check in the same run: **0 px** between two renders
+of one sheet, so no noise floor applies to this family. Visually: at rest the
+checked thumb sits in a deep-blue seat; under hover the scale knob wears the
+accent rim, light at the top-left and deep at the foot — the pen's lever read.
+`tools/check-selectors`: contract OK, `switch:checked > slider` added.
+
+**Method note (new, keep).** `render-gallery` reads hover from the real
+pointer, so a *default* render can come back hover-poisoned: in this pass
+`out/after` differed from a re-render of the same sheet by **1262 px** confined
+to `scale > trough` (the hovered 20% `currentColor` channel), and the
+`STATE=prelight` pair matched it exactly. Every A/B from here on is rendered as
+a pair inside one invocation; a lone default render is not a rest render.
+
+**Not verified.** The live eye in daily apps (the user's sweep is the gate at
+M7); fractional scaling (X5 card); the vertical scale and switches inside
+`.adw` rows are outside the gallery, so the lit pair is measured on the
+horizontal controls only.

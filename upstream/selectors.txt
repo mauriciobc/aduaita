@@ -178,6 +178,7 @@ switch > slider
 switch > slider:disabled
 switch:active
 switch:checked
+switch:checked > slider
 switch:checked:active
 switch:checked:hover
 switch:hover
