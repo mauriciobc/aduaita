@@ -1628,3 +1628,37 @@ can never be read as material — spelled in GTK's own `RGB()` form because
 libsass claims `hsl()` for its own comma-separated signature. The first attempt
 failed the build with "Function hsl is missing argument $saturation"; the trap
 is recorded because it will recur in any future inline colour.
+
+## GTK CSS capability probe — 26 Sep 2026
+
+**Why.** The pen pass needed to know which of the pen's tools GTK 4.22.5
+actually has, before spending a change on any of them. Measured on this
+machine, not recalled: one declaration per selector in a sheet handed to
+`build/render-widget` (parse errors land on stderr, and a render still
+happens), then pixel checks on the TIFFs for the two that parse but might not
+paint. Method worth keeping — it costs one throwaway sheet.
+
+| Feature | GTK 4.22.5 | Evidence |
+| --- | --- | --- |
+| `@property` | **no** | `Theme parser error: Unknown @ rule` |
+| `:has()` | **no** | `Unknown pseudoclass` (both `:has(label)` and `:has(:nth-child(2))`) |
+| `::before` / `::after` | **no** | already in proposal §What not to reach for |
+| `aspect-ratio`, grid | no property | irrelevant — layout is out of scope |
+| `transition: <custom-prop> 1s` | parses | no interpolation type exists without `@property`, so it cannot animate |
+| `conic-gradient()` | **yes, renders** | a 166px button's mid-row reads rgb(64,0,191) → rgb(191,0,64) |
+| `radial-gradient()` | yes, renders | centre 255 red, falls to the rim |
+| `filter: blur(8px)` | **yes, applies** | red spreads past the node box to the window edge; 200/200 px of the mid-row fully red |
+| `filter: saturate(0) brightness(0.5)` | yes | `max(R-G)` goes 255 → 0 |
+| `box-shadow` ladders, inset, spread | yes | the sheet's own idiom |
+| `color-mix()`, relative colour syntax | yes | 416 uses in upstream's pinned sheet |
+
+**What this settles.** Two of the pen's three load-bearing mechanisms are
+unavailable — `@property` (`--angle`, `--selector-width`, `--is-selected` are
+all *animated* custom properties there) and `:has()` (a checked descendant
+re-hues its ancestor). That is why the port is a lighting language and not a
+mechanism, and why the report's remaining lever, a conic gradient, has no
+control here with a meaningful angle.
+
+**Still on the table, unused.** `conic-gradient` renders and `filter: blur`
+applies. `filter` stays banned in v1 for iGPU cost (proposal, risk table);
+conic gradients have no GTK control whose angle means anything.
