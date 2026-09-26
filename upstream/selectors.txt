@@ -126,6 +126,10 @@ notebook > header > tabs > arrow
 notebook > header > tabs > tab
 notebook > header > tabs > tab:active
 notebook > header > tabs > tab:hover
+notebook > header.bottom > tabs > tab:checked
+notebook > header.left > tabs > tab:checked
+notebook > header.right > tabs > tab:checked
+notebook > header.top > tabs > tab:checked
 placessidebar .navigation-sidebar > row
 popover > contents
 popover.menu box.circular-buttons button.circular.image-button.model
@@ -184,6 +188,11 @@ switch:checked > slider
 switch:checked:active
 switch:checked:hover
 switch:hover
+tabbar .box
+tabbar .box:backdrop
+tabbar tab button.image-button
+tabbar tab:selected
+tabbar tabbox.single-tab tab
 tabthumbnail button
 toast
 toggle-group

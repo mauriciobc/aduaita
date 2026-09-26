@@ -487,6 +487,11 @@ Four moves, landed separately because each one is a visual change.
   well (a current-folder cap was tried and dropped — Nautilus stretches that
   crumb across the bar). **Done 26 Sep 2026** — decisions.md, "Path bar".
 
+- [x] **RR6** (P1) Tabs (reopens U6): AdwTabBar strip wears the bar material,
+  the selected tab is the raised cap, its close button is flat; notebook's
+  checked tab is a cap with a lit accent underline. **Done 26 Sep 2026** —
+  decisions.md, "Tabs".
+
 - [x] **RR1** (P0) Rest register: bevel x4 + a soft drop on raised buttons
   (user: "these buttons look pretty darn flat"). Candidates rendered first;
   x4 + drop chosen; the 19 Sep no-drop rule retired (user).

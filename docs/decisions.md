@@ -1894,3 +1894,33 @@ crumb is now flat text; the well keeps its scoop. `--ov-up-cap-bg` and its
 contract entry are removed (no consumer left). The gallery mock now stretches
 the current crumb like Nautilus does; rendered light/dark/HC against
 Nautilus's stock CSS: text in the well in all three, HC matching stock.
+
+## Tabs — 26 Sep 2026
+
+**Ask.** "Improve tabs visual to match the overall system look and feel"
+(user). Reopens the 19 Sep U6 deferral for GtkNotebook and AdwTabBar.
+
+**AdwTabBar** (`surfaces/_tabbar.scss`). (1) A standalone strip painted
+upstream's flat headerbar colour under a headerbar wearing the bar material,
+so the chrome broke in two; the strip now wears `ov-bar-surface()` with the
+same backdrop re-point, and stays transparent where upstream makes it so
+(inside a toolbarview bar, `.inline`) — restated, since our rule outranks
+theirs. (2) The selected tab was a flat 10% patch; it is now the house raised
+cap (bevel + rim + face + drop; the tab box's 6px padding leaves room for the
+drop). Unselected tabs keep upstream's washes; a single tab stays bare, as
+upstream has it. (3) The round close button is a plain button and was wearing
+the full raised material, a 3D disc inside the tab; it now carries none.
+
+**GtkNotebook** (`surfaces/_notebook.scss`). The checked tab is the raised cap
+(bevel + face, no drop — the header border sits right under it) and its 4px
+accent underline becomes a lit one: a 3px accent bar with the accent's own
+light (`--ov-lit-bloom`) rising 4px into the tab. All four header positions.
+Hover and switch now animate the box-shadow at house timing (it snapped).
+
+**Measured** (paired, determinism 0 in every cell): `adw` light 28409 px /
+dark 24782 / prelight 28319; `notebook` light 679 / dark 1149 / prelight 789;
+HC `notebook` 0 px (the underline is restated exactly). HC `adw` 488 px, all
+on the selected tab: upstream declares an HC ring there that stock does not
+paint (bare `var()` in a `color-mix()` percentage, the same finding as
+"Toggle groups"); the alias's fallback paints it. Contract: nine new atoms,
+OK.
