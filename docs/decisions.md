@@ -2127,3 +2127,21 @@ deleted.
 **Measured** (gallery, white label on the CTA body, blue accent): light
 3.28:1, dark 4.54:1 (stock 3.77) — the brightness trade from the previous
 entry, unchanged in kind.
+
+## Toolbarview bottom bar — 26 Sep 2026
+
+**Bug.** Nautilus' file chooser (the GNOME 50 FileChooser portal) showed a
+plain white slab across the bottom bar between two gradient patches (user
+screenshot). Its bottom bar is an `AdwToolbarView` bottom bar holding a
+GtkCenterBox whose start and end children are separate `.toolbar` boxes; in
+open mode the centre (filename widget) is empty. We painted each `.toolbar`
+with `ov-bar-surface()` but left the container on upstream's flat
+`toolbarview > .bottom-bar.raised` colour, which showed through the gap.
+
+**Fix** (`surfaces/_toolbar.scss`). The mirror of the top bar: the
+`toolbarview > .bottom-bar` container wears the bar material with the same
+backdrop re-point, and `.toolbar`, searchbar and actionbar boxes nested in
+either toolbarview bar go transparent (upstream already does that for
+searchbar/actionbar there; restated, since our rule outranks theirs), so no
+nested bar restarts the gradient mid-bar. Verified with an offscreen render of
+the same widget tree before/after. Contract: eight new atoms, OK.

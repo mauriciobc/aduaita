@@ -21,3 +21,30 @@ actionbar > revealer > box:backdrop,
 .toolbar:backdrop {
   --ov-bar-base: var(--ov-bar-backdrop-base);
 }
+
+// AdwToolbarView bottom bar — the mirror of `toolbarview > .top-bar` in
+// surfaces/_headerbar.scss. Upstream paints the container itself
+// (`toolbarview > .bottom-bar.raised`), and apps fill it with several
+// sibling bars that do not tile it: Nautilus' file chooser puts two
+// `.toolbar` boxes in the ends of a GtkCenterBox, so painting each bar
+// separately left the empty centre showing the container's plain
+// --headerbar-bg-color between two gradients. The container wears the
+// material; the bars nested in either toolbarview bar go transparent, as
+// upstream already makes actionbar and searchbar there — otherwise each
+// would restart the gradient mid-bar.
+toolbarview > .bottom-bar {
+  @include ov-bar-surface();
+}
+
+toolbarview > .bottom-bar:backdrop {
+  --ov-bar-base: var(--ov-bar-backdrop-base);
+}
+
+toolbarview > .top-bar .toolbar,
+toolbarview > .top-bar searchbar > revealer > box,
+toolbarview > .top-bar actionbar > revealer > box,
+toolbarview > .bottom-bar .toolbar,
+toolbarview > .bottom-bar searchbar > revealer > box,
+toolbarview > .bottom-bar actionbar > revealer > box {
+  background: none;
+}
