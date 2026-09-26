@@ -941,7 +941,8 @@ build_adw (Gallery *g)
   }
 
   /* A Nautilus-style path bar: the app's own classes, one well, three crumbs,
-   * the last one the current folder (surfaces/_pathbar.scss). Nautilus's own
+   * the last one the current folder, which Nautilus stretches to fill the
+   * bar (surfaces/_pathbar.scss). Nautilus's own
    * pathbar CSS is not loaded here; the harness sheet must append it. */
   {
     GtkWidget *bar = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -954,10 +955,13 @@ build_adw (Gallery *g)
 
         gtk_widget_add_css_class (crumb, "nautilus-path-button");
         if (i == 2)
-          gtk_widget_add_css_class (crumb, "current-dir");
+          {
+            gtk_widget_add_css_class (crumb, "current-dir");
+            gtk_widget_set_hexpand (crumb, TRUE);
+          }
         gtk_box_append (GTK_BOX (bar), crumb);
       }
-    add (content, aligned (bar, GTK_ALIGN_START));
+    add (content, bar);
   }
 
   for (int i = 1; i <= 3; i++)

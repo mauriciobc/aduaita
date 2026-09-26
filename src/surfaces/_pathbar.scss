@@ -6,12 +6,13 @@
 // buttons without `.flat`, so the button material landed on every one: a row
 // of raised keys stacked in a sunken field, their drops clipped by it.
 //
-// Same language as the toggle group: the well is recessed, the CURRENT
-// folder is the one raised cap (libadwaita's active-toggle fill, bevel and
-// face, no drop — the well's 3px margin would clip it), and every other
-// crumb is flat text. Hover keeps libadwaita's own button hover fill (which
-// Nautilus lets through) but not the neon: a halo would be clipped by the
-// scrolled window around the crumbs.
+// The well is recessed and every crumb, current folder included, is flat
+// text — Nautilus's own intent. A raised cap on `.current-dir` was tried
+// the same day and dropped: Nautilus stretches the current crumb to fill
+// the rest of the bar, so the cap became a white slab that read as a text
+// field (user: "drop the cap and keep the recessed well"). Hover keeps
+// libadwaita's own button hover fill (which Nautilus lets through) but not
+// the neon: a halo would be clipped by the scrolled window around the crumbs.
 //
 // Not in upstream/selectors.txt, deliberately: these are Nautilus's classes,
 // not libadwaita's, so the libadwaita guard cannot watch them (like the
@@ -36,21 +37,10 @@ $ov-crumb: ".nautilus-pathbar button.nautilus-path-button:not(.flat):not(.osd):n
   box-shadow: none;
 }
 
-#{$ov-crumb}.current-dir,
-#{$ov-crumb}.current-dir:hover:not(:active):not(:checked):not(:disabled) {
-  background-color: var(--ov-up-cap-bg);
-  box-shadow: ov-bevel(), ov-face();
-}
-
 @media (prefers-contrast: more) {
   // Nautilus's own HC: a ring on the well, no shadow on resting crumbs.
   .nautilus-pathbar {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--ov-up-border-opacity), transparent);
-  }
-  #{$ov-crumb}.current-dir,
-  #{$ov-crumb}.current-dir:hover:not(:active):not(:checked):not(:disabled) {
-    background-color: transparent;
-    box-shadow: none;
   }
   // Hovered crumbs get the ring every HC button wears.
   #{$ov-crumb}:hover:not(:active):not(:checked):not(:disabled) {

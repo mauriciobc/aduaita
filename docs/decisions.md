@@ -1885,3 +1885,12 @@ identical to Nautilus stock plus the hovered ring. Method trap recorded: the
 first excerpt of Nautilus's CSS ended mid-block, which swallowed the whole
 overlay (render came back fully stock); check that a prepended excerpt closes
 every block. The live Nautilus window is the final judge.
+
+**Cap dropped (same day).** In a live window Nautilus stretches the
+`.current-dir` crumb to fill the rest of the bar, so the white cap became a
+bar-wide slab that read as a text field (the mock had label-sized crumbs and
+did not show it). User: "drop the cap and keep the recessed well". Every
+crumb is now flat text; the well keeps its scoop. `--ov-up-cap-bg` and its
+contract entry are removed (no consumer left). The gallery mock now stretches
+the current crumb like Nautilus does; rendered light/dark/HC against
+Nautilus's stock CSS: text in the well in all three, HC matching stock.

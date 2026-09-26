@@ -483,8 +483,9 @@ Four moves, landed separately because each one is a visual change.
   red; the button face (inset convex/concave) and a 0.5px rim, toned down per
   the user. **Done 26 Sep 2026** — decisions.md, "Button face, neon hover, rim".
 
-- [x] **RR5** (P1) Nautilus path bar: crumbs are text in a well, the current
-  folder is the raised cap. **Done 26 Sep 2026** — decisions.md, "Path bar".
+- [x] **RR5** (P1) Nautilus path bar: every crumb is flat text in a recessed
+  well (a current-folder cap was tried and dropped — Nautilus stretches that
+  crumb across the bar). **Done 26 Sep 2026** — decisions.md, "Path bar".
 
 - [x] **RR1** (P0) Rest register: bevel x4 + a soft drop on raised buttons
   (user: "these buttons look pretty darn flat"). Candidates rendered first;
