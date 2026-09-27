@@ -1,18 +1,113 @@
 #!/usr/bin/env bash
-# Fetch a libadwaita package from the Arch Linux archive and extract its
-# compiled stylesheet into upstream/cache/<version>/gtk.css.
+# Fetch an upstream stylesheet into upstream/cache/ (reproducible, gitignored).
 #
 # Usage: tools/fetch-upstream [version]
-#   version  full pacman version, e.g. 1:1.9.4-1.
-#            Defaults to upstream/pinned-version.
+#        tools/fetch-upstream --gtk3 [version]
+#        tools/fetch-upstream --libhandy [version]
 #
-# Only the extracted gtk.css is kept; the package and its file tree are
-# removed afterwards (the cache is reproducible and gitignored).
+#   (default)  libadwaita, from the Arch Linux archive, into
+#              upstream/cache/<version>/gtk.css.
+#              version: full pacman version, e.g. 1:1.9.4-1.
+#              Defaults to upstream/pinned-version.
+#   --gtk3     GTK3's built-in Adwaita, from the GNOME GitLab tag matching
+#              the pacman version, into upstream/cache/gtk3/<version>/:
+#              Adwaita/ (the SCSS source tree plus its checked-in compiled
+#              sheets) and gtk.css (light + dark, concatenated).
+#              version: e.g. 1:3.24.52-1; defaults to
+#              upstream/gtk3/pinned-version. The source is kept because
+#              tools/gtk3-accent-sites and tools/build-gtk3 recompile it;
+#              fetching fails unless sassc reproduces the checked-in sheets
+#              byte for byte.
+#   --libhandy libhandy's theme SCSS for the tag matching the pacman version
+#              (e.g. 1.8.3-2; defaults to upstream/libhandy/pinned-version)
+#              into upstream/cache/libhandy/<version>/themes/, verified to
+#              reproduce its Adwaita{,-dark}.css against the pinned gtk3 source.
+#
+# For libadwaita only the extracted gtk.css is kept; the package and its
+# file tree are removed afterwards.
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=tools/_lib.sh
 . "$repo/tools/_lib.sh"
+
+if [[ "${1:-}" == "--gtk3" ]]; then
+  shift
+  v="${1:-$(cat "$repo/upstream/gtk3/pinned-version")}"
+  tag="$(gtk3_tag "$v")"
+  cache="$repo/upstream/cache/gtk3/$v"
+  src="$cache/Adwaita"
+
+  if [[ ! -s "$cache/gtk.css" ]]; then
+    url="https://gitlab.gnome.org/GNOME/gtk/-/archive/${tag}/gtk-${tag}.tar.gz?path=gtk/theme/Adwaita"
+    echo "fetching: $url"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    curl -sfL "$url" | tar xz -C "$tmp"
+    mkdir -p "$cache"
+    rm -rf "$src"
+    mv "$tmp/gtk-${tag}-gtk-theme-Adwaita/gtk/theme/Adwaita" "$src"
+    # Same options as upstream's meson.build / parse-sass.sh.
+    for f in gtk-contained gtk-contained-dark; do
+      sassc -a -M -t compact "$src/$f.scss" "$tmp/$f.css"
+      if ! cmp -s "$tmp/$f.css" "$src/$f.css"; then
+        echo "error: sassc does not reproduce $tag's $f.css — the accent" >&2
+        echo "       inventory would not describe the shipped sheet" >&2
+        rm -rf "$cache"
+        exit 1
+      fi
+    done
+    cat "$src/gtk-contained.css" "$src/gtk-contained-dark.css" > "$cache/gtk.css"
+  fi
+
+  echo "version:   gtk3 $v (tag $tag)"
+  echo "gtk.css:   $cache/gtk.css ($(wc -l < "$cache/gtk.css") lines, light + dark)"
+  echo "selectors: $(extract_selectors "$cache/gtk.css" | wc -l) atoms"
+  echo "colors:    $(extract_named_colors "$cache/gtk.css" | wc -l) @define-color"
+  exit 0
+fi
+
+if [[ "${1:-}" == "--libhandy" ]]; then
+  # libhandy's Adwaita.css is built against GTK3's Adwaita SCSS (-I) and
+  # bakes the same #3584e4. Only its Adwaita{,-dark} sheets are loaded
+  # under the theme name "Adwaita"; under any other name libhandy falls back
+  # to fallback.css, a strict subset — so the generated theme restates them.
+  shift
+  v="${1:-$(cat "$repo/upstream/libhandy/pinned-version")}"
+  tag="${v%-*}"
+  cache="$repo/upstream/cache/libhandy/$v"
+  src="$cache/themes"
+  gtk3v="$(cat "$repo/upstream/gtk3/pinned-version")"
+  gtk3src="$repo/upstream/cache/gtk3/$gtk3v/Adwaita"
+  [[ -d "$gtk3src" ]] || "$repo/tools/fetch-upstream" --gtk3 >/dev/null
+
+  if [[ ! -d "$src" ]]; then
+    url="https://gitlab.gnome.org/GNOME/libhandy/-/archive/${tag}/libhandy-${tag}.tar.gz?path=src/themes"
+    echo "fetching: $url"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    curl -sfL "$url" | tar xz -C "$tmp"
+    mkdir -p "$cache"
+    mv "$tmp/libhandy-${tag}-src-themes/src/themes" "$src"
+    # sassc splits -I on ':', and the cache path carries the pacman epoch.
+    cp -r "$gtk3src" "$tmp/gtk3"
+    for f in Adwaita Adwaita-dark; do
+      (cd "$src" && sassc -M -t compact -I"$tmp/gtk3" "$f.scss" "$tmp/$f.css" 2>/dev/null)
+      # Upstream built these with an older sassc and GTK 3.24.31; today's
+      # build orders compound-selector parts differently on a few lines.
+      # Accept exactly that: every differing line is a permutation.
+      if ! same_modulo_order "$tmp/$f.css" "$src/$f.css"; then
+        echo "error: sassc does not reproduce libhandy $tag's $f.css" >&2
+        rm -rf "$cache"
+        exit 1
+      fi
+    done
+  fi
+
+  echo "version:   libhandy $v (tag $tag, built against gtk3 $gtk3v)"
+  echo "themes:    $src"
+  exit 0
+fi
 
 v="${1:-$(cat "$repo/upstream/pinned-version")}"
 enc="${v/:/%3A}"

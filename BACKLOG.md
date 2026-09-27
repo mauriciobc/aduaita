@@ -512,6 +512,53 @@ Four moves, landed separately because each one is a visual change.
 
 ---
 
+## G — GTK3 accent — 27 Sep 2026
+
+*GTK3's built-in Adwaita (gtk3 1:3.24.52-1) has no accent: `_colors.scss`
+hardcodes `#3584e4` and sassc bakes it and every derivation into literals, so
+every GTK3 app here paints blue under the `teal` accent. Scope: accent only;
+material (bevel/texture/depth) on GTK3 waits for daily-drive evidence (G6).
+Method and counts: decisions.md, "GTK3 accent: scope and method".*
+
+- [x] **G0** (P0) Scope call: GTK3 is in, accent only.
+- [x] **G1** (P0) GTK3 contract axis. `fetch-upstream --gtk3` caches the
+  pinned tag's Adwaita SCSS and refuses it unless sassc reproduces the
+  checked-in sheets byte for byte; `check-selectors` checks both toolkits
+  with no argument (the hook, now also triggered by `gtk3`) and reports
+  SHEET DRIFT when the installed sheet is not the pinned tag's.
+  *Accept:* contract OK on both; a planted missing selector and a drifted
+  cache each exit 1. **Done 27 Sep 2026.**
+- [x] **G2** (P0) Accent inventory: `tools/gtk3-accent-sites` compiles the
+  source with the stock accent and two sentinels and lists every declaration
+  whose value moves. *Accept:* declaration-level TSV for both variants.
+  **Done 27 Sep 2026** — 251 rules / 373 declarations (light 131/194, dark
+  120/179), vs 71 literal `#3584e4` in the light sheet.
+- [x] **G3** (P0) Generated theme `Adwaita-overlay`: `tools/build-gtk3`
+  recompiles the pinned GTK3 Adwaita + libhandy Adwaita SCSS with the accent
+  and installs it as a theme (priority 200), not the user sheet — revised
+  from the plan, see decisions.md "G3: a theme, not the user sheet".
+  *Accept:* stock accent renders pixel-identical to built-in Adwaita (light
+  and dark); for each non-blue accent the stock-blue pixel count falls to the
+  accent-independent floor. **Done 27 Sep 2026** — stock accent: identical
+  bytes, both schemes; stock sheet 17225/16561 blue px (light/dark) →
+  228–253 / 303–424 for red, pink, orange, yellow, green, purple, teal (the
+  floor is the same widgets under red, so not accent); slate 369/462, being
+  blue-grey itself. Disabled CTA unchanged vs stock. HC still swaps GTK3 to
+  `HighContrast` with the theme active; GTK4 `probe-foreign` output identical.
+- [ ] **G4** (P1) Accent sync: a user service on `gsettings monitor
+  org.gnome.desktop.interface accent-color` reruns `tools/build-gtk3`. Dark
+  (GTK3's own `gtk-dark.css` switch) and high contrast (GDK swaps to
+  `HighContrast`, verified) need nothing. *Accept:* changing the accent
+  rewrites the theme; a restarted GTK3 app follows (check whether a running
+  one does).
+- [ ] **G5** (P1) `render-gallery3`: GTK3 offscreen renderer + `gallery-diff`,
+  so G3/G4 are judged in numbers.
+- [ ] **G6** (P2) Material on GTK3 — only if daily driving shows GTK3 apps
+  reading inconsistent. Hand-written; would use `upstream/gtk3/selectors.txt`
+  and `variables.txt` (named colours), which `check-selectors` already reads.
+
+---
+
 ## Out of scope — explicit, do not creep
 
 - The GNOME Shell stylesheet (a separate project, only if the desktop

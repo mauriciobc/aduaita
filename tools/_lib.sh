@@ -43,3 +43,38 @@ extract_selectors() {
 extract_variables() {
   grep -oE -- '--[a-z0-9][a-z0-9-]*:' "$1" | tr -d ':' | sort -u
 }
+
+# extract_sheet_gtk3 <libgtk-3.so> — print GTK3's built-in Adwaita sheet,
+# light then dark (gtk-contained{,-dark}.css). Concatenated: the presence
+# checks do not care about cascade order.
+extract_sheet_gtk3() {
+  local so="$1" p
+  for p in gtk-contained.css gtk-contained-dark.css; do
+    gresource extract "$so" "/org/gtk/libgtk/theme/Adwaita/$p" || return 1
+  done
+}
+
+# extract_named_colors <gtk.css> — print the sorted set of @define-color
+# names the sheet defines. GTK3's variable axis: no custom properties there.
+extract_named_colors() {
+  grep -oE '@define-color [a-z_][a-z0-9_]*' "$1" | cut -d' ' -f2 | sort -u
+}
+
+# gtk3_tag <pacman version> — the upstream git tag for a gtk3 package
+# version: 1:3.24.52-1 -> 3.24.52.
+gtk3_tag() {
+  local v="${1#*:}"
+  echo "${v%-*}"
+}
+
+# same_modulo_order <a.css> <b.css> — true when both have the same line
+# count and every differing line pair holds the same characters (a
+# reordered compound selector). Anything else is a real difference.
+same_modulo_order() {
+  python3 - "$1" "$2" <<'EOF'
+import sys
+a, b = (open(p).read().splitlines() for p in sys.argv[1:3])
+sys.exit(0 if len(a) == len(b) and all(
+    x == y or sorted(x) == sorted(y) for x, y in zip(a, b)) else 1)
+EOF
+}

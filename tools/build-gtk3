@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Generate the GTK3 theme "Adwaita-overlay": upstream Adwaita, recompiled
+with the GNOME accent.
+
+Usage: tools/build-gtk3 [--accent NAME|#rrggbb] [--activate | --deactivate]
+
+GTK3's Adwaita bakes #3584e4 into literals (decisions.md, "GTK3 accent").
+This recompiles the pinned upstream SCSS — GTK3's Adwaita plus libhandy's
+Adwaita sheets — with the accent substituted, and installs the result as a
+theme at GTK_STYLE_PROVIDER_PRIORITY_THEME (200). A theme and not the user
+sheet: at 800 a subset of rules beats upstream's more specific ones
+(provider priority is compared before specificity), and a full copy at 800
+would beat apps' own CSS at 600. As a theme the cascade is stock's.
+
+  build/gtk3-theme/gtk-3.0/gtk{,-dark}.css   generated
+  ~/.local/share/themes/Adwaita-overlay/gtk-3.0 -> build/gtk3-theme/gtk-3.0
+
+Dark is GTK3's own gtk-dark.css switch (gtk-application-prefer-dark-theme);
+high contrast is GDK swapping the theme to HighContrast. Neither needs us.
+The name cannot be "Adwaita": GTK3 resolves that to its built-in resource
+before any theme directory. libhandy only loads its Adwaita sheets under
+that name — elsewhere it loads fallback.css, a strict subset — so they are
+appended here, recompiled with the same accent.
+
+  --accent      default: org.gnome.desktop.interface accent-color; a name is
+                resolved through the installed libadwaita sheet's
+                --accent-<name>, so the table is upstream's, not ours
+  --activate    set org.gnome.desktop.interface gtk-theme to Adwaita-overlay
+  --deactivate  set gtk-theme back to Adwaita and exit (not `reset`: the
+                schema default here is Adwaita-dark)
+"""
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+THEME = "Adwaita-overlay"
+STOCK = "#3584e4"
+ASSETS = "resource:///org/gtk/libgtk/theme/Adwaita/assets/"
+IFACE = "org.gnome.desktop.interface"
+
+repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def pin(name):
+    return open(os.path.join(repo, "upstream", name, "pinned-version")).read().strip()
+
+
+def run(*cmd, **kw):
+    return subprocess.run(cmd, check=True, capture_output=True, text=True, **kw).stdout
+
+
+def resolve_accent(value):
+    if value is None:
+        value = run("gsettings", "get", IFACE, "accent-color").strip().strip("'")
+    if re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+        return value.lower(), value.lower()
+    sheet = run("gresource", "extract", "/usr/lib/libadwaita-1.so.0",
+                "/org/gnome/Adwaita/styles/gtk.css")
+    m = re.search(rf"--accent-{re.escape(value)}:\s*(#[0-9a-fA-F]{{6}})", sheet)
+    if not m:
+        sys.exit(f"error: libadwaita defines no --accent-{value}")
+    return value, m.group(1).lower()
+
+
+def substitute(tree, accent):
+    hits = 0
+    for name in os.listdir(tree):
+        if name.endswith(".scss"):
+            path = os.path.join(tree, name)
+            text = open(path).read()
+            new, n = re.subn(re.escape(STOCK), accent, text, flags=re.IGNORECASE)
+            hits += n
+            open(path, "w").write(new)
+    return hits
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--accent")
+    group = ap.add_mutually_exclusive_group()
+    group.add_argument("--activate", action="store_true")
+    group.add_argument("--deactivate", action="store_true")
+    args = ap.parse_args()
+
+    if args.deactivate:
+        run("gsettings", "set", IFACE, "gtk-theme", "Adwaita")
+        print(f"gtk-theme: {run('gsettings', 'get', IFACE, 'gtk-theme').strip()}")
+        return
+    if os.geteuid() == 0:
+        sys.exit("error: run as your user, not root")
+
+    name, accent = resolve_accent(args.accent)
+    gtk3v, hdyv = pin("gtk3"), pin("libhandy")
+    gtk3src = os.path.join(repo, "upstream/cache/gtk3", gtk3v, "Adwaita")
+    hdysrc = os.path.join(repo, "upstream/cache/libhandy", hdyv, "themes")
+    if not os.path.isdir(hdysrc):  # fetches the gtk3 source too
+        subprocess.run([os.path.join(repo, "tools/fetch-upstream"), "--libhandy"],
+                       check=True, stdout=subprocess.DEVNULL)
+
+    out_dir = os.path.join(repo, "build/gtk3-theme/gtk-3.0")
+    os.makedirs(out_dir, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        # Colon-free copies: sassc splits -I on ':' and the gtk3 cache
+        # path carries the pacman epoch.
+        g3, hdy = os.path.join(tmp, "gtk3"), os.path.join(tmp, "libhandy")
+        shutil.copytree(gtk3src, g3)
+        shutil.copytree(hdysrc, hdy)
+        if not substitute(g3, accent) or not substitute(hdy, accent):
+            sys.exit(f"error: {STOCK} not found in the pinned SCSS — accent "
+                     "definition changed upstream; see decisions.md")
+        for out, gtk_entry, hdy_entry in (("gtk.css", "gtk-contained", "Adwaita"),
+                                          ("gtk-dark.css", "gtk-contained-dark", "Adwaita-dark")):
+            gtk = run("sassc", "-a", "-M", "-t", "compact", gtk_entry + ".scss", cwd=g3)
+            # Assets stay the installed library's own, not copies.
+            gtk = gtk.replace('url("assets/', f'url("{ASSETS}')
+            handy = run("sassc", "-M", "-t", "compact", "-I", g3, hdy_entry + ".scss",
+                        cwd=hdy)
+            header = (f"/* {THEME}: GTK3 Adwaita {gtk3v} + libhandy {hdyv} "
+                      f"{hdy_entry}.css, accent {name} ({accent}).\n"
+                      f" * Generated by tools/build-gtk3 — do not edit. */\n")
+            with open(os.path.join(out_dir, out), "w") as f:
+                f.write(header + gtk + "\n/* libhandy */\n" + handy)
+
+    data = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    target = os.path.join(data, "themes", THEME, "gtk-3.0")
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    if os.path.lexists(target) and not os.path.islink(target):
+        sys.exit(f"error: refusing to replace a real directory: {target}")
+    if os.path.islink(target):
+        os.unlink(target)
+    os.symlink(out_dir, target)
+    print(f"installed: {target} -> {out_dir} (accent {name} {accent})")
+
+    if args.activate:
+        run("gsettings", "set", IFACE, "gtk-theme", THEME)
+    current = run("gsettings", "get", IFACE, "gtk-theme").strip()
+    if current != f"'{THEME}'":
+        print(f"gtk-theme is {current}; tools/build-gtk3 --activate to use it")
+
+
+main()

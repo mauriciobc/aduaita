@@ -2145,3 +2145,87 @@ either toolbarview bar go transparent (upstream already does that for
 searchbar/actionbar there; restated, since our rule outranks theirs), so no
 nested bar restarts the gradient mid-bar. Verified with an offscreen render of
 the same widget tree before/after. Contract: eight new atoms, OK.
+
+## GTK3 accent: scope and method — 27 Sep 2026
+
+**Scope (user).** GTK3 is in, accent only (BACKLOG G). Material on GTK3 is
+G6, gated on daily-drive evidence.
+
+**Finding.** GTK3's built-in Adwaita (gtk3 1:3.24.52-1) never follows the
+accent: `_colors.scss:11` is `$selected_bg_color: if($variant == 'light',
+#3584e4, darken(#3584e4, 20%))`, sassc bakes it, and no rule references
+`@theme_selected_bg_color`. With `accent-color` = `teal`, every GTK3 app here
+(gnome-terminal, gedit, meld, evince, disks, …) paints blue. Redefining a
+named colour from user CSS — libsingularity's `_write_gtk_accent` — cannot
+fix Adwaita; it only works for a theme whose rules read that name.
+
+**Method: differential compile, not literal grep.** Upstream's SCSS
+recompiled with `sassc -a -M -t compact` is byte-identical to the sheet in
+libgtk-3.so (verified; `fetch-upstream --gtk3` refuses a tag where it is not).
+`tools/gtk3-accent-sites` compiles it with the stock accent and two sentinels
+and keeps every declaration whose value moves: **251 rules / 373
+declarations** (light 131/194, dark 120/179), where grepping for `#3584e4`
+finds 71 lines in the light sheet only. Twenty-odd derived values carry the
+accent: `#1b6acb`, `#185fb4`, `#15539e`, `#030c17`, … and text-shadow alphas
+such as `rgba(0, 0, 0, 0.719216)` that sassc derives from the accent's
+lightness. Two sentinels because a derivation that clamps (lighten() to
+white) can coincide with stock under one.
+
+**Consequence for G3 (revises the chat plan).** The plan was to hand-write
+`mix(@theme_bg_color, @ov_accent, f)` expressions — libsingularity's
+`build-css.py` idea done at source. The inventory retires that: hand-mapping
+373 declarations, including lightness-dependent alphas GTK3's `mix()` cannot
+express, is where drift would come from. Instead the accent sheet is
+*generated*: compile the pinned source with the user's accent and keep only
+the inventoried declarations. Exact by construction, no hand-written colour.
+Its guard is the pin itself: `check-selectors` reports SHEET DRIFT when the
+installed sheet is no longer the pinned tag's, which is when the generated
+sheet stops being exact. The hand-written contract files
+(`upstream/gtk3/selectors.txt`, `variables.txt`) are left for G6.
+
+**Cost.** Runtime accent changes need regeneration (G4's user service)
+instead of a GTK-side expression — acceptable: a rebuild is ~0.3 s, and GTK3
+reads user CSS at startup anyway [INFERENCE, to verify in G4].
+
+## G3: a theme, not the user sheet — 27 Sep 2026
+
+**Problem.** Emitting only the 373 accent declarations from
+`~/.config/gtk-3.0/gtk.css` breaks the cascade. GTK compares provider
+priority before specificity, so the sheet's `button.suggested-action {
+background-image: <accent gradient> }` at 800 beats upstream's non-accent
+`button.suggested-action:disabled { background-image: image(#faf9f8) }` at
+200 — every disabled CTA would paint accent. A full copy at 800 fixes that
+but beats apps' own CSS at 600.
+
+**Decision (user).** Ship the full recompiled sheet as a theme,
+`Adwaita-overlay`, at `PRIORITY_THEME`: the cascade is stock's and apps'
+CSS still wins. `tools/build-gtk3` writes `build/gtk3-theme/gtk-3.0/`
+(`gtk.css`, `gtk-dark.css`), symlinked from
+`~/.local/share/themes/Adwaita-overlay/gtk-3.0`; `--activate` sets
+`gtk-theme`. Asset URLs point at the installed library's gresource.
+
+**Constraints found on the way.**
+- The name cannot be `Adwaita`: GTK3 resolves it to the built-in resource
+  before any theme directory (tested with `XDG_DATA_HOME`).
+- libhandy loads its `Adwaita{,-dark}.css` only under the theme name
+  `Adwaita`, else `fallback.css` — a strict subset (48/48 lines in
+  Adwaita.css). Both carry `#3584e4` too, so the theme appends libhandy's
+  Adwaita sheets, recompiled from the pinned tag (1.8.3) against the pinned
+  gtk3 SCSS with the same accent. Today's sassc reproduces them except for
+  three lines per variant whose compound selectors are ordered differently
+  (same characters); `fetch-upstream --libhandy` accepts exactly that. The
+  expander-arrow rule is in both our sheet and libhandy's fallback at equal
+  priority; which wins is untested (G5).
+- sassc splits `-I` on `:`, so the epoch in the cache path needs a
+  colon-free copy.
+- `gsettings reset … gtk-theme` yields `Adwaita-dark` here (schema default),
+  not the `Adwaita` that was set; `--deactivate` sets `Adwaita` explicitly.
+- Dark: GTK3 3.24.52 does not read `color-scheme` (no such string in
+  libgdk-3); it switches to `gtk-dark.css` on prefer-dark. HC: with the theme
+  active and `a11y.interface high-contrast` on, GTK3 resolves `HighContrast`
+  — our sheet is out of the way, rule 3 holds with no code.
+
+**Evidence.** Throwaway GTK3 offscreen probe (suggested/disabled CTA, switch,
+check, progress, scale, selected row, entry selection, HdyViewSwitcher):
+numbers in BACKLOG G3. The drift guard now covers libhandy as well, and the
+hook triggers on `libhandy`.

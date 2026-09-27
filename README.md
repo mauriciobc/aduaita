@@ -17,10 +17,11 @@ src/            L0 tokens, L1 primitives, L2 surfaces (SCSS, built by sassc)
 assets/         empty: the grain is an inline SVG data: URI in src/_tokens.scss
                 (ov-grain()); 9-slice descoped —
                 border-image does not follow border-radius (decisions.md E1)
-upstream/       pinned-version, selector + variable contracts, cache/ (gitignored)
+upstream/       pinned-version, selector + variable contracts, cache/ (gitignored);
+                gtk3/ and libhandy/pinned-version for the GTK3 theme
 tools/          fetch-upstream, check-selectors, build, render-widget.c,
                 probe-motion.c, probe-foreign.c, render-gallery.c,
-                gallery-diff, track
+                gallery-diff, track, gtk3-accent-sites, build-gtk3
 hooks/          pacman PostTransaction hook
 docs/           proposal, decisions, evening-0 experiments
 build/          sassc output (gitignored)
@@ -28,15 +29,25 @@ build/          sassc output (gitignored)
 
 ## Toolchain
 
-All present: sassc, glib2 (gresource), bsdtar, git, gcc (for render-widget).
+All present: sassc, glib2 (gresource), bsdtar, git, gcc (for render-widget),
+python3 (gtk3-accent-sites).
 
 ## Commands
 
 ```
 tools/fetch-upstream             # fill upstream/cache/<pinned>/gtk.css from the Arch archive
 tools/fetch-upstream 1:1.6.5-1   # any archived version (handles the pre-1.9 four-file layout)
-tools/check-selectors            # contract vs the *installed* sheet — what the pacman hook runs
-tools/check-selectors 1:1.9.4-1  # contract vs an archived version (network)
+tools/check-selectors            # both contracts (libadwaita + gtk3) vs the *installed*
+                                 # sheets — what the pacman hook runs
+tools/check-selectors 1:1.9.4-1  # libadwaita contract vs an archived version (network)
+tools/fetch-upstream --gtk3      # GTK3 Adwaita SCSS for the pinned tag, from GNOME GitLab
+tools/fetch-upstream --libhandy  # libhandy's theme SCSS for its pinned tag
+tools/check-selectors --gtk3     # gtk3 only; also reports SHEET DRIFT (gtk3, libhandy) vs the pins
+tools/gtk3-accent-sites          # TSV of every GTK3 declaration that depends on the
+                                 # accent (BACKLOG G, decisions.md "GTK3 accent")
+tools/build-gtk3                 # GTK3 theme Adwaita-overlay: upstream Adwaita + libhandy
+                                 # recompiled with the GNOME accent (--accent to override)
+tools/build-gtk3 --activate      # ...and set gtk-theme to it; --deactivate goes back to Adwaita
 tools/build                      # sassc + symlink ~/.config/gtk-4.0/gtk.css + restart daemons
 tools/build --debug              # the same, plus a 1px outline on every node
                                  # (build/gtk-debug.css) — see "Aiming a rule"

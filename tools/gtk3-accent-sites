@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Inventory every declaration in GTK3's built-in Adwaita that depends on
+the accent colour.
+
+Usage: tools/gtk3-accent-sites [version]      (default upstream/gtk3/pinned-version)
+
+GTK3's Adwaita has no accent variable: `_colors.scss` hardcodes #3584e4 and
+sassc bakes it — and everything derived from it (darken(), lighten(),
+alpha(), mix(), the dark variant's darken(#3584e4, 20%)) — into literal
+hexes. Grepping the compiled sheet for #3584e4 finds the root and misses
+the derivations. So the source is compiled three times, with the stock
+accent and two sentinels; a declaration is accent-dependent iff its value
+differs between any two compiles. Two sentinels, because a single one can
+coincide with stock where a derivation clamps (lighten() to white).
+
+Output (stdout), tab-separated, one declaration per line:
+    variant  selector  property  stock-value
+Summary counts on stderr. Exit 1 if the source has no #3584e4 to replace
+(upstream changed how the accent is defined — the method needs revisiting).
+"""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+STOCK = "#3584e4"
+SENTINELS = ("#a0522d", "#2e8b57")
+VARIANTS = (("light", "gtk-contained"), ("dark", "gtk-contained-dark"))
+
+repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+version = sys.argv[1] if len(sys.argv) > 1 else open(
+    os.path.join(repo, "upstream/gtk3/pinned-version")).read().strip()
+src = os.path.join(repo, "upstream/cache/gtk3", version, "Adwaita")
+if not os.path.isdir(src):
+    subprocess.run([os.path.join(repo, "tools/fetch-upstream"), "--gtk3", version],
+                   check=True, stdout=subprocess.DEVNULL)
+
+
+def compile_with(accent, tmp):
+    tree = os.path.join(tmp, accent.lstrip("#"))
+    shutil.copytree(src, tree)
+    hits = 0
+    for name in os.listdir(tree):
+        if not name.endswith(".scss"):
+            continue
+        path = os.path.join(tree, name)
+        text = open(path).read()
+        hits += len(re.findall(re.escape(STOCK), text, re.IGNORECASE))
+        open(path, "w").write(re.sub(re.escape(STOCK), accent, text, flags=re.IGNORECASE))
+    if hits == 0:
+        sys.exit(f"error: no {STOCK} in the {version} SCSS — accent definition changed")
+    out = {}
+    for variant, entry in VARIANTS:
+        css = subprocess.run(["sassc", "-a", "-M", "-t", "compact", entry + ".scss"],
+                             cwd=tree, check=True, capture_output=True, text=True).stdout
+        out[variant] = css.splitlines()
+    return out
+
+
+def split_decls(body):
+    """Split a declaration block on ';' outside parentheses and quotes."""
+    decls, depth, quote, cur = [], 0, None, ""
+    for ch in body:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == ";" and depth == 0:
+            decls.append(cur.strip())
+            cur = ""
+            continue
+        cur += ch
+    if cur.strip():
+        decls.append(cur.strip())
+    return [d.split(":", 1) for d in decls if ":" in d]
+
+RULE = re.compile(r"^(?P<sel>[^{]+?) \{ (?P<body>.*) \}$")
+DEFINE = re.compile(r"^@define-color (?P<name>\S+) (?P<value>.*);$")
+
+with tempfile.TemporaryDirectory() as tmp:
+    builds = [compile_with(a, tmp) for a in (STOCK,) + SENTINELS]
+
+total_rules = total_decls = 0
+for variant, _ in VARIANTS:
+    lines = [b[variant] for b in builds]
+    if len({len(l) for l in lines}) != 1:
+        sys.exit(f"error: {variant}: compiles differ in rule count — cannot pair rules")
+    rules = decls = 0
+    for stock, *others in zip(*lines):
+        if all(o == stock for o in others):
+            continue
+        rules += 1
+        color = DEFINE.match(stock)
+        if color:
+            # A named colour: GTK3 apps' own CSS may read it (@theme_selected_bg_color).
+            print(f"{variant}\t@define-color\t{color.group('name')}\t{color.group('value')}")
+            decls += 1
+            continue
+        m = RULE.match(stock)
+        if not m or m.group("sel").startswith("@"):
+            # Any other at-rule (@keyframes): nested blocks, report whole.
+            head, _, body = stock.partition(" { ")
+            print(f"{variant}\t{head}\t*\t{body.rstrip(' }')}")
+            decls += 1
+            continue
+        parsed = [split_decls(RULE.match(l).group("body")) for l in [stock] + others]
+        if len({len(p) for p in parsed}) != 1:
+            sys.exit(f"error: {variant}: declaration count differs in: {m.group('sel')}")
+        for (prop, value), *alts in zip(*parsed):
+            if all(a[1] == value for a in alts):
+                continue
+            print(f"{variant}\t{m.group('sel')}\t{prop.strip()}\t{value.strip()}")
+            decls += 1
+    print(f"{variant}: {rules} rules, {decls} declarations depend on the accent",
+          file=sys.stderr)
+    total_rules += rules
+    total_decls += decls
+print(f"total: {total_rules} rules, {total_decls} declarations (gtk3 {version})",
+      file=sys.stderr)

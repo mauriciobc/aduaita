@@ -3,6 +3,8 @@ Operation = Upgrade
 Operation = Install
 Type = Package
 Target = libadwaita
+Target = gtk3
+Target = libhandy
 
 [Action]
 Description = Checking Adwaita overlay selector contract
